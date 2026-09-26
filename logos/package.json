@@ -1,0 +1,17 @@
+{
+  "name": "logos",
+  "private": true,
+  "type": "module",
+  "description": "LOGOS — Christian and Stoic thought, learned to be spoken. Web app, iOS app and the Netlify functions they share.",
+  "scripts": {
+    "build": "node scripts/extract-corpus.mjs --out web/corpus.json",
+    "corpus": "node scripts/extract-corpus.mjs",
+    "check": "node scripts/check-web.mjs",
+    "dev": "netlify dev"
+  },
+  "dependencies": {
+    "@google/genai": "^1.52.0",
+    "@netlify/blobs": "^10.7.0",
+    "@netlify/functions": "^4.3.0"
+  }
+}

@@ -1,0 +1,8 @@
+node_modules/
+.netlify/
+web/corpus.json
+ios/build/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/project.xcworkspace/xcuserdata/
+DerivedData/
+.DS_Store
