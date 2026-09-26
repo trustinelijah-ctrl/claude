@@ -19,7 +19,7 @@ struct PracticeView: View {
             row(store.L("Craft", "Handwerk"), "\(store.corpus.figures.count)",
                 store.L("Figures of speech, taught from the texts you already know. Rewrite, say it, get coached.", "Redefiguren, gelehrt an Texten, die du schon kennst. Umschreiben, sprechen, Rückmeldung.")) { router.push(.craft) }
             row(store.L("Voices", "Stimmen"), "\(store.corpus.voices.count)",
-                store.L("People who lived these questions — a scene, a line to keep, a move to use.", "Menschen, die diese Fragen gelebt haben — eine Szene, ein Satz, ein Zug.")) { router.push(.voices) }
+                store.L("People who lived these questions: a scene, a line to keep, a move to use.", "Menschen, die diese Fragen gelebt haben: eine Szene, ein Satz, ein Zug.")) { router.push(.voices) }
             if store.lockedCount > 0 {
                 Block { Meta("\(store.lockedCount) " + store.L("recalls are held back until you have learned their topic. Finish a lesson to release them.",
                                                               "Abrufe warten, bis du ihr Thema gelernt hast. Schließe eine Lektion ab, um sie freizugeben.")) }
@@ -124,15 +124,18 @@ struct RhetoricView: View {
 
     func begin(_ p: RhetoricPrompt) {
         prompt = p; answer = ""; coach = nil; prev = []; showBetter = false
-        left = p.secs; stage = .prompt
+        stage = .prompt
         store.lastConcept = p.concept
+        startClock(p.secs)
+        Feedback.shared.play(.turn, muted: store.mute)
+    }
+
+    func startClock(_ secs: Int) {
+        left = secs
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-            Task { @MainActor in
-                if left > 0 { left -= 1 } else { timer?.invalidate() }
-            }
+            Task { @MainActor in if left > 0 { left -= 1 } else { timer?.invalidate() } }
         }
-        Feedback.shared.play(.turn, muted: store.mute)
     }
 
     func quoteMarks(_ p: RhetoricPrompt, _ s: String) -> String { p.lang == "de" ? "»" + s + "«" : "“" + s + "”" }
@@ -151,7 +154,7 @@ struct RhetoricView: View {
             Rubric(store.L("Your answer", "Deine Antwort")).padding(.bottom, 10)
             SpeakField(text: $answer, speech: speech, lang: Lang(rawValue: p.lang) ?? .en, secs: p.secs,
                        placeholder: store.L("Speak. The words land here.", "Sprich. Die Worte landen hier."))
-            Button(store.L("Done — review it", "Fertig — ansehen")) {
+            Button(store.L("Review my answer", "Antwort ansehen")) {
                 speech.stop(); timer?.invalidate()
                 store.logRhetoric(promptId: p.id, answer: answer, secs: p.secs - left, lang: p.lang, concept: p.concept, difficulty: p.difficulty)
                 stage = .review
@@ -165,7 +168,7 @@ struct RhetoricView: View {
             Rubric(store.L("The question", "Die Frage")).padding(.bottom, 8)
             PassageText(quoteMarks(p, p.q), small: true, color: .ink2)
             Rubric(store.L("What you said", "Was du gesagt hast")).padding(.top, 18).padding(.bottom, 8)
-            PassageText(answer.isEmpty ? "—" : answer, small: true)
+            PassageText(answer.isEmpty ? store.L("Nothing written.", "Nichts geschrieben.") : answer, small: true)
         }
         Rail(label: store.L("What a strong answer needs", "Was eine starke Antwort braucht")) { PassageText(p.structure, small: true, color: .ink2) }
         Block {
@@ -173,9 +176,8 @@ struct RhetoricView: View {
                        showQuestion: false, text: $answer, coach: $coach, previous: [], revealed: $showBetter,
                        onRetry: {
                            prev.append(["text": .string(answer), "coach": coach.map(JSONValue.string) ?? nil])
-                           answer = ""; coach = nil; showBetter = false; left = p.secs; stage = .prompt
-                           timer?.invalidate()
-                           timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in Task { @MainActor in if left > 0 { left -= 1 } else { timer?.invalidate() } } }
+                           answer = ""; coach = nil; showBetter = false; stage = .prompt
+                           startClock(p.secs)
                        })
         }
         if !p.sources.isEmpty {
@@ -209,7 +211,7 @@ struct ReflectView: View {
             PageHead(title: evening ? store.L("Evening examination", "Abendbetrachtung") : store.L("Morning intention", "Morgenvorsatz"),
                      sub: evening ? store.L("Seneca did this nightly, and Ignatius taught its Christian form. Seven questions; answer the ones that bite.",
                                             "Seneca tat das jeden Abend, Ignatius lehrte die christliche Form. Sieben Fragen; beantworte die, die treffen.")
-                                  : store.L("One sentence on what today asks of you, before it starts asking.", "Ein Satz darüber, was der Tag von dir verlangt — bevor er zu verlangen beginnt."))
+                                  : store.L("One sentence on what today asks of you, before it starts asking.", "Ein Satz darüber, was der Tag von dir verlangt, bevor er zu verlangen beginnt."))
             Block {
                 Flow {
                     Chip(title: store.L("Morning", "Morgen"), on: !evening) { evening = false }
@@ -293,11 +295,11 @@ struct VoicesView: View {
     var body: some View {
         Page {
             PageHead(title: store.L("Voices", "Stimmen"),
-                     sub: store.L("People who lived these questions — a scene, a line to keep, a move to use.",
-                                  "Menschen, die diese Fragen gelebt haben — eine Szene, ein Satz, ein Zug."))
+                     sub: store.L("People who lived these questions: a scene, a line to keep, a move to use.",
+                                  "Menschen, die diese Fragen gelebt haben: eine Szene, ein Satz, ein Zug."))
             ForEach(store.corpus.voices) { v in
                 Button { router.push(.voice(v.id)) } label: {
-                    RowLink(title: v.name, sub: v.years + " · " + (v.trad == "stoic" ? store.L("Stoic", "Stoisch") : store.L("Christian", "Christlich")) + " — " + store.pick(v.hook)) {
+                    RowLink(title: v.name, sub: v.years + " · " + (v.trad == "stoic" ? store.L("Stoic", "Stoisch") : store.L("Christian", "Christlich")) + "\n" + store.pick(v.hook)) {
                         if store.work("voiceWork", v.id)["seen"].truthy { Image(systemName: "checkmark").font(.caption).foregroundStyle(Color.forest) }
                     }
                 }.buttonStyle(.plain)
@@ -404,7 +406,7 @@ struct CraftView: View {
                                   "Redefiguren, gelehrt an Texten, die du schon kennst. Umschreiben, sprechen, Rückmeldung."))
             ForEach(store.corpus.figures) { f in
                 Button { router.push(.figure(f.id)) } label: {
-                    RowLink(title: store.pick(f.n), sub: f.term + " — " + store.pick(f.def)) {
+                    RowLink(title: store.pick(f.n), sub: f.term + "\n" + store.pick(f.def)) {
                         if store.work("craftWork", f.id)["seen"].truthy { Image(systemName: "checkmark").font(.caption).foregroundStyle(Color.forest) }
                     }
                 }.buttonStyle(.plain)
@@ -443,7 +445,8 @@ struct FigureView: View {
                                placeholder: store.L("Your version.", "Deine Fassung."), minChars: 8, showQuestion: false,
                                text: store.workText("craftWork", f.id), coach: store.workCoach("craftWork", f.id),
                                previous: store.work("craftWork", f.id)["prev"].array, revealed: store.workRevealed("craftWork", f.id),
-                               onRetry: { store.workRetry("craftWork", f.id) })
+                               onRetry: { store.workRetry("craftWork", f.id) },
+                               task: { .craft(figure: store.pick(f.n) + " (" + f.term + ")", def: store.pick(f.def), flat: store.pick(f.flat), answer: $0) })
                 }
                 if let i = store.corpus.figures.firstIndex(where: { $0.id == f.id }) {
                     let nx = store.corpus.figures[(i + 1) % store.corpus.figures.count]

@@ -2,7 +2,7 @@ import XCTest
 @testable import LogosCore
 
 final class SyncTests: XCTestCase {
-    struct Golden: Decodable { var code: String; var id: String; var blob: String; var text: String }
+    struct Golden: Decodable { var code: String; var id: String; var auth: String; var blob: String; var text: String }
     static let golden: Golden = {
         let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("golden-sync.json")
         return try! JSONDecoder().decode(Golden.self, from: Data(contentsOf: url))
@@ -12,6 +12,8 @@ final class SyncTests: XCTestCase {
         let g = Self.golden
         let code = try XCTUnwrap(SyncCode(g.code))
         XCTAssertEqual(code.id, g.id)
+        XCTAssertEqual(code.auth, g.auth)
+        XCTAssertNotEqual(code.auth, code.id)
         XCTAssertEqual(String(decoding: try code.open(g.blob), as: UTF8.self), g.text)
     }
 

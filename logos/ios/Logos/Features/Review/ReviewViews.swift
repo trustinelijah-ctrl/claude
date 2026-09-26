@@ -10,15 +10,15 @@ struct ReviewView: View {
         Page {
             PageHead(title: store.L("Review", "Abruf"),
                      sub: store.L("Recall is the part that decides whether you can produce this in a conversation rather than recognise it on a page.",
-                                  "Der Abruf entscheidet, ob du das im Gespräch hervorbringen kannst — statt es auf einer Seite wiederzuerkennen."))
+                                  "Der Abruf entscheidet, ob du das im Gespräch hervorbringen kannst, statt es auf einer Seite nur wiederzuerkennen."))
             Block {
                 if r.due > 0 {
                     Text("\(r.due)").font(Typo.serifBold(44)).foregroundStyle(Color.ink).contentTransition(.numericText())
                     Meta(r.due == 1 ? store.L("item due now", "Eintrag jetzt fällig") : store.L("items due now", "Einträge jetzt fällig")).padding(.top, 4)
                     Button(store.L("Begin", "Beginnen")) { router.push(.memorySession) }.buttonStyle(.solid).padding(.top, 18)
                 } else {
-                    PassageText(store.L("Nothing is due. That is the system working, not a gap — spacing them out is what makes them stick.",
-                                    "Nichts fällig. Das ist das System bei der Arbeit, keine Lücke — gerade die Abstände lassen es haften."), small: true)
+                    PassageText(store.L("Nothing is due. Spacing recalls out is what makes them stick, so an empty queue means the system is working.",
+                                    "Nichts fällig. Die Abstände lassen das Gelernte haften; eine leere Warteschlange heißt, dass das System arbeitet."), small: true)
                     if r.soon > 0 { Meta("\(r.soon) " + store.L("come due within two days.", "werden binnen zwei Tagen fällig.")).padding(.top, 12) }
                 }
             }
@@ -34,8 +34,8 @@ struct ReviewView: View {
                 }
                 if r.saved == 0 && r.own == 0 {
                     AnswerBox {
-                        Meta(store.L("Everything here so far is material that shipped with the app. Anything you save from a lesson or a plan lands in this queue too — tap Save to review under a passage.",
-                                     "Bisher ist alles hier mitgeliefertes Material. Was du in einer Lektion oder einem Plan speicherst, landet ebenfalls in dieser Warteschlange — tippe unter einer Stelle auf In Wiederholung."))
+                        Meta(store.L("Everything here so far is material that shipped with the app. Anything you save from a lesson or a plan lands in this queue too. Tap Save to review under a passage.",
+                                     "Bisher ist alles hier mitgeliefertes Material. Was du in einer Lektion oder einem Plan speicherst, landet ebenfalls in dieser Warteschlange. Tippe unter einer Stelle auf In Wiederholung."))
                     }.padding(.top, 16)
                 }
             }
@@ -121,7 +121,7 @@ struct OwnCardSheet: View {
                         .lineLimit(4...12).font(Typo.serif(17)).padding(12).overlay(Rectangle().stroke(Color.rule))
                     Rubric(store.L("Topic", "Thema")).padding(.top, 18).padding(.bottom, 8)
                     Picker("", selection: $concept) {
-                        Text("—").tag("")
+                        Text(store.L("None", "Keins")).tag("")
                         ForEach(store.corpus.concepts) { c in Text(store.pick(c.t)).tag(c.id) }
                     }.pickerStyle(.menu).tint(.ink)
                 }
@@ -303,8 +303,8 @@ struct MemoriseStaircase: View {
         let gs = gaps
         let current = gs.firstIndex { !filled.contains($0) }
         return VStack(alignment: .leading, spacing: 0) {
-            Meta(store.L("Type the first letter of each missing word — the rest fills itself in.",
-                         "Tippe den ersten Buchstaben jedes fehlenden Wortes — der Rest ergänzt sich.")).padding(.top, 16).padding(.bottom, 16)
+            Meta(store.L("Type the first letter of each missing word and the rest fills itself in.",
+                         "Tippe den ersten Buchstaben jedes fehlenden Wortes, der Rest ergänzt sich.")).padding(.top, 16).padding(.bottom, 16)
             AnswerBox {
                 gapText(toks, gs, current).font(Typo.serif(21)).lineSpacing(9)
                     .modifier(Shake(amount: CGFloat(shake)))
@@ -319,7 +319,7 @@ struct MemoriseStaircase: View {
             HStack {
                 Cite("\(filled.count) / \(gs.count)")
                 Spacer()
-                Button(store.L("I'm stuck — show it", "Ich komme nicht weiter")) {
+                Button(store.L("Show the words", "Wörter zeigen")) {
                     filled = Set(gs); Feedback.shared.play(.wrong, muted: store.mute)
                 }.buttonStyle(.ghostSmall)
             }.padding(.top, 14)
@@ -394,7 +394,7 @@ struct MemoriseStaircase: View {
                                 meaningPending = false
                                 if case .success(let t) = r { withAnimation { meaning = t } }
                             }
-                        } label: { HStack { if meaningPending { ProgressView() }; Text(store.L("Did I get the meaning?", "Habe ich den Sinn getroffen?")) } }
+                        } label: { Text(meaningPending ? store.L("Reading it…", "Wird gelesen …") : store.L("Did I get the meaning?", "Habe ich den Sinn getroffen?")) }
                         .buttonStyle(.ghost).padding(.top, 14).disabled(meaningPending || recite.count < 8)
                     }
                 }

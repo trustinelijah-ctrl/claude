@@ -5,7 +5,6 @@ import SwiftUI
 struct LessonFlowView: View {
     @Environment(AppStore.self) private var store
     @Environment(Router.self) private var router
-    @Environment(\.dismiss) private var dismiss
 
     static let steps = [("Open", "Beginn"), ("Christian teaching", "Christliche Lehre"), ("Stoic teaching", "Stoische Lehre"),
                         ("Side by side", "Nebeneinander"), ("Check yourself", "Selbstprüfung"), ("Say it", "Sprich es"), ("Done", "Fertig")]
@@ -55,7 +54,7 @@ struct LessonFlowView: View {
     }
     func back() { store.updateLesson { $0["step"] = .number(max(0, $0["step"].double - 1)) }; Feedback.shared.play(.tap, muted: store.mute) }
 
-    // MARK: 0 — open
+    // MARK: 0 open
 
     @ViewBuilder func openStep(_ les: Lesson) -> some View {
         VStack(spacing: 0) {
@@ -77,7 +76,7 @@ struct LessonFlowView: View {
             }
         }
         Block(rule: false) {
-            Button(store.L("Begin — about 6 minutes", "Beginnen — etwa 6 Minuten"), action: advance).buttonStyle(.solid)
+            Button(store.L("Begin (6 min)", "Beginnen (6 Min.)"), action: advance).buttonStyle(.solid)
             HStack(spacing: 10) {
                 Button(store.L("Choose a different topic", "Anderes Thema wählen")) { router.push(.pickLesson) }.buttonStyle(.ghostSmall)
                 Button(store.L("Skip to practice", "Zum Üben")) { router.tab = .practice }.buttonStyle(.ghostSmall)
@@ -85,7 +84,7 @@ struct LessonFlowView: View {
         }
     }
 
-    // MARK: 1/2 — teachings
+    // MARK: 1/2 teachings
 
     @ViewBuilder func teaching(_ les: Lesson, christian: Bool) -> some View {
         let side = christian ? les.christian : les.stoic
@@ -125,7 +124,7 @@ struct LessonFlowView: View {
         }
         Block {
             Rubric(store.L("In its own words", "In eigenen Worten"))
-            Meta(store.L("Save any of these and you can learn them by heart, step by step.", "Speichere davon, was du willst — dann lernst du es Stufe für Stufe auswendig.") + " " + store.translationName)
+            Meta(store.L("Save any of these and you can learn them by heart, step by step.", "Speichere, was du willst, und lerne es Stufe für Stufe auswendig.") + " " + store.translationName)
                 .padding(.top, 6).padding(.bottom, 16)
             ForEach(side.quotes, id: \.self) { k in
                 QuoteCard(key: k, concept: id, why: store.corpus.qwhy[id + ":" + k].map { store.pick($0) })
@@ -138,13 +137,13 @@ struct LessonFlowView: View {
         }
     }
 
-    // MARK: 3 — side by side
+    // MARK: 3 side by side
 
     @ViewBuilder func compare(_ les: Lesson) -> some View {
         Block(top: 16) {
             Heading(store.L("Side by side", "Nebeneinander"))
-            Meta(store.L("You have now heard each tradition on its own terms. Comparison is a separate skill — and an optional one. Skip it if you would rather let the two settle first.",
-                         "Du hast nun jede Tradition für sich gehört. Der Vergleich ist eine eigene Fertigkeit — und freiwillig. Überspring ihn, wenn du die beiden erst setzen lassen willst.")).padding(.top, 12)
+            Meta(store.L("You have now heard each tradition on its own terms. Comparison is a separate skill, and an optional one. Skip it if you would rather let the two settle first.",
+                         "Du hast nun jede Tradition für sich gehört. Der Vergleich ist eine eigene Fertigkeit und freiwillig. Überspring ihn, wenn du die beiden erst setzen lassen willst.")).padding(.top, 12)
         }
         if let b = store.corpus.builds[id], let t = b.t, let body = b.body {
             Block { Heading(store.pick(t), level: 2); Paragraphs(text: store.pick(body)).padding(.top, 14) }
@@ -165,7 +164,7 @@ struct LessonFlowView: View {
         }
     }
 
-    // MARK: 4 — think, then check
+    // MARK: 4 think, then check
 
     @ViewBuilder func check(_ les: Lesson) -> some View {
         if let th = store.corpus.think[id], !st["thoughtDone"].truthy {
@@ -208,7 +207,7 @@ struct LessonFlowView: View {
         }
     }
 
-    // MARK: 5 — say it
+    // MARK: 5 say it
 
     @ViewBuilder func say(_ les: Lesson) -> some View {
         if let say = les.say {
@@ -235,7 +234,7 @@ struct LessonFlowView: View {
         }
     }
 
-    // MARK: 6 — done
+    // MARK: 6 done
 
     @ViewBuilder func done(_ les: Lesson) -> some View {
         VStack(spacing: 0) {
@@ -310,7 +309,7 @@ struct AskBlock: View {
                         switch r { case .success(let t): withAnimation { answer = t }; case .failure(let e): failure = e }
                     }
                 } label: {
-                    HStack { if pending { ProgressView().tint(.ink) }; Text(store.L("Explain it another way", "Anders erklären")) }
+                    Text(pending ? store.L("Reading it…", "Wird gelesen …") : store.L("Explain it another way", "Anders erklären"))
                 }
                 .buttonStyle(.ghost).disabled(pending)
                 if let f = failure { Meta(f.reason(store.lang), color: .burgundy).padding(.top, 10) }

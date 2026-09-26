@@ -8,55 +8,31 @@ import CryptoKit
 import Crypto
 #endif
 
-/// The Netlify deployment both apps talk to. Changing it in Settings points
-/// the phone at a different deploy (a preview, a fork) without a rebuild.
+/// The Netlify deployment both apps talk to.
 public enum Endpoint {
-    public static let defaultBase = URL(string: "https://logosschool.netlify.app")!
-    public static var base: URL {
-        get { UserDefaults.standard.string(forKey: "logos.base").flatMap(URL.init(string:)) ?? defaultBase }
-        set { UserDefaults.standard.set(newValue.absoluteString, forKey: "logos.base") }
-    }
+    public static let base = URL(string: "https://logosschool.netlify.app")!
 }
 
 // MARK: - the reviewer
 
-/// Prompts are the web app's PROMPTS, word for word, so the coach behaves the
-/// same on both surfaces.
+/// One reviewer request. The prompt templates live in the `ai` function, so
+/// the app sends only which exercise this is and the learner's words.
 public enum CoachTask {
     case coach(question: String, hint: String, model: String, answer: String)
+    case craft(figure: String, def: String, flat: String, answer: String)
     case explain(topic: String, tradition: String, summary: String, points: [String])
     case recite(text: String, reference: String, said: String)
 
-    public var prompt: String {
+    public var body: [String: Any] {
         switch self {
         case let .coach(question, hint, model, answer):
-            return "You are a demanding but warm rhetoric coach. A learner answered a speaking exercise out loud and wrote down roughly what they said.\n\n" +
-                "Exercise: " + question + "\n" +
-                (hint.isEmpty ? "" : "What a good answer needs: " + hint + "\n") +
-                (model.isEmpty ? "" : "One strong answer, for reference only (it is ONE way, not the answer): " + model + "\n") +
-                "\nTheir answer:\n\"" + answer + "\"\n\n" +
-                "Reply in exactly these four labelled lines and nothing else:\n" +
-                "STRENGTH: the single best thing in their answer, quoting a few of their own words.\n" +
-                "FIX: the one change that would most improve it next time — structure, a missing concession, a vague claim, an overclaim, or a missed opportunity. Be concrete.\n" +
-                "REWRITE: take their weakest sentence and rewrite it so it lands, keeping their meaning and their position. Put only the rewritten sentence here, in quotation marks.\n" +
-                "DEVICE: one rhetorical move that would have helped (for example antithesis, a tricolon, a concrete example, restating the objection more strongly, naming what the view costs) and show it in one short line using their material.\n\n" +
-                "Rules. Do not praise a quotation, verse or citation unless you are confident its wording and attribution are correct; if one looks wrong or unverifiable, say so under FIX. " +
-                "If their position differs from the reference answer but is a defensible reading, do not call it wrong — judge how well they argued it. " +
-                "Judge only the words; you cannot hear pace, pauses or tone, so do not comment on them. No flattery, no preamble, under 130 words in total."
+            return ["task": "coach", "input": ["question": question, "hint": hint, "model": model, "answer": answer]]
+        case let .craft(figure, def, flat, answer):
+            return ["task": "craft", "input": ["figure": figure, "def": def, "flat": flat, "answer": answer]]
         case let .explain(topic, tradition, summary, points):
-            return "A learner is studying \"" + topic + "\" and has just read the " + tradition + " teaching.\n" +
-                "Summary: " + summary + "\n" +
-                "Points: " + points.joined(separator: " | ") + "\n\n" +
-                "Give one short clarification that adds something the lesson did not already say — " +
-                "an example, a common misunderstanding, or where this shows up in ordinary life. " +
-                "Stay strictly inside the " + tradition + " tradition; do not mention the other one."
+            return ["task": "explain", "input": ["topic": topic, "tradition": tradition, "summary": summary, "points": points]]
         case let .recite(text, reference, said):
-            return "The learner is memorising this passage:\n\"" + text + "\" (" + reference + ")\n\n" +
-                "From memory they said:\n\"" + said + "\"\n\n" +
-                "Judge it by MEANING, not exact wording — a correct paraphrase passes. " +
-                "Say in one line whether they have it, then name anything missing in substance " +
-                "(not synonyms, not word order). If a dropped clause changes the sense, quote just that clause. " +
-                "Two or three sentences total."
+            return ["task": "recite", "input": ["text": text, "reference": reference, "said": said]]
         }
     }
 }
@@ -67,7 +43,7 @@ public enum CoachError: Error, Equatable {
     public func reason(_ lang: Lang) -> String {
         let de = lang == .de
         switch self {
-        case .timeout: return de ? "Die Rückmeldung hat zu lange gebraucht. Deine Antwort ist unverändert — versuch es noch einmal oder mach weiter." : "The reviewer took too long. Your answer is untouched — try again or carry on."
+        case .timeout: return de ? "Die Rückmeldung hat zu lange gebraucht. Deine Antwort ist unverändert. Versuch es noch einmal oder mach weiter." : "The reviewer took too long. Your answer is untouched. Try again or carry on."
         case .network: return de ? "Keine Verbindung zur Rückmeldung. Deine Antwort ist unverändert." : "No connection to the reviewer. Your answer is untouched."
         case .rate: return de ? "Gerade zu viele Anfragen. Versuch es gleich noch einmal." : "Too many requests just now. Try again shortly."
         case .malformed: return de ? "Die Rückmeldung war unlesbar. Es wurde nichts verändert." : "The reviewer sent something unreadable. Nothing has been changed."
@@ -84,13 +60,13 @@ public struct CoachClient {
 
     /// Never throws past the caller's text: every failure is a CoachError the UI explains.
     public func run(_ task: CoachTask, exerciseLang: Lang) async -> Result<String, CoachError> {
-        var prompt = task.prompt
-        prompt += exerciseLang == .de ? "\n\nAntworte auf Deutsch." : "\n\nAnswer in English."
+        var body = task.body
+        body["lang"] = exerciseLang.rawValue
         var req = URLRequest(url: base.appendingPathComponent(".netlify/functions/ai"))
         req.httpMethod = "POST"
         req.timeoutInterval = 25
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.httpBody = try? JSONSerialization.data(withJSONObject: ["prompt": prompt])
+        req.httpBody = try? JSONSerialization.data(withJSONObject: body)
         do {
             let (data, resp) = try await session.data(for: req)
             let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
@@ -113,8 +89,8 @@ public struct CoachClient {
 
 // MARK: - content updates
 
-/// Fetches /corpus.json from the deploy. A content edit to the web app that is
-/// deployed to Netlify reaches installed phones on their next launch.
+/// Fetches /corpus.json from the deploy, so a content edit deployed to
+/// Netlify reaches installed phones on their next launch.
 public struct CorpusUpdater {
     public var base: URL
     public var cacheURL: URL
@@ -146,8 +122,8 @@ public struct CorpusUpdater {
 
 // MARK: - sync
 
-/// End-to-end-encrypted sync through the deploy's /api/sync function. The
-/// browser implements the same scheme with WebCrypto; see web/sync.js.
+/// Encrypted sync through the deploy's /api/sync function. The browser
+/// implements the same scheme with WebCrypto (web/sync.js).
 public struct SyncCode: Equatable {
     public static let alphabet = Array("ABCDEFGHJKLMNPQRSTUVWXYZ23456789")
     public let normalized: String
@@ -168,12 +144,15 @@ public struct SyncCode: Equatable {
             return String(normalized[a..<normalized.index(a, offsetBy: 4)])
         }.joined(separator: "-")
     }
-    public var id: String {
-        SHA256.hash(data: Data(("logos-sync-id:" + normalized).utf8)).map { String(format: "%02x", $0) }.joined()
+    public var id: String { Self.hex("logos-sync-id:" + normalized) }
+    /// Sent with every request so the server can tell the code's holder from someone who only knows the id.
+    public var auth: String { Self.hex("logos-sync-auth:" + normalized) }
+    static func hex(_ s: String) -> String {
+        SHA256.hash(data: Data(s.utf8)).map { String(format: "%02x", $0) }.joined()
     }
     var key: SymmetricKey { SymmetricKey(data: Data(SHA256.hash(data: Data(("logos-sync-key:" + normalized).utf8)))) }
 
-    /// base64(nonce(12) || ciphertext || tag(16)) — WebCrypto AES-GCM compatible.
+    /// base64(nonce(12) || ciphertext || tag(16)), readable by WebCrypto AES-GCM.
     public func seal(_ plaintext: Data) throws -> String {
         try AES.GCM.seal(plaintext, using: key).combined!.base64EncodedString()
     }
@@ -199,6 +178,7 @@ public struct SyncClient {
     public func pull() async throws -> SyncRemote? {
         var req = URLRequest(url: url)
         req.cachePolicy = .reloadIgnoringLocalCacheData
+        req.setValue(code.auth, forHTTPHeaderField: "X-Sync-Auth")
         let (data, resp): (Data, URLResponse)
         do { (data, resp) = try await session.data(for: req) } catch { throw SyncError.network }
         let status = (resp as? HTTPURLResponse)?.statusCode ?? 0
@@ -218,6 +198,7 @@ public struct SyncClient {
         var req = URLRequest(url: url)
         req.httpMethod = "PUT"
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue(code.auth, forHTTPHeaderField: "X-Sync-Auth")
         req.httpBody = try JSONSerialization.data(withJSONObject: ["updated": updated, "blob": blob])
         let resp: URLResponse
         do { (_, resp) = try await session.data(for: req) } catch { throw SyncError.network }

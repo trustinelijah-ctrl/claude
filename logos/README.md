@@ -1,114 +1,115 @@
 # LOGOS
 
-Christian and Stoic thought, learned to be spoken — in English and German.
+Christian and Stoic thought, learned to be spoken, in English and German.
 
-One corpus, two surfaces:
-
-| | Where | What it is |
-|---|---|---|
-| **Web** | `web/` → https://logosschool.netlify.app | The original single-file app, now an installable offline PWA with encrypted sync |
-| **iOS** | `ios/` | A native SwiftUI app over the same content and the same learner data |
-| **Functions** | `netlify/functions/` | `ai` (the speaking coach, Gemini via Netlify AI Gateway) and `sync` (encrypted blobs) |
-| **Content** | `content/corpus.json` | Every lesson, voice, plan and passage, extracted from the web app |
+The same content and the same learner data run on two surfaces: the original
+web app at https://logosschool.netlify.app and a native SwiftUI app for iPhone.
 
 ```
 logos/
-├── web/                  deployable folder (Netlify "publish")
-│   ├── index.html        the app (+ a small add-on script at the end)
-│   ├── sync.js           WebCrypto half of sync
+├── web/                  what Netlify publishes
+│   ├── index.html        the app, plus a small add-on script at the end
+│   ├── sync.js           browser side of sync (WebCrypto)
 │   ├── sw.js, manifest.webmanifest, icons/
-├── netlify/functions/    ai.mts, sync.mts
-├── content/corpus.json   generated — the iOS app bundles this
-├── scripts/              extract-corpus, check-web, golden-value generators
-├── ios/                  SwiftUI app (XcodeGen spec + Swift package for the model layer)
+├── netlify/functions/    ai.mts (speaking coach), sync.mts (encrypted storage)
+├── content/corpus.json   generated from web/index.html; the iOS app bundles it
+├── scripts/              corpus extraction, checks, golden-value generators
+├── ios/                  SwiftUI app: XcodeGen spec, app code, core Swift package
 └── netlify.toml
 ```
 
 ## How the pieces fit
 
-- **Content has one source: `web/index.html`.** `npm run corpus` evaluates the
-  app's script and writes `content/corpus.json`. The Netlify build also
-  publishes it at `/corpus.json`; the iOS app checks that on launch and swaps
-  in newer content without an App Store release. Edit a lesson on the web,
-  deploy, and phones have it next time they open.
-- **Learner data has one shape.** The iOS app stores the web's own document
-  (`S.d`) as JSON. Backup files open on either side, and fields one side
-  doesn't know about survive the round trip.
-- **Sync is end-to-end encrypted.** A 20-character code is the only secret.
-  Each client derives the blob id and an AES-256-GCM key from it (SHA-256
-  with separate labels); the `sync` function stores ciphertext it cannot
-  read. Browser (WebCrypto) and iOS (CryptoKit) are tested against each other.
-- **The coach is shared.** Both clients POST `{prompt}` to
-  `/.netlify/functions/ai` and get `{text}` back, using identical prompts.
+`web/index.html` is the only place content is written. `npm run corpus` runs the
+app's script in Node and writes every lesson, voice, plan and passage to
+`content/corpus.json`. The Netlify build publishes the same file at
+`/corpus.json`, and the iOS app downloads it on launch, so a lesson edited and
+deployed on the web reaches phones without an App Store release.
+
+The iOS app stores the learner's progress in the web app's own JSON format.
+A backup file exported on one side opens on the other, and fields one side
+doesn't know about are kept.
+
+Sync is optional. The learner holds a 20-character code. Each client derives
+three values from it with SHA-256: the blob id, an auth token sent with every
+request, and an AES-256-GCM key that never leaves the device. The `sync`
+function stores only ciphertext and a hash of the auth token, so it can check
+who is allowed to read or replace a blob but cannot decrypt it. The tests seal
+data in the browser and open it in Swift, and the reverse.
+
+Both clients use the same coach. They send `{task, input, lang}` to
+`/.netlify/functions/ai`, the function fills in a fixed prompt template, and
+sends back `{text}`. Clients never send a prompt, so the endpoint can't be used
+as a general-purpose model.
 
 ## Web
 
 ```sh
 cd logos
 npm install
-npm run check        # static checks: scripts parse, files exist, sync crypto round-trips
-npm run build        # what Netlify runs: regenerates web/corpus.json
-npx netlify dev      # local server with functions (needs the Netlify CLI)
+npm run check    # app scripts parse, referenced files exist, sync crypto round-trips,
+                 # and the functions reject bad input and callers without the code
+npm run build    # what Netlify runs: regenerates web/corpus.json
+npx netlify dev  # local server with functions (needs the Netlify CLI)
 ```
+
+The web add-ons make the site installable and usable offline, and add a sync
+panel under Practice, in the "Your data" section. `netlify.toml` sets a
+Content-Security-Policy that only allows same-origin requests, so learner data
+can't be sent to another host.
 
 ### Deploying to Netlify
 
-The existing project is `logosschool`. Two ways:
+The existing project is `logosschool`. Either link the repo (Project
+configuration, then Build & deploy: repository `trustinelijah-ctrl/claude`,
+base directory `logos`), after which every push deploys and branches get
+preview URLs, or run `npx netlify deploy --build --prod` inside `logos/`.
 
-1. **Link the repo (recommended).** In Netlify → Project configuration →
-   Build & deploy, connect `trustinelijah-ctrl/claude`, set **Base directory**
-   to `logos`. `netlify.toml` supplies the build command, publish folder and
-   functions. Every push then deploys; branches get preview URLs.
-2. **CLI deploy from this folder:** `npx netlify deploy --build --prod` inside
-   `logos/`.
+The `ai` function reads its Gemini credentials from Netlify's AI Gateway at
+runtime; there are no keys in the repo. `LOGOS_AI_MODEL` overrides the default
+model, `gemini-2.5-flash`. The coach allows 12 requests a minute per IP and sync
+allows 30. Set a spending limit for AI Gateway in the Netlify team settings as
+well, because per-IP limits don't stop someone using many IPs.
 
-Either way the `ai` function keeps working: it reads its credentials from
-Netlify's AI Gateway at runtime (no keys in the repo). `LOGOS_AI_MODEL`
-optionally overrides the model. The `sync` function needs nothing — Netlify
-Blobs provisions itself. Both functions are rate-limited per IP.
+Deploy previews write sync data to a per-deploy store, so testing a branch
+never touches production data.
 
 ## iOS
 
-Requirements: Xcode 16+, iOS 17+.
+Requires Xcode 16 or later and iOS 17 or later.
 
 ```sh
 cd logos/ios
 brew install xcodegen
-xcodegen            # creates Logos.xcodeproj from project.yml
+xcodegen             # creates Logos.xcodeproj from project.yml
 open Logos.xcodeproj
 ```
 
-Set your team under Signing & Capabilities, then run. `swift test` in
-`logos/ios` runs the model-layer tests (they also run on Linux).
+Choose your team under Signing & Capabilities and run. `swift test` in
+`logos/ios` runs the model-layer tests, which also run on Linux.
 
-What's in the app:
+The app has the web app's five tabs. Today shows the voice or figure of the
+day, your last coached answer with the one thing to change, the next unit on
+the Path, and how many recalls are due. The Path has 29 units in 8 stages.
+Review runs the web's spaced-repetition schedule and the five-step memorising
+exercise. Practice has the rhetoric studio, morning and evening reflection, the
+speech bank, 19 voices and 9 figures of speech. Library holds the sources, the
+concept atlas, your notes, the arguments and search across both languages.
 
-- **Today** — greeting, the voice or figure of the day, "where you left off"
-  (your last coached answer and its one fix), the next unit on the Path, recalls due.
-- **Path** — 29 units in 8 stages; lessons, deep units and multi-day tracks.
-- **Lesson** — open → Christian teaching → Stoic teaching → side by side →
-  think it through / check yourself → say it → done. Mastery rises only on evidence.
-- **Review** — spaced repetition (the web's SM-2 variant, verified against it),
-  and the memorise staircase: read, fill first letters at 25/50/78%, recite.
-- **Practice** — rhetoric studio (timed, coached, with the opponent's follow-up),
-  morning/evening reflection, speech bank, 19 voices, 9 figures of speech.
-- **Library** — sources, concept atlas, commonplace book, arguments, full-text
-  search across both languages.
-- **Native extras** — speak-and-see transcription on device (Speech framework),
-  haptics and the web's soft tones, vector engraving plates, a daily reminder,
-  backup export/import via Files, sync with the website, deep links
-  (`logos://review`, `logos://voice/augustine`, …).
+What the phone adds: spoken answers are transcribed on the device, feedback
+comes as haptics and the web's soft tones, the engraving plates are drawn as
+vectors, a daily reminder is available, backups go through Files, and
+`logos://` links open screens directly (`logos://review`,
+`logos://voice/augustine`). The sync code is kept in the Keychain.
 
-### Shipping to the App Store
-
-1. Pick a bundle id you own (project.yml: `PRODUCT_BUNDLE_IDENTIFIER`).
-2. Set `DEVELOPMENT_TEAM`, archive in Xcode, upload via Organizer.
-3. Privacy answers: microphone and speech are used on device for transcription;
-   typed answers are sent to the coach only when the learner taps "Coach";
-   sync data is encrypted on device before upload.
+To ship it, change `PRODUCT_BUNDLE_IDENTIFIER` in `project.yml` to one you own,
+set your team, archive in Xcode and upload from the Organizer. For the App
+Store privacy form: microphone and speech recognition run on the device;
+answers go to the coach only when the learner taps "Coach my answer"; sync data
+is encrypted before it leaves the phone.
 
 ## CI
 
-`.github/workflows/logos.yml` checks that `content/corpus.json` matches the
-web app, runs the web checks, runs the Swift tests on macOS, builds the app
-for the simulator and uploads screenshots as an artifact.
+`.github/workflows/logos.yml` fails if `content/corpus.json` is out of date with
+the web app, then runs the web and function checks, the Swift tests on macOS,
+an Xcode build for the simulator, and uploads simulator screenshots.

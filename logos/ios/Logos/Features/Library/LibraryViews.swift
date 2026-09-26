@@ -78,7 +78,7 @@ struct LibraryView: View {
 
     @ViewBuilder var voices: some View {
         ForEach(store.corpus.voices) { v in
-            Button { router.push(.voice(v.id)) } label: { RowLink(title: v.name, sub: v.years + " — " + store.pick(v.hook)) }.buttonStyle(.plain)
+            Button { router.push(.voice(v.id)) } label: { RowLink(title: v.name, sub: v.years + "\n" + store.pick(v.hook)) }.buttonStyle(.plain)
         }
     }
 
@@ -123,8 +123,8 @@ struct SearchPanel: View {
             .font(Typo.serif(17)).padding(12).overlay(Rectangle().stroke(Color.rule)).submitLabel(.search)
         let q = query.trimmingCharacters(in: .whitespaces).lowercased()
         if q.count < 2 {
-            Meta(store.L("Search Scripture, passages, concepts, your notes, arguments and speaking prompts — in English and German at once.",
-                         "Durchsuche Schrift, Stellen, Begriffe, deine Notizen, Argumente und Sprechaufgaben — auf Englisch und Deutsch zugleich.")).padding(.top, 14)
+            Meta(store.L("Search Scripture, passages, concepts, your notes, arguments and speaking prompts, in English and German at once.",
+                         "Durchsuche Schrift, Stellen, Begriffe, deine Notizen, Argumente und Sprechaufgaben, auf Englisch und Deutsch zugleich.")).padding(.top, 14)
         } else {
             results(q)
         }
@@ -413,7 +413,7 @@ struct CaptureEditor: View {
                 SpeakField(text: $body_, speech: speech, lang: store.lang, secs: 300, placeholder: store.L("What struck you, and why.", "Was dich getroffen hat, und warum."), minHeight: 200)
                 Rubric(store.L("Topic", "Thema")).padding(.top, 18).padding(.bottom, 6)
                 Picker("", selection: $concept) {
-                    Text("—").tag("")
+                    Text(store.L("None", "Keins")).tag("")
                     ForEach(store.corpus.concepts) { c in Text(store.pick(c.t)).tag(c.id) }
                 }.pickerStyle(.menu).tint(.ink)
                 TextField(store.L("Tags, separated by commas", "Schlagworte, durch Kommas getrennt"), text: $tags).font(Typo.meta).padding(.top, 12)

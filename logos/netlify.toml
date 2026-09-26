@@ -15,6 +15,10 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     X-Frame-Options = "SAMEORIGIN"
     Permissions-Policy = "camera=(), geolocation=(), microphone=(self)"
+    # The app is one file with inline script and style; everything else is
+    # same-origin. connect-src 'self' keeps learner data from leaving for any
+    # other host even if markup were ever injected.
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'"
 
 [[headers]]
   for = "/"

@@ -43,7 +43,7 @@ struct Plate: View {
     }
 }
 
-/// The vellum ground with a faint, fixed grain — the web's paper noise.
+/// The vellum ground with the web's faint, fixed paper grain.
 struct Paper: View {
     var body: some View {
         Color.vellum

@@ -1,4 +1,4 @@
-/* LOGOS service worker — makes the app open offline.
+/* LOGOS service worker: lets the app open offline.
    Pages: network first, so a new deploy is seen at once; the cached copy is
    only a fallback. Static files: served from cache, refreshed in the
    background. The reviewer and sync endpoints are never cached. */

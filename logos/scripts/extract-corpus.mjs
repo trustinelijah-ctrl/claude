@@ -15,11 +15,11 @@ if (!scripts.length) throw new Error("app script not found");
 let src = scripts.reduce((a, b) => (b.length > a.length ? b : a)).replace(/\bboot\(\);\s*$/, "");
 
 const KEYS = ["SCRIPTURE","PASSAGES","MASTERY","CONCEPTS","MEMORY_SEED","RHETORIC","RH_FOLLOW",
-  "SPEECH","SPEECH_CATS","SOURCES","SOURCE_CATS","CAPTURE_SEED","KINDS","ARGUMENTS","FORMATS",
-  "WHO","DIFF","EVENING_Q","LESSONS","PLAIN","TRANSLATIONS","PLANS","PATH","CARDS","VOICES",
-  "VOICE_KIND","FIGURES","MODES","MODE_TIER","DIFF_TIER","DEPTH","DEEPEN","THINK","QWHY",
-  "MODULES","BUILDS","PLAN_Q","PLAN_DEPTH","PLAN_THINK","SAIDW","PQWHY","CONCEPT_FILL",
-  "PLATES","SOURCE_PACKS","REF_ALIAS","LESSON_IDS"];
+  "SPEECH","SPEECH_CATS","SOURCES","SOURCE_CATS","CAPTURE_SEED","KINDS","ARGUMENTS",
+  "WHO","DIFF","EVENING_Q","LESSONS","TRANSLATIONS","PLANS","PATH","VOICES",
+  "VOICE_KIND","FIGURES","MODES","MODE_TIER","DEPTH","DEEPEN","THINK","QWHY",
+  "MODULES","BUILDS","PLAN_Q","PLAN_DEPTH","PLAN_THINK","SAIDW","PQWHY",
+  "PLATES","LESSON_IDS"];
 src += "\n;globalThis.__OUT = {" + KEYS.map(k => `${k}: typeof ${k} === "undefined" ? null : ${k}`).join(",") + "};";
 
 const noop = () => {};

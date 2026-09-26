@@ -1,7 +1,7 @@
 import AVFoundation
 import UIKit
 
-/// The web app's small acknowledgements — a soft tone and a tap — rebuilt
+/// The web app's small acknowledgements (a soft tone and a tap), rebuilt
 /// natively. Silent when muted or when Reduce Motion asks for stillness.
 @MainActor
 final class Feedback {

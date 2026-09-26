@@ -24,7 +24,7 @@ jobs:
       - name: Corpus is in sync with the web app
         run: |
           npm run corpus
-          git diff --exit-code -- content/corpus.json || (echo "::error::content/corpus.json is stale — run 'npm run corpus' in logos/ and commit" && exit 1)
+          git diff --exit-code -- content/corpus.json || (echo "::error::content/corpus.json is stale. Run 'npm run corpus' in logos/ and commit" && exit 1)
       - name: Web checks
         run: npm run check
       - name: Build (as Netlify does)

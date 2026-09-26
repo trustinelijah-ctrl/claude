@@ -55,7 +55,6 @@ public struct Passage: Codable, Hashable {
     public var author: String
     public var en: String
     public var de: String
-    public var gist: String?
     public var tr: String?
     public var cite: String?
 }
@@ -227,7 +226,6 @@ public struct Voice: Codable, Hashable, Identifiable {
         public struct Also: Codable, Hashable { public var en: String?; public var orig: String?; public var src: String? }
         public var en: String?
         public var orig: String?
-        public var origLang: String?
         public var src: String?
         public var de: String?
         public var deKind: String?
@@ -278,7 +276,6 @@ public struct Think: Codable, Hashable { public var t: LS; public var a: LS; pub
 public struct Builds: Codable, Hashable { public var from: LS?; public var t: LS?; public var body: LS? }
 public struct HeadedBlock: Codable, Hashable { public var h: LS; public var b: LS }
 public struct SaidWell: Codable, Hashable { public var bad: LS; public var well: LS; public var note: LS? }
-public struct Card: Codable, Hashable { public var claim: LS?; public var moves: [LS]?; public var lines: [LS]?; public var cost: LS? }
 public struct Translation: Codable, Hashable { public var en: String; public var de: String; public var note: LS? }
 
 public struct Module: Codable, Hashable {
@@ -292,7 +289,6 @@ public struct Module: Codable, Hashable {
         public struct Body: Codable, Hashable { public var h: LS; public var p: LS }
         public var hook: LS; public var body: [Body]
     }
-    public var pack: String?
     public var title: LS
     public var sub: LS?
     public var claims: [Claim]
@@ -322,16 +318,13 @@ public struct Corpus {
     public var captureSeed: [CaptureSeed] = []
     public var kinds: [String: LS] = [:]
     public var arguments: [Argument] = []
-    public var formats: [String: LS] = [:]
     public var who: [String: LS] = [:]
     public var diff: [String: LS] = [:]
     public var eveningQ: [LS] = []
     public var lessons: [String: Lesson] = [:]
-    public var plain: [String: [String]] = [:]
     public var translations: [String: Translation] = [:]
     public var plans: [Plan] = []
     public var path: [PathStage] = []
-    public var cards: [String: Card] = [:]
     public var voices: [Voice] = []
     public var voiceKind: [String: LS] = [:]
     public var figures: [Figure] = []
@@ -386,16 +379,13 @@ public struct Corpus {
         captureSeed = get("CAPTURE_SEED", [CaptureSeed].self) ?? []
         kinds = get("KINDS", [String: LS].self) ?? [:]
         arguments = get("ARGUMENTS", [Argument].self) ?? []
-        formats = get("FORMATS", [String: LS].self) ?? [:]
         who = get("WHO", [String: LS].self) ?? [:]
         diff = get("DIFF", [String: LS].self) ?? [:]
         eveningQ = get("EVENING_Q", [LS].self) ?? []
         lessons = get("LESSONS", [String: Lesson].self) ?? [:]
-        plain = get("PLAIN", [String: [String]].self) ?? [:]
         translations = get("TRANSLATIONS", [String: Translation].self) ?? [:]
         plans = get("PLANS", [Plan].self) ?? []
         path = get("PATH", [PathStage].self) ?? []
-        cards = get("CARDS", [String: Card].self) ?? [:]
         voices = get("VOICES", [Voice].self) ?? []
         voiceKind = get("VOICE_KIND", [String: LS].self) ?? [:]
         figures = get("FIGURES", [Figure].self) ?? []
@@ -431,6 +421,5 @@ public struct Corpus {
         for s in path { if let u = s.units.first(where: { $0.id == id }) { return u } }
         return nil
     }
-    public func stage(of unit: PathUnit) -> PathStage? { path.first { $0.units.contains(unit) } }
     public var allUnits: [PathUnit] { path.flatMap(\.units) }
 }

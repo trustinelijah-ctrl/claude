@@ -1,7 +1,7 @@
 import Foundation
 
 /// Ports of the web app's small text algorithms. They must match the
-/// JavaScript bit for bit — same shuffles, same gaps, same scores — so a
+/// JavaScript exactly (same shuffles, same gaps, same scores), so a
 /// learner moving between the web and the phone sees the same exercise.
 public enum TextTools {
 
@@ -127,7 +127,7 @@ public enum TextTools {
         .map { $0.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines) }
     }
 
-    /// "u" + base36(ms) + base36(rand) — the web's id shape.
+    /// "u" + base36(ms) + base36(rand), the web's id shape.
     public static func uid(now: Date = Date()) -> String {
         let ms = Int64(now.timeIntervalSince1970 * 1000)
         return "u" + String(ms, radix: 36) + String(Int.random(in: 0..<10000), radix: 36)

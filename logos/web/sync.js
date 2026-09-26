@@ -1,9 +1,10 @@
-/* LOGOS sync — the browser half. The iOS app implements the same scheme
+/* LOGOS sync, browser side. The iOS app implements the same scheme
    (ios/Logos/Core/Network.swift); a test seals here and opens there.
 
    A 20-character code is the only secret. From it:
-     id  = hex SHA-256("logos-sync-id:"  + code)   the blob's name on the server
-     key = SHA-256("logos-sync-key:" + code)       AES-256-GCM key, never sent
+     id   = hex SHA-256("logos-sync-id:"   + code)  the blob's name on the server
+     auth = hex SHA-256("logos-sync-auth:" + code)  proves the caller holds the code
+     key  = SHA-256("logos-sync-key:"  + code)      AES-256-GCM key, never sent
    The server stores base64(nonce || ciphertext || tag) and cannot read it. */
 (function(root){
   "use strict";
@@ -27,9 +28,10 @@
 
   async function derive(code){
     const id = hex(await subtle().digest("SHA-256", enc.encode("logos-sync-id:" + code)));
+    const auth = hex(await subtle().digest("SHA-256", enc.encode("logos-sync-auth:" + code)));
     const raw = await subtle().digest("SHA-256", enc.encode("logos-sync-key:" + code));
     const key = await subtle().importKey("raw", raw, {name:"AES-GCM"}, false, ["encrypt","decrypt"]);
-    return {id:id, key:key};
+    return {id:id, auth:auth, key:key};
   }
   async function seal(code, text){
     const k = await derive(code);
@@ -48,7 +50,7 @@
   /* Talks to /api/sync/<id>. Returns {updated, data} | null (nothing stored). */
   async function pull(code){
     const k = await derive(code);
-    const r = await fetch("/api/sync/" + k.id, {cache:"no-store"});
+    const r = await fetch("/api/sync/" + k.id, {cache:"no-store", headers:{"X-Sync-Auth": k.auth}});
     if(r.status === 404) return null;
     if(!r.ok) throw new Error("server:" + r.status);
     const j = await r.json();
@@ -61,7 +63,7 @@
   async function push(code, data, updated){
     const k = await derive(code);
     const blob = await seal(code, JSON.stringify({app:"logos", version:2, data:data}));
-    const r = await fetch("/api/sync/" + k.id, {method:"PUT", headers:{"Content-Type":"application/json"},
+    const r = await fetch("/api/sync/" + k.id, {method:"PUT", headers:{"Content-Type":"application/json", "X-Sync-Auth": k.auth},
       body: JSON.stringify({updated:updated, blob:blob})});
     if(!r.ok) throw new Error("server:" + r.status);
   }

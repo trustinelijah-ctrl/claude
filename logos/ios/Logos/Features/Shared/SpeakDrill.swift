@@ -20,6 +20,8 @@ struct SpeakDrill: View {
     @Binding var revealed: Bool
     /// Archive the current attempt and clear the field.
     var onRetry: () -> Void
+    /// Builds the reviewer request from the answer; the default is the speaking coach.
+    var task: ((String) -> CoachTask)? = nil
 
     @State private var speech = SpeechCapture()
     @State private var pending = false
@@ -85,14 +87,11 @@ struct SpeakDrill: View {
             Button {
                 Task { await run() }
             } label: {
-                HStack(spacing: 10) {
-                    if pending { ProgressView().tint(.ink) }
-                    Text(pending ? store.L("Reading it…", "Wird gelesen …") : store.L("Coach my answer", "Meine Antwort coachen"))
-                }
+                Text(pending ? store.L("Reading it…", "Wird gelesen …") : store.L("Coach my answer", "Meine Antwort coachen"))
             }
             .buttonStyle(.outline)
             .disabled(!ready || pending)
-            if !ready { Meta(store.L("Say it first — the words appear as you speak.", "Sprich zuerst — die Worte erscheinen beim Sprechen.")).padding(.top, 10) }
+            if !ready { Meta(store.L("Say it first. The words appear as you speak.", "Sprich zuerst. Die Worte erscheinen beim Sprechen.")).padding(.top, 10) }
             if let f = failure {
                 Meta(f.reason(store.lang) + (f == .absent ? " " + store.L("Compare yours with the model answer in the meantime.", "Vergleiche deine Antwort solange mit der Musterantwort.") : ""),
                      color: .burgundy).padding(.top, 10)
@@ -103,7 +102,8 @@ struct SpeakDrill: View {
     func run() async {
         speech.stop()
         pending = true; failure = nil
-        let r = await CoachClient().run(.coach(question: question, hint: hint, model: model, answer: text), exerciseLang: lang)
+        let request = task?(text) ?? .coach(question: question, hint: hint, model: model, answer: text)
+        let r = await CoachClient().run(request, exerciseLang: lang)
         pending = false
         switch r {
         case .success(let t): withAnimation { coach = t }; Feedback.shared.play(.right, muted: store.mute)
@@ -145,7 +145,7 @@ struct SpeakField: View {
                         .frame(width: 56, height: 56)
                         .animation(.easeOut(duration: 0.1), value: speech.level)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(speech.isListening ? store.L("Listening — tap to stop", "Ich höre zu — tippen zum Beenden")
+                            Text(speech.isListening ? store.L("Listening, tap to stop", "Ich höre zu, tippen zum Beenden")
                                                     : store.L("Tap and speak", "Tippen und sprechen"))
                                 .font(Typo.button).tracking(1.2).textCase(.uppercase).foregroundStyle(Color.ink)
                             Text(speech.isListening ? clock(speech.elapsed) + " / " + clock(Double(secs))
@@ -197,7 +197,7 @@ struct PaceNote: View {
             if wpm < 95 && words > 10 { return store.L("Slow. Fine if deliberate; tighten if you were searching for words.", "Langsam. In Ordnung, wenn bewusst; straffen, wenn du nach Worten gesucht hast.") }
             return store.L("A good speaking pace.", "Ein gutes Sprechtempo.")
         }()
-        Meta("\(Int(seconds))s · \(wpm) " + store.L("words a minute", "Wörter pro Minute") + " — " + note +
+        Meta("\(Int(seconds))s, \(wpm) " + store.L("words a minute", "Wörter pro Minute") + ". " + note +
              (Int(seconds) > target + 10 ? " " + store.L("Over time.", "Über der Zeit.") : ""))
             .padding(.top, 10)
     }
@@ -256,10 +256,6 @@ struct AttemptsView: View {
 
 /// Binds a string field of a JSON record held in the store.
 extension AppStore {
-    func textBinding(get: @escaping () -> String, set: @escaping (String) -> Void) -> Binding<String> {
-        Binding(get: get, set: set)
-    }
-
     /// Standard drill bindings for voiceWork / craftWork records.
     func workText(_ bucket: String, _ id: String) -> Binding<String> {
         Binding(get: { self.work(bucket, id)["text"].string }, set: { v in self.setWork(bucket, id) { $0["text"] = .string(v) } })

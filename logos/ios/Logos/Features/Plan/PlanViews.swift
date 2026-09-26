@@ -178,7 +178,7 @@ struct PlanDayView: View {
                                })
                 }
                 if rec["skipped"].truthy && rec["text"].string.trimmingCharacters(in: .whitespaces).count < 15 {
-                    AnswerBox { Meta(store.L("Marked skipped. It stays open — answering it later still counts.", "Als übersprungen markiert. Sie bleibt offen — sie später zu beantworten zählt weiterhin.")) }
+                    AnswerBox { Meta(store.L("Marked skipped. It stays open, and answering it later still counts.", "Als übersprungen markiert. Sie bleibt offen, und sie später zu beantworten zählt weiterhin.")) }
                 }
             }
         case "reflect":

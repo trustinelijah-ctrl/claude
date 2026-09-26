@@ -3,6 +3,7 @@ import SwiftUI
 struct RootView: View {
     @Environment(AppStore.self) private var store
     @Environment(Router.self) private var router
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         @Bindable var router = router
@@ -20,6 +21,7 @@ struct RootView: View {
                 .tabItem { Label(store.L("LIBRARY", "BIBLIOTHEK"), systemImage: "books.vertical") }.tag(Tab.library)
         }
         .environment(\.symbolVariants, .none)
+        .transaction { if reduceMotion { $0.animation = nil } }
         .sensoryFeedback(.selection, trigger: router.tab)
     }
 

@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The web app's tokens, unchanged: vellum ground, iron-gall ink, a bronze
-/// accent, burgundy for tension and forest for agreement. Parchment only —
+/// accent, burgundy for tension and forest for agreement. Parchment only:
 /// the brief never had a dark variant, and the app pins light appearance.
 extension Color {
     static let vellum = Color(hex: 0xF3EEE3)

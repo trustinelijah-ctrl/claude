@@ -18,19 +18,18 @@ struct SettingsView: View {
     @State private var importing = false
     @State private var pendingImport: (JSONValue, AppStore.BackupSummary)?
     @State private var message: String?
-    @State private var baseText = Endpoint.base.absoluteString
 
     var body: some View {
         Page {
             PageHead(title: store.L("Settings", "Einstellungen"))
             Block {
-                Rubric(store.L("Sound and touch", "Ton und Haptik")).padding(.bottom, 10)
+                Heading(store.L("Sound and touch", "Ton und Haptik"), level: 3).padding(.bottom, 10)
                 Toggle(isOn: Binding(get: { !store.mute }, set: { store.mute = !$0 })) {
                     Text(store.L("Soft tones on actions", "Leise Töne bei Aktionen")).font(Typo.serif(17))
                 }.tint(.bronze)
             }
             Block {
-                Rubric(store.L("Bible wording", "Bibelwortlaut")).padding(.bottom, 10)
+                Heading(store.L("Bible wording", "Bibelwortlaut"), level: 3).padding(.bottom, 10)
                 Flow {
                     ForEach(["plain", "classic"], id: \.self) { t in
                         Chip(title: store.lang == .de ? (store.corpus.translations[t]?.de ?? t) : (store.corpus.translations[t]?.en ?? t), on: store.translation == t) {
@@ -42,7 +41,7 @@ struct SettingsView: View {
                      store.L("Copyrighted modern translations cannot be bundled into an app like this.", "Urheberrechtlich geschützte moderne Übersetzungen können nicht in eine solche App aufgenommen werden.")).padding(.top, 10)
             }
             Block {
-                Rubric(store.L("A daily reminder", "Eine tägliche Erinnerung")).padding(.bottom, 10)
+                Heading(store.L("A daily reminder", "Eine tägliche Erinnerung"), level: 3).padding(.bottom, 10)
                 Toggle(isOn: $reminderOn) { Text(store.L("Remind me once a day", "Einmal am Tag erinnern")).font(Typo.serif(17)) }.tint(.bronze)
                 if reminderOn {
                     DatePicker(store.L("At", "Um"), selection: Binding(
@@ -50,13 +49,13 @@ struct SettingsView: View {
                         set: { let c = Calendar.current.dateComponents([.hour, .minute], from: $0); reminderMinutes = (c.hour ?? 8) * 60 + (c.minute ?? 0) }),
                                displayedComponents: .hourAndMinute).font(Typo.meta)
                 }
-                Meta(store.L("No streaks. Nothing is lost if you miss a day.", "Keine Serien. Nichts geht verloren, wenn du einen Tag auslässt.")).padding(.top, 8)
+                Meta(store.L("Missing a day costs nothing. There are no streaks.", "Ein ausgelassener Tag kostet nichts. Es gibt keine Serien.")).padding(.top, 8)
             }
             .onChange(of: reminderOn) { _, _ in updateReminder() }
             .onChange(of: reminderMinutes) { _, _ in updateReminder() }
 
             Block {
-                Rubric(store.L("Your data", "Deine Daten")).padding(.bottom, 10)
+                Heading(store.L("Your data", "Deine Daten"), level: 3).padding(.bottom, 10)
                 Meta(store.L("Everything stays on this device unless you turn on sync. A backup file opens in the web app too, and a web backup opens here.",
                              "Alles bleibt auf diesem Gerät, außer du schaltest den Abgleich ein. Eine Sicherung öffnet sich auch in der Web-App, und eine Web-Sicherung öffnet sich hier."))
                 Button(store.L("Sync with the web and other devices", "Mit dem Web und anderen Geräten abgleichen")) { router.push(.sync) }.buttonStyle(.solid).padding(.top, 16)
@@ -84,22 +83,10 @@ struct SettingsView: View {
                 if let m = message { Meta(m, color: .forest).padding(.top, 10) }
             }
             Block {
-                Rubric(store.L("Content", "Inhalt")).padding(.bottom, 10)
-                Meta(store.L("Lessons, voices and plans update from the website whenever a new version is published — no app update needed.",
-                             "Lektionen, Stimmen und Pläne aktualisieren sich von der Website, sobald eine neue Fassung veröffentlicht ist — ohne App-Update."))
+                Heading(store.L("Content", "Inhalt"), level: 3).padding(.bottom, 10)
+                Meta(store.L("Lessons, voices and plans update from the website when a new version is published. You don't need an app update.",
+                             "Lektionen, Stimmen und Pläne aktualisieren sich von der Website, sobald eine neue Fassung veröffentlicht ist. Ein App-Update ist nicht nötig."))
                 Cite(store.L("Content version", "Inhaltsversion") + " " + store.corpus.version).padding(.top, 8)
-                DisclosureGroup {
-                    VStack(alignment: .leading, spacing: 10) {
-                        TextField("https://…", text: $baseText).font(Typo.counter).textInputAutocapitalization(.never).autocorrectionDisabled()
-                            .padding(10).overlay(Rectangle().stroke(Color.rule))
-                        HStack {
-                            Button(store.L("Use this server", "Diesen Server nutzen")) {
-                                if let u = URL(string: baseText), u.scheme == "https" { Endpoint.base = u; message = u.host }
-                            }.buttonStyle(.outlineSmall)
-                            Button(store.L("Default", "Standard")) { Endpoint.base = Endpoint.defaultBase; baseText = Endpoint.defaultBase.absoluteString }.buttonStyle(.ghostSmall)
-                        }
-                    }.padding(.top, 10)
-                } label: { Meta(store.L("Server (for previews and forks)", "Server (für Vorschauen und Abspaltungen)")) }.tint(.ink3).padding(.top, 12)
             }
             Block(rule: false) {
                 Meta("LOGOS · " + store.L("Scripture: World English Bible, KJV, Luther 1912 (public domain). Stoic texts from public-domain translations.",
@@ -163,7 +150,7 @@ struct SyncView: View {
                                   "Nimm deinen Fortschritt zwischen diesem Telefon, der Website und anderen Geräten mit. Deine Daten werden auf dem Gerät mit einem Code verschlüsselt, den nur du hast; der Server speichert etwas, das er nicht lesen kann."), showLang: false)
             if let code {
                 Block {
-                    Rubric(store.L("Your sync code", "Dein Abgleich-Code")).padding(.bottom, 10)
+                    Heading(store.L("Your sync code", "Dein Abgleich-Code"), level: 3).padding(.bottom, 10)
                     HStack {
                         Text(showCode ? code.display : String(repeating: "•", count: 4) + "-••••-••••-••••-" + String(code.display.suffix(4)))
                             .font(.system(size: 19, weight: .medium, design: .monospaced)).foregroundStyle(Color.ink).textSelection(.enabled)
@@ -174,12 +161,12 @@ struct SyncView: View {
                         Button(store.L("Copy", "Kopieren")) { UIPasteboard.general.string = code.display; status = store.L("Copied.", "Kopiert.") }.buttonStyle(.outlineSmall)
                         ShareLink(item: code.display) { Text(store.L("Share", "Teilen")) }.buttonStyle(.outlineSmall)
                     }.padding(.top, 12)
-                    Meta(store.L("Enter this code in the web app (Practice → Your data → Sync) or on another device. Anyone with it can read and replace your data — keep it like a password. If you lose it, nobody can recover the synced copy; your data on this device is unaffected.",
-                                 "Gib diesen Code in der Web-App (Üben → Deine Daten → Abgleich) oder auf einem anderen Gerät ein. Wer ihn hat, kann deine Daten lesen und ersetzen — bewahre ihn wie ein Passwort auf. Geht er verloren, kann niemand die abgeglichene Kopie wiederherstellen; deine Daten auf diesem Gerät bleiben unberührt."))
+                    Meta(store.L("Enter this code in the web app (Practice → Your data → Sync) or on another device. Anyone with it can read and replace your synced data, so keep it like a password. If you lose it, nobody can recover the synced copy; your data on this device is unaffected.",
+                                 "Gib diesen Code in der Web-App (Üben → Deine Daten → Abgleich) oder auf einem anderen Gerät ein. Wer ihn hat, kann deine abgeglichenen Daten lesen und ersetzen, also bewahre ihn wie ein Passwort auf. Geht er verloren, kann niemand die abgeglichene Kopie wiederherstellen; deine Daten auf diesem Gerät bleiben unberührt."))
                         .padding(.top, 12)
                 }
                 Block {
-                    Button { Task { await sync() } } label: { HStack { if busy { ProgressView().tint(.vellum) }; Text(store.L("Sync now", "Jetzt abgleichen")) } }
+                    Button { Task { await sync() } } label: { Text(busy ? store.L("Syncing…", "Gleiche ab …") : store.L("Sync now", "Jetzt abgleichen")) }
                         .buttonStyle(.solid).disabled(busy)
                     if lastSync > 0 { Meta(store.L("Last synced", "Zuletzt abgeglichen") + " " + store.daysAgo(lastSync)).padding(.top, 10) }
                     if let c = conflict {
@@ -210,12 +197,12 @@ struct SyncView: View {
                                  "Erzeugt einen neuen Code und lädt eine verschlüsselte Kopie dieses Geräts hoch.")).padding(.top, 10)
                 }
                 Block(rule: false) {
-                    Rubric(store.L("I already have a code", "Ich habe schon einen Code")).padding(.bottom, 10)
+                    Heading(store.L("I already have a code", "Ich habe schon einen Code"), level: 3).padding(.bottom, 10)
                     TextField("ABCD-EFGH-JKLM-NPQR-STUV", text: $entry)
                         .font(.system(size: 18, design: .monospaced)).textInputAutocapitalization(.characters).autocorrectionDisabled()
                         .padding(12).overlay(Rectangle().stroke(Color.rule))
                     Button(store.L("Connect", "Verbinden")) {
-                        guard let c = SyncCode(entry) else { status = store.L("That code is not complete — it has 20 letters and digits.", "Der Code ist unvollständig — er hat 20 Buchstaben und Ziffern."); return }
+                        guard let c = SyncCode(entry) else { status = store.L("That code is incomplete. It has 20 letters and digits.", "Der Code ist unvollständig. Er hat 20 Buchstaben und Ziffern."); return }
                         Keychain.set(c.normalized, for: "sync"); code = c
                         Task { await sync() }
                     }.buttonStyle(.outline).padding(.top, 12)

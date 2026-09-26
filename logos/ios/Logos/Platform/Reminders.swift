@@ -1,8 +1,8 @@
 import Foundation
 import UserNotifications
 
-/// One quiet daily nudge, at a time the learner picks. No streaks, no guilt:
-/// the web's rule is that nothing is lost by missing a day.
+/// One daily reminder at a time the learner picks. There are no streaks,
+/// following the web's rule that missing a day costs nothing.
 enum Reminders {
     static let id = "logos.daily"
 
@@ -13,7 +13,7 @@ enum Reminders {
         center.removePendingNotificationRequests(withIdentifiers: [id])
         let content = UNMutableNotificationContent()
         content.title = "LOGOS"
-        content.body = lang == .de ? "Ein Gedanke, ein Satz, ein Abruf. Etwa zehn Minuten." : "One idea, one sentence, one recall. About ten minutes."
+        content.body = lang == .de ? "Die heutige Lektion und deine Abrufe dauern etwa zehn Minuten." : "Today's lesson and your recalls take about ten minutes."
         content.sound = .default
         var dc = DateComponents(); dc.hour = hour; dc.minute = minute
         let req = UNNotificationRequest(identifier: id, content: content, trigger: UNCalendarNotificationTrigger(dateMatching: dc, repeats: true))

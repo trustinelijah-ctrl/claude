@@ -360,32 +360,8 @@ public final class AppStore {
         if mastery(cid) < to { doc["mastery"][cid] = .number(Double(to)); save(); return true }
         return false
     }
-    public func setMastery(_ cid: String, _ v: Int) { doc["mastery"][cid] = .number(Double(max(0, min(5, v)))); save() }
     public func masteryName(_ l: Int) -> String { pick(corpus.mastery.indices.contains(l) ? corpus.mastery[l] : corpus.mastery.first) }
 
-    public struct Evidence { public var recalls, explained, spoke, hard, taught, notes: Int }
-    public func evidence(_ cid: String) -> Evidence {
-        var recalls = 0, explained = 0
-        for m in allMemory where m.concept == cid {
-            let st = memState(m.id)
-            recalls += st.successes
-            if st.successes > 0 && ["explanation", "comparison", "argument"].contains(m.mode) { explained += 1 }
-        }
-        let ev = doc["evidence"][cid]
-        let notes = doc["captures"].array.filter { $0["concept"].string == cid }.count
-        return Evidence(recalls: recalls, explained: explained, spoke: ev["spoke"].int, hard: ev["hard"].int, taught: ev["taught"].int, notes: notes)
-    }
-    public func nextLevelReady(_ cid: String) -> Bool {
-        let l = mastery(cid), e = evidence(cid)
-        switch l {
-        case 0: return e.notes > 0 || e.recalls > 0
-        case 1: return e.recalls >= 3
-        case 2: return e.explained >= 1 || e.spoke >= 1
-        case 3: return e.hard >= 1
-        case 4: return e.taught >= 1
-        default: return false
-        }
-    }
     public func noteEvidence(_ cid: String?, _ key: String, lang lg: Lang? = nil) {
         guard let cid, !cid.isEmpty else { return }
         if doc["evidence"][cid].isNull { doc["evidence"][cid] = ["spoke": 0, "hard": 0, "taught": 0] }

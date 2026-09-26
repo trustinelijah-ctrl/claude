@@ -50,7 +50,7 @@ final class StoreTests: XCTestCase {
         XCTAssertEqual(s.mastery("control"), 2)
         XCTAssertTrue(s.unitDone(CorpusTests.corpus.unit("u1")!))
         XCTAssertEqual(s.pathNext?.unit.id, "u2")
-        XCTAssertEqual(s.evidence("control").spoke, 1)
+        XCTAssertEqual(s.doc["evidence"]["control"]["spoke"].int, 1)
     }
 
     func testSavedQuoteBecomesACard() {

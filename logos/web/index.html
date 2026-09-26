@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="LOGOS">
-<meta name="description" content="Learn the Christian and Stoic traditions side by side, and practise saying them aloud — in English and German.">
+<meta name="description" content="Learn the Christian and Stoic traditions side by side, and practise saying them aloud in English and German.">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
@@ -3795,52 +3795,7 @@ const Sound = {
    If the function is not deployed, every caller falls back to the
    stored corpus and the app works unchanged.
    ============================================================ */
-const PROMPTS = {
-  /* The speaking coach. Its job is to make the next attempt better, so it
-     shows rather than tells: it rewrites the learner's weakest sentence in
-     their own meaning. Three rules come from the improvement brief:
-     do not reward a citation you cannot vouch for, do not mark a defensible
-     reading wrong because it differs from the model, and judge words only. */
-  coach: function(p){
-    return "You are a demanding but warm rhetoric coach. A learner answered a speaking exercise out loud and wrote down roughly what they said.\n\n" +
-      "Exercise: " + p.question + "\n" +
-      (p.hint ? "What a good answer needs: " + p.hint + "\n" : "") +
-      (p.model ? "One strong answer, for reference only (it is ONE way, not the answer): " + p.model + "\n" : "") +
-      "\nTheir answer:\n\"" + p.answer + "\"\n\n" +
-      "Reply in exactly these four labelled lines and nothing else:\n" +
-      "STRENGTH: the single best thing in their answer, quoting a few of their own words.\n" +
-      "FIX: the one change that would most improve it next time — structure, a missing concession, a vague claim, an overclaim, or a missed opportunity. Be concrete.\n" +
-      "REWRITE: take their weakest sentence and rewrite it so it lands, keeping their meaning and their position. Put only the rewritten sentence here, in quotation marks.\n" +
-      "DEVICE: one rhetorical move that would have helped (for example antithesis, a tricolon, a concrete example, restating the objection more strongly, naming what the view costs) and show it in one short line using their material.\n\n" +
-      "Rules. Do not praise a quotation, verse or citation unless you are confident its wording and attribution are correct; if one looks wrong or unverifiable, say so under FIX. " +
-      "If their position differs from the reference answer but is a defensible reading, do not call it wrong — judge how well they argued it. " +
-      "Judge only the words; you cannot hear pace, pauses or tone, so do not comment on them. No flattery, no preamble, under 130 words in total.";
-  },
-  explain: function(p){
-    return "A learner is studying \"" + p.topic + "\" and has just read the " + p.tradition + " teaching.\n" +
-      "Summary: " + p.summary + "\n" +
-      "Points: " + (p.points || []).join(" | ") + "\n\n" +
-      "Give one short clarification that adds something the lesson did not already say — " +
-      "an example, a common misunderstanding, or where this shows up in ordinary life. " +
-      "Stay strictly inside the " + p.tradition + " tradition; do not mention the other one.";
-  },
-  review: function(p){
-    return "Speaking exercise.\nQuestion: " + p.question + "\n\n" +
-      "Their answer: " + p.answer + "\n\n" +
-      "A model answer for reference: " + p.model + "\n\n" +
-      "Review their answer in four short parts, one or two sentences each:\n" +
-      "1. What worked\n2. What was weak\n3. What they seem to know but failed to retrieve\n" +
-      "4. One thing to change next time.\nBe specific and encouraging. They are a beginner.";
-  },
-  recite: function(p){
-    return "The learner is memorising this passage:\n\"" + p.text + "\" (" + p.reference + ")\n\n" +
-      "From memory they said:\n\"" + p.said + "\"\n\n" +
-      "Judge it by MEANING, not exact wording — a correct paraphrase passes. " +
-      "Say in one line whether they have it, then name anything missing in substance " +
-      "(not synonyms, not word order). If a dropped clause changes the sense, quote just that clause. " +
-      "Two or three sentences total.";
-  }
-};
+/* Prompt templates live in netlify/functions/ai.mts; the client sends only the task and its fields. */
 const AI = {
   endpoint:"/.netlify/functions/ai",
   state:"unknown",              // unknown | live | absent
@@ -3851,20 +3806,15 @@ const AI = {
   async call(task, payload){
     this.lastError = null;
     if(this.state === "absent"){ this.lastError = "absent"; return null; }
-    const build = PROMPTS[task];
-    if(!build){ this.lastError = "unknown-task"; return null; }
-    let prompt;
-    try{ prompt = build(payload || {}); }catch(e){ this.lastError = "bad-payload"; return null; }
     /* the exercise language, not the interface language */
     const lg = (typeof exerciseLang === "function") ? exerciseLang() : S.lang;
-    prompt += (lg === "de") ? "\n\nAntworte auf Deutsch." : "\n\nAnswer in English.";
     const ctl = (typeof AbortController !== "undefined") ? new AbortController() : null;
     const timer = ctl ? setTimeout(function(){ try{ ctl.abort(); }catch(e){} }, this.timeoutMs) : null;
     try{
       const r = await fetch(this.endpoint, {
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({prompt: prompt}),
+        body: JSON.stringify({task: task, input: payload || {}, lang: lg}),
         signal: ctl ? ctl.signal : undefined
       });
       if(!r.ok){
@@ -12288,18 +12238,6 @@ const FIGURES = [
   model:LS("I don't know why. I'm staying.","Ich weiß nicht, warum. Ich bleibe.")}
 ];
 
-PROMPTS.craft = function(p){
-  return "Rhetoric drill. The learner is practising one figure of speech.\n" +
-    "Figure: " + p.figure + " — " + p.def + "\n" +
-    "The flat sentence they were given to rewrite: \"" + p.flat + "\"\n" +
-    "Their rewrite: \"" + p.answer + "\"\n\n" +
-    "Reply in exactly these four labelled lines and nothing else:\n" +
-    "STRENGTH: what their rewrite does well, quoting a few of their words.\n" +
-    "FIX: did they actually use the figure, or only gesture at it? Is it forced, too long, or did it lose the original meaning? One concrete change.\n" +
-    "REWRITE: a sharper version using the same figure and keeping their meaning, in quotation marks. Shorter is usually better.\n" +
-    "DEVICE: one different figure that would also suit this sentence, shown in one short line.\n\n" +
-    "No flattery, no preamble, under 110 words in total.";
-};
 (function(){ const base = coachTarget;
   coachTarget = function(key){
     const parts = String(key).split(":");
@@ -13324,7 +13262,7 @@ boot();
 <script src="/sync.js"></script>
 <script>
 /* ============================================================
-   LOGOS — web add-ons shared with the iOS app
+   LOGOS web add-ons, shared with the iOS app
    1. Installable and usable offline (manifest + service worker).
    2. Sync: the same end-to-end-encrypted scheme the iPhone app
       uses, so progress moves between browser and phone.
@@ -13459,7 +13397,7 @@ boot();
     if(a === "sync-on"){ ls(SYNC_KEY, LogosSync.generate()); UI.show = true; UI.status = ""; syncNow(false); }
     else if(a === "sync-connect"){
       const c = LogosSync.normalize(UI.entry);
-      if(!c){ UI.status = L("That code is not complete — it has 20 letters and digits.","Der Code ist unvollständig — er hat 20 Buchstaben und Ziffern."); render(); return; }
+      if(!c){ UI.status = L("That code is incomplete. It has 20 letters and digits.","Der Code ist unvollständig. Er hat 20 Buchstaben und Ziffern."); render(); return; }
       ls(SYNC_KEY, c); UI.entry = ""; syncNow(false);
     }
     else if(a === "sync-now") syncNow(false);

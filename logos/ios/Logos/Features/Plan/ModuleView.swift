@@ -75,7 +75,7 @@ struct ModuleView: View {
                 Heading(store.L("Worked example", "Durchgearbeitetes Beispiel"), level: 2)
                 PassageText(store.pick(m.worked.question), small: true).padding(.top, 14)
                 Meta(store.L("Read all four steps. You will build them yourself in a moment, last step first.",
-                             "Lies alle vier Schritte. Gleich baust du sie selbst — den letzten zuerst.")).padding(.top, 12)
+                             "Lies alle vier Schritte. Gleich baust du sie selbst, den letzten zuerst.")).padding(.top, 12)
             }
             ForEach(Array(m.worked.steps.enumerated()), id: \.offset) { i, ws in
                 Block {

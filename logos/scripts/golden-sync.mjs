@@ -12,9 +12,9 @@ const S = ctx.LogosSync;
 const code = S.normalize("ABCD-EFGH-JKLM-NPQR-STUV");
 const text = JSON.stringify({ app: "logos", version: 2, data: { v: 2, lang: "de", note: "Grüße — ✓" } });
 const blob = await S.seal(code, text);
-const { id } = await S.derive(code);
+const { id, auth } = await S.derive(code);
 if (await S.open(code, blob) !== text) throw new Error("round trip failed");
-fs.writeFileSync(path.join(root, "ios/Tests/LogosCoreTests/golden-sync.json"), JSON.stringify({ code, id, blob, text }));
+fs.writeFileSync(path.join(root, "ios/Tests/LogosCoreTests/golden-sync.json"), JSON.stringify({ code, id, auth, blob, text }));
 console.log("golden sync id", id.slice(0, 12) + "…");
 // And the reverse: open a blob the Swift test sealed, if present.
 const back = path.join(root, "ios/Tests/LogosCoreTests/.swift-sealed.json");

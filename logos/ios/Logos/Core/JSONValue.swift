@@ -94,12 +94,6 @@ public enum JSONValue: Codable, Equatable, Hashable {
               let v = try? JSONDecoder().decode(JSONValue.self, from: data) else { return .null }
         return v
     }
-
-    /// Decodes a JSON tree into a Codable type.
-    public func decode<T: Decodable>(_ type: T.Type) -> T? {
-        guard let data = try? JSONEncoder().encode(self) else { return nil }
-        return try? JSONDecoder().decode(T.self, from: data)
-    }
 }
 
 extension JSONValue: ExpressibleByStringLiteral, ExpressibleByFloatLiteral, ExpressibleByIntegerLiteral,

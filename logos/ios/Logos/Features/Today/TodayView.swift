@@ -110,8 +110,8 @@ struct TodayView: View {
             }
         } else {
             Block {
-                PassageText(store.L("You have been through every unit. Running a track again is not repetition — the speaking answers come out differently now.",
-                                "Du hast jede Einheit durchlaufen. Einen Weg erneut zu gehen ist keine Wiederholung — die Sprechantworten fallen jetzt anders aus."), small: true)
+                PassageText(store.L("You have been through every unit. Run a track again and your speaking answers will come out differently.",
+                                "Du hast jede Einheit durchlaufen. Geh einen Weg erneut, und deine Sprechantworten fallen anders aus."), small: true)
                 Button(store.L("Open the path", "Den Weg öffnen")) { router.tab = .path }.buttonStyle(.solid).padding(.top, 18)
             }
         }
@@ -134,7 +134,7 @@ struct TodayView: View {
     }
 }
 
-/// One voice or one figure a day — worth reading even if you tap nothing.
+/// One voice or one figure a day, worth reading even if you tap nothing.
 struct LeafBlock: View {
     @Environment(AppStore.self) private var store
     @Environment(Router.self) private var router
@@ -153,7 +153,7 @@ struct LeafBlock: View {
                         Rubric(store.L("Could you answer this?", "Könntest du darauf antworten?"))
                         PassageText(store.pick(v.drill.q), small: true, color: .ink2)
                     }.padding(.top, 20)
-                    Button(store.L("Read the scene — about four minutes", "Die Szene lesen — etwa vier Minuten")) { router.push(.voice(v.id)) }
+                    Button(store.L("Read the scene (4 min)", "Die Szene lesen (4 Min.)")) { router.push(.voice(v.id)) }
                         .buttonStyle(.outline).padding(.top, 18)
                 }
             } else if let lf = leaf, let f = store.corpus.figure(lf.id) {
@@ -168,7 +168,7 @@ struct LeafBlock: View {
                         Rubric(store.L("Make this sentence land", "Bring diesen Satz zum Sitzen"))
                         PassageText(store.pick(f.flat), small: true, color: .ink2)
                     }.padding(.top, 20)
-                    Button(store.L("Try it — about two minutes", "Versuch es — etwa zwei Minuten")) { router.push(.figure(f.id)) }
+                    Button(store.L("Try it (2 min)", "Versuch es (2 Min.)")) { router.push(.figure(f.id)) }
                         .buttonStyle(.outline).padding(.top, 18)
                 }
             }
