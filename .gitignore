@@ -1,0 +1,15 @@
+# Secrets
+Config/Secrets.xcconfig
+backend/supabase/.env
+backend/supabase/.temp/
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+.swiftpm/
+
+# macOS
+.DS_Store

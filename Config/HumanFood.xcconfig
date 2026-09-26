@@ -1,0 +1,10 @@
+// Human Food build settings.
+// Put real values in Config/Secrets.xcconfig (git-ignored) — see Secrets.example.xcconfig.
+// Note: xcconfig treats "//" as a comment, so hosts are given without "https://".
+
+HF_BACKEND_HOST =
+HF_BACKEND_ANON_KEY =
+HF_GEMINI_DEV_KEY =
+HF_GEMINI_MODEL = gemini-3.5-flash-lite
+
+#include? "Secrets.xcconfig"

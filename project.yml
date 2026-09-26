@@ -1,0 +1,31 @@
+# Fallback: regenerate the Xcode project with XcodeGen (`brew install xcodegen && xcodegen`).
+name: HumanFood
+options:
+  bundleIdPrefix: com.humanfood
+  deploymentTarget:
+    iOS: "17.0"
+configFiles:
+  Debug: Config/HumanFood.xcconfig
+  Release: Config/HumanFood.xcconfig
+targets:
+  HumanFood:
+    type: application
+    platform: iOS
+    sources:
+      - path: HumanFood
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.humanfood.app
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: 1
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: 1
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: Config/Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: Human Food
+        INFOPLIST_KEY_NSCameraUsageDescription: Human Food uses the camera to scan barcodes and read ingredient labels.
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor

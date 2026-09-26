@@ -1,0 +1,5 @@
+# Minimal Supabase CLI config for the Human Food backend.
+project_id = "human-food"
+
+[functions.human-food]
+verify_jwt = true

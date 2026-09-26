@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>HFBackendHost</key>
+	<string>$(HF_BACKEND_HOST)</string>
+	<key>HFBackendAnonKey</key>
+	<string>$(HF_BACKEND_ANON_KEY)</string>
+	<key>HFGeminiDevKey</key>
+	<string>$(HF_GEMINI_DEV_KEY)</string>
+	<key>HFGeminiModel</key>
+	<string>$(HF_GEMINI_MODEL)</string>
+</dict>
+</plist>
