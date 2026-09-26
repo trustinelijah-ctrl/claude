@@ -141,7 +141,9 @@ struct LeafBlock: View {
     @State private var leaf: (kind: String, id: String)?
 
     var body: some View {
-        Group {
+        VStack(spacing: 0) {
+            Color.clear.frame(height: 0)
+                .onAppear { if leaf == nil { leaf = store.leafOfDay() } }
             if let lf = leaf, lf.kind == "voice", let v = store.corpus.voice(lf.id) {
                 Block {
                     Rubric(store.L("Today's voice", "Stimme des Tages") + " · " + v.name)
@@ -171,7 +173,6 @@ struct LeafBlock: View {
                 }
             }
         }
-        .onAppear { if leaf == nil { leaf = store.leafOfDay() } }
     }
 }
 

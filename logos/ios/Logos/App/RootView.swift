@@ -19,6 +19,7 @@ struct RootView: View {
             stack(.library) { LibraryView() }
                 .tabItem { Label(store.L("LIBRARY", "BIBLIOTHEK"), systemImage: "books.vertical") }.tag(Tab.library)
         }
+        .environment(\.symbolVariants, .none)
         .sensoryFeedback(.selection, trigger: router.tab)
     }
 

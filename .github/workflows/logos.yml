@@ -62,7 +62,8 @@ jobs:
           xcrun simctl launch "$UDID" school.logos.app; sleep 6
           xcrun simctl io "$UDID" screenshot shots/1-today.png
           for route in lesson path review voice/augustine figure/antithesis concept/control sync; do
-            xcrun simctl openurl "$UDID" "logos://$route"; sleep 4
+            xcrun simctl terminate "$UDID" school.logos.app || true
+            xcrun simctl launch "$UDID" school.logos.app -route "$route"; sleep 5
             xcrun simctl io "$UDID" screenshot "shots/$(echo $route | tr '/' '-').png"
           done
       - uses: actions/upload-artifact@v4

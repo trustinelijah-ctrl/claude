@@ -29,7 +29,14 @@ struct LogosApp: App {
                 .environment(router)
                 .preferredColorScheme(.light)
                 .tint(.ink)
-                .task { await refreshCorpus() }
+                .task {
+                    // `-route lesson` opens a screen directly (used by CI screenshots).
+                    let args = ProcessInfo.processInfo.arguments
+                    if let i = args.firstIndex(of: "-route"), i + 1 < args.count, let u = URL(string: "logos://" + args[i + 1]) {
+                        router.open(u)
+                    }
+                    await refreshCorpus()
+                }
                 .onOpenURL { router.open($0) }
         }
         .onChange(of: phase) { _, p in
@@ -71,6 +78,7 @@ enum Appearance {
         let label = UIFont.systemFont(ofSize: 10, weight: .semibold)
         item.normal.titleTextAttributes = [.font: label, .foregroundColor: UIColor.ink4, .kern: 1.4]
         item.selected.titleTextAttributes = [.font: label, .foregroundColor: UIColor.ink, .kern: 1.4]
+        item.normal.badgeBackgroundColor = UIColor(red: 0x6E / 255, green: 0x22 / 255, blue: 0x33 / 255, alpha: 1)
         item.normal.iconColor = .ink4
         item.selected.iconColor = .ink
         tab.stackedLayoutAppearance = item
