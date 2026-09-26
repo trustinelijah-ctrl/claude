@@ -6,5 +6,8 @@
         "repo": "pbakaus/impeccable"
       }
     }
+  },
+  "enabledPlugins": {
+    "impeccable@impeccable": true
   }
 }
