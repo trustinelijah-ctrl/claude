@@ -119,7 +119,9 @@ export default async (req: Request, _context: Context) => {
     const res = await ai.models.generateContent({
       model: Netlify.env.get("LOGOS_AI_MODEL") || "gemini-2.5-flash",
       contents: prompt,
-      config: { temperature: 0.4, maxOutputTokens: 600 },
+      // Gemini 2.5 counts hidden "thinking" against maxOutputTokens, which cut
+      // replies off mid-line; four short labelled lines need no thinking.
+      config: { temperature: 0.4, maxOutputTokens: 600, thinkingConfig: { thinkingBudget: 0 } },
     });
     const text = (res.text || "").trim();
     if (!text) return Response.json({ error: "empty-reply" }, { status: 502 });
