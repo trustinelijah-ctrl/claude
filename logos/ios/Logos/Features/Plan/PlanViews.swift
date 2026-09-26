@@ -109,8 +109,8 @@ struct PlanDayView: View {
             }
             if firstRead, let sw = store.corpus.saidWell["\(planId):\(day)"] {
                 Block(rule: false) { Rubric(store.L("The same point, two ways", "Derselbe Punkt, zweimal")) }
-                Band(kind: .tension) { Rubric(store.L("Said badly", "Schlecht gesagt")); Passage(store.pick(sw.bad), small: true) }
-                Band(kind: .agree) { Rubric(store.L("Said well", "Gut gesagt")); Passage(store.pick(sw.well), small: true) }
+                Band(kind: .tension) { Rubric(store.L("Said badly", "Schlecht gesagt")); PassageText(store.pick(sw.bad), small: true) }
+                Band(kind: .agree) { Rubric(store.L("Said well", "Gut gesagt")); PassageText(store.pick(sw.well), small: true) }
                 if let n = sw.note { Block { Meta(store.pick(n)) } }
             }
         case "teach":
@@ -120,7 +120,7 @@ struct PlanDayView: View {
                 let dep = christian ? store.corpus.depth[l]?.c : store.corpus.depth[l]?.s
                 Block(top: 18) {
                     Heading(christian ? store.L("The Christian teaching", "Die christliche Lehre") : store.L("The Stoic teaching", "Die stoische Lehre"), level: 2)
-                    Passage(store.pick(side.summary), small: true).padding(.top, 14)
+                    PassageText(store.pick(side.summary), small: true).padding(.top, 14)
                 }
                 if let st = dep?.story { Rail(label: store.L("Where this comes from", "Woher das kommt")) { Paragraphs(text: store.pick(st)) } }
                 Block { ForEach(Array(side.points.enumerated()), id: \.offset) { i, p in NumberedPoint(n: i + 1, text: store.pick(p)) } }
@@ -132,14 +132,14 @@ struct PlanDayView: View {
                 Meta(store.L("Save what you want to keep. Saved lines are learned by heart, step by step.",
                              "Speichere, was du behalten willst. Gespeichertes wird Stufe für Stufe auswendig gelernt.")).padding(.top, 6).padding(.bottom, 16)
                 ForEach(s.keys ?? [], id: \.self) { k in
-                    QuoteCard(key: k, concept: s.concept, why: store.corpus.pqwhy["\(planId):\(day):\(k)"].map(store.pick))
+                    QuoteCard(key: k, concept: s.concept, why: store.corpus.pqwhy["\(planId):\(day):\(k)"].map { store.pick($0) })
                 }
             }
         case "memorise":
             if let k = s.key, let q = store.quote(k) {
                 Block(top: 18) {
                     Heading(store.L("Learn this by heart", "Das auswendig lernen"), level: 2)
-                    AnswerBox { Passage(q.text, small: true); Cite(q.label) }.padding(.top, 16)
+                    AnswerBox { PassageText(q.text, small: true); Cite(q.label) }.padding(.top, 16)
                     Button(store.L("Open the staircase", "Die Stufen öffnen")) {
                         store.saveQuote(k, concept: s.concept)
                         if let m = store.extras.first(where: { $0.qk == k }) { router.push(.memorise(m.id)) }
@@ -183,7 +183,7 @@ struct PlanDayView: View {
             }
         case "reflect":
             Block(top: 18) {
-                Passage(store.pick(s.q), small: true).padding(.bottom, 16)
+                PassageText(store.pick(s.q), small: true).padding(.bottom, 16)
                 ReflectField(text: said(step))
             }
         default:
@@ -236,7 +236,7 @@ struct PlanDayView: View {
         if last {
             let rec = store.planRecord(planId)
             Block {
-                Passage(rec.spoken > 0 ? store.L("You have been through the whole track and answered its speaking tasks.", "Du hast den ganzen Weg durchlaufen und seine Sprechaufgaben beantwortet.")
+                PassageText(rec.spoken > 0 ? store.L("You have been through the whole track and answered its speaking tasks.", "Du hast den ganzen Weg durchlaufen und seine Sprechaufgaben beantwortet.")
                                        : store.L("You have read the whole track. Nothing here has yet tested whether you can say any of it.", "Du hast den ganzen Weg gelesen. Bisher hat nichts geprüft, ob du etwas davon sagen kannst."), small: true)
             }
             Block {

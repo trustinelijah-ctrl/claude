@@ -145,7 +145,7 @@ struct RhetoricView: View {
                 .contentTransition(.numericText(countsDown: true))
         }.padding(.top, 16)
         ProgressRule(fraction: p.secs > 0 ? Double(left) / Double(p.secs) : 0).padding(.top, 10)
-        Block(top: 30) { Passage(quoteMarks(p, p.q)) }
+        Block(top: 30) { PassageText(quoteMarks(p, p.q)) }
         if !prev.isEmpty { AttemptsView(previous: prev) }
         Block(rule: false) {
             Rubric(store.L("Your answer", "Deine Antwort")).padding(.bottom, 10)
@@ -163,11 +163,11 @@ struct RhetoricView: View {
     @ViewBuilder func review(_ p: RhetoricPrompt) -> some View {
         Block(top: 18) {
             Rubric(store.L("The question", "Die Frage")).padding(.bottom, 8)
-            Passage(quoteMarks(p, p.q), small: true, color: .ink2)
+            PassageText(quoteMarks(p, p.q), small: true, color: .ink2)
             Rubric(store.L("What you said", "Was du gesagt hast")).padding(.top, 18).padding(.bottom, 8)
-            Passage(answer.isEmpty ? "—" : answer, small: true)
+            PassageText(answer.isEmpty ? "—" : answer, small: true)
         }
-        Rail(label: store.L("What a strong answer needs", "Was eine starke Antwort braucht")) { Passage(p.structure, small: true, color: .ink2) }
+        Rail(label: store.L("What a strong answer needs", "Was eine starke Antwort braucht")) { PassageText(p.structure, small: true, color: .ink2) }
         Block {
             SpeakDrill(question: p.q, hint: p.structure, model: p.better, secs: p.secs, exerciseLang: Lang(rawValue: p.lang),
                        showQuestion: false, text: $answer, coach: $coach, previous: [], revealed: $showBetter,
@@ -187,7 +187,7 @@ struct RhetoricView: View {
         if let f = store.corpus.followUps[p.id] {
             Block {
                 Rubric(store.L("They come back with", "Die Gegenseite legt nach")).padding(.bottom, 8)
-                Passage(quoteMarks(p, store.pick(f.q)), small: true, color: .burgundy)
+                PassageText(quoteMarks(p, store.pick(f.q)), small: true, color: .burgundy)
                 Meta(store.pick(f.hint)).padding(.top, 10)
             }
         }
@@ -218,14 +218,14 @@ struct ReflectView: View {
             }
             if !evening {
                 Block {
-                    Passage(store.L("What is within my responsibility today, and how will I answer it?", "Was liegt heute in meiner Verantwortung, und wie will ich antworten?"), small: true).padding(.bottom, 14)
+                    PassageText(store.L("What is within my responsibility today, and how will I answer it?", "Was liegt heute in meiner Verantwortung, und wie will ich antworten?"), small: true).padding(.bottom, 14)
                     ReflectField(text: Binding(get: { store.reflection()["morning"].string },
                                                set: { v in store.setReflection { $0["morning"] = .string(v) } }))
                 }
             } else {
                 ForEach(Array(store.corpus.eveningQ.enumerated()), id: \.offset) { i, q in
                     Block {
-                        Passage("\(i + 1). " + store.pick(q), small: true).padding(.bottom, 10)
+                        PassageText("\(i + 1). " + store.pick(q), small: true).padding(.bottom, 10)
                         TextField(store.L("A line is enough.", "Eine Zeile genügt."), text: Binding(
                             get: { store.reflection()["evening"][i].string },
                             set: { v in store.setReflection { r in
@@ -268,12 +268,12 @@ struct SpeechBankView: View {
                      sub: store.L("Formulations to internalise, in both languages. Say them until they come without reaching.",
                                   "Formulierungen zum Verinnerlichen, in beiden Sprachen. Sprich sie, bis sie ohne Suchen kommen."))
             let cats = Array(Set(store.corpus.speech.map(\.cat)))
-            ForEach(store.corpus.speechCats.keys.sorted().filter(cats.contains), id: \.self) { cat in
+            ForEach(store.corpus.speechCats.keys.sorted().filter { cats.contains($0) }, id: \.self) { cat in
                 Block {
                     Rubric(store.pick(store.corpus.speechCats[cat])).padding(.bottom, 10)
                     ForEach(store.corpus.speech.filter { $0.cat == cat }) { s in
                         VStack(alignment: .leading, spacing: 6) {
-                            Passage(store.lang == .de ? s.de : s.en, small: true)
+                            PassageText(store.lang == .de ? s.de : s.en, small: true)
                             Meta(store.lang == .de ? s.en : s.de, color: .ink4)
                         }.padding(.vertical, 10)
                     }
@@ -322,14 +322,14 @@ struct VoiceView: View {
                     Meta(store.pick(v.place))
                 }.padding(.top, 12).padding(.bottom, 18)
                 DoubleRule()
-                Block { Passage(store.pick(v.hook), italic: true) }
+                Block { PassageText(store.pick(v.hook), italic: true) }
                 Block { Rubric(store.L("The scene", "Die Szene")).padding(.bottom, 12); Paragraphs(text: store.pick(v.scene)) }
                 Block { VoiceQuote(voice: v) }
                 Rail(label: store.L("When to reach for this", "Wann du dazu greifst")) { Paragraphs(text: store.pick(v.use)) }
                 Band(kind: .tension) { Rubric(store.L("Where it breaks", "Wo es bricht")); Paragraphs(text: store.pick(v.limit)) }
                 Block(top: 18) {
                     HStack(alignment: .firstTextBaseline) { Heading(store.L("Use it", "Setz es ein"), level: 2); Spacer(); Cite("\(v.drill.secs ?? 60)s") }.padding(.bottom, 12)
-                    Passage(store.pick(v.drill.q), small: true)
+                    PassageText(store.pick(v.drill.q), small: true)
                     SpeakDrill(question: store.pick(v.drill.q), hint: store.pick(v.drill.hint), model: store.pick(v.drill.model), secs: v.drill.secs ?? 60,
                                showQuestion: false,
                                text: store.workText("voiceWork", v.id), coach: store.workCoach("voiceWork", v.id),
@@ -362,7 +362,7 @@ struct VoiceQuote: View {
     let voice: Voice
     var body: some View {
         let q = voice.quote, kind = q.kind ?? "pd"
-        let (main, note, under): (String, String, String) = {
+        let parts: (main: String, note: String, under: String) = {
             if kind == "none" { return (store.pick(q.para), store.pick(store.corpus.voiceKind["none"]), "") }
             if store.lang == .de {
                 if q.deKind == "orig" { return (q.de ?? "", kind == "own" ? "Originalwortlaut." : store.pick(store.corpus.voiceKind[kind]), "") }
@@ -372,10 +372,10 @@ struct VoiceQuote: View {
             return (q.en ?? "", store.pick(store.corpus.voiceKind[kind]), q.orig ?? "")
         }()
         VStack(alignment: .leading, spacing: 12) {
-            Passage((store.lang == .de ? "»" : "“") + main + (store.lang == .de ? "«" : "”"), italic: true)
-            if !under.isEmpty { Text(under).font(Typo.serifItalic(15)).foregroundStyle(Color.ink3) }
+            PassageText((store.lang == .de ? "»" : "“") + parts.main + (store.lang == .de ? "«" : "”"), italic: true)
+            if !parts.under.isEmpty { Text(parts.under).font(Typo.serifItalic(15)).foregroundStyle(Color.ink3) }
             HStack(spacing: 6) { Text(voice.name).font(Typo.meta).foregroundStyle(Color.ink2); Cite("· " + (q.src ?? "")) }
-            if !note.isEmpty { Meta(note) }
+            if !parts.note.isEmpty { Meta(parts.note) }
             if kind != "none" {
                 let on = store.isSaved("voice:" + voice.id)
                 Chip(title: on ? "✓ " + store.L("In review", "In Wiederholung") : store.L("Learn it by heart", "Auswendig lernen"), on: on) {
@@ -384,7 +384,7 @@ struct VoiceQuote: View {
             }
             if let also = q.also {
                 Divider().overlay(Color.ruleSoft)
-                Passage("“" + ((store.lang == .de ? also.orig : nil) ?? also.en ?? "") + "”", small: true)
+                PassageText("“" + ((store.lang == .de ? also.orig : nil) ?? also.en ?? "") + "”", small: true)
                 Cite(also.src ?? "")
             }
         }
@@ -428,17 +428,17 @@ struct FigureView: View {
                     HStack(alignment: .top) { Heading(store.pick(f.n), level: 0); Spacer(); LangSwitch() }
                 }.padding(.top, 12).padding(.bottom, 18)
                 DoubleRule()
-                Block { Passage(store.pick(f.def), italic: true) }
+                Block { PassageText(store.pick(f.def), italic: true) }
                 Block {
                     Rubric(store.L("In the texts you already know", "In Texten, die du schon kennst")).padding(.bottom, 12)
                     ForEach(Array(f.specimens.enumerated()), id: \.offset) { _, sp in specimen(sp) }
                 }
                 Rail(label: store.L("Why it works", "Warum es wirkt")) { Paragraphs(text: store.pick(f.why)) }
-                if let g = f.german { Rail(label: store.L("In German", "Im Deutschen")) { Passage(store.pick(g), small: true) } }
+                if let g = f.german { Rail(label: store.L("In German", "Im Deutschen")) { PassageText(store.pick(g), small: true) } }
                 Block(top: 18) {
                     Heading(store.L("Rewrite it", "Schreib es um"), level: 2)
                     Meta(store.L("A flat sentence. Rewrite it using this figure, then say it aloud.", "Ein flacher Satz. Schreib ihn mit dieser Figur um und sprich ihn dann laut.")).padding(.top, 10)
-                    Band { Passage(store.pick(f.flat), small: true) }
+                    Band { PassageText(store.pick(f.flat), small: true) }
                     SpeakDrill(question: store.pick(f.flat), hint: store.pick(f.def), model: store.pick(f.model), secs: 20,
                                placeholder: store.L("Your version.", "Deine Fassung."), minChars: 8, showQuestion: false,
                                text: store.workText("craftWork", f.id), coach: store.workCoach("craftWork", f.id),
@@ -465,7 +465,7 @@ struct FigureView: View {
             }.padding(16).overlay(Rectangle().stroke(Color.ruleSoft)).padding(.bottom, 12)
         } else if let k = sp.k, let q = store.quote(k) {
             VStack(alignment: .leading, spacing: 8) {
-                Passage("“" + q.text + "”", small: true)
+                PassageText("“" + q.text + "”", small: true)
                 Cite(q.label)
                 Meta(store.pick(sp.note))
             }.padding(16).overlay(Rectangle().stroke(Color.ruleSoft)).padding(.bottom, 12)

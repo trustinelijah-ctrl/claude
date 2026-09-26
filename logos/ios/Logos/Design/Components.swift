@@ -13,7 +13,7 @@ struct Rubric: View {
     }
 }
 
-struct Passage: View {
+struct PassageText: View {
     let text: String
     var small = false
     var italic = false
@@ -38,7 +38,7 @@ struct Paragraphs: View {
     var color: Color = .ink
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            ForEach(Array(TextTools.paragraphs(text).enumerated()), id: \.offset) { _, p in Passage(p, small: small, color: color) }
+            ForEach(Array(TextTools.paragraphs(text).enumerated()), id: \.offset) { _, p in PassageText(p, small: small, color: color) }
         }
     }
 }
@@ -197,7 +197,7 @@ struct NumberedPoint: View {
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 14) {
             Text("\(n)").font(Typo.serifItalic(20)).foregroundStyle(Color.bronze).frame(width: 18)
-            Passage(text, small: true)
+            PassageText(text, small: true)
         }
         .padding(.vertical, 8)
     }
@@ -366,7 +366,7 @@ struct CheckView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Passage((number.map { "\($0). " } ?? "") + store.pick(q.q), small: true).padding(.bottom, 16)
+            PassageText((number.map { "\($0). " } ?? "") + store.pick(q.q), small: true).padding(.bottom, 16)
             ForEach(TextTools.optionOrder(question: q.q, count: q.opts.count), id: \.self) { j in
                 OptionRow(text: store.pick(q.opts[j]), state: state(j)) {
                     answer(j)
@@ -401,9 +401,9 @@ struct QuoteCard: View {
     var body: some View {
         if let q = store.quote(key) {
             VStack(alignment: .leading, spacing: 12) {
-                if q.isScripture { Passage(q.text, small: true) }
+                if q.isScripture { PassageText(q.text, small: true) }
                 else {
-                    Passage(q.text, small: true, italic: true)
+                    PassageText(q.text, small: true, italic: true)
                         .padding(.leading, 14)
                         .overlay(alignment: .leading) { Rectangle().fill(Color.rule).frame(width: 2) }
                 }

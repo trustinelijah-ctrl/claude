@@ -15,7 +15,12 @@ struct ModuleView: View {
     enum Step: Hashable { case intro, teach, worked, faded(Int), independent, transfer(Int), done }
 
     func steps(_ m: Module) -> [Step] {
-        [.intro, .teach, .worked] + m.faded.indices.map { .faded($0) } + [.independent] + m.transfer.indices.map { .transfer($0) } + [.done]
+        var out: [Step] = [.intro, .teach, .worked]
+        out += m.faded.indices.map { Step.faded($0) }
+        out.append(.independent)
+        out += m.transfer.indices.map { Step.transfer($0) }
+        out.append(.done)
+        return out
     }
 
     var body: some View {
@@ -47,7 +52,7 @@ struct ModuleView: View {
                 Heading(store.pick(m.title)).multilineTextAlignment(.center).padding(.top, 12)
                 if let sub = m.sub { Meta(store.pick(sub)).multilineTextAlignment(.center).padding(.top, 10) }
             }.frame(maxWidth: .infinity)
-            Block { Passage(store.pick(m.teaching.hook), small: true) }
+            Block { PassageText(store.pick(m.teaching.hook), small: true) }
             nav(m, primary: store.L("Begin", "Beginnen"))
         case .teach:
             ForEach(Array(m.teaching.body.enumerated()), id: \.offset) { i, b in
@@ -68,7 +73,7 @@ struct ModuleView: View {
         case .worked:
             Block(top: 18) {
                 Heading(store.L("Worked example", "Durchgearbeitetes Beispiel"), level: 2)
-                Passage(store.pick(m.worked.question), small: true).padding(.top, 14)
+                PassageText(store.pick(m.worked.question), small: true).padding(.top, 14)
                 Meta(store.L("Read all four steps. You will build them yourself in a moment, last step first.",
                              "Lies alle vier Schritte. Gleich baust du sie selbst — den letzten zuerst.")).padding(.top, 12)
             }
@@ -76,7 +81,7 @@ struct ModuleView: View {
                 Block {
                     HStack(alignment: .firstTextBaseline, spacing: 14) {
                         Text("\(i + 1)").font(Typo.serifItalic(20)).foregroundStyle(Color.bronze)
-                        VStack(alignment: .leading, spacing: 6) { Rubric(store.pick(ws.principle)); Passage(store.pick(ws.text), small: true) }
+                        VStack(alignment: .leading, spacing: 6) { Rubric(store.pick(ws.principle)); PassageText(store.pick(ws.text), small: true) }
                     }
                 }
             }
@@ -85,7 +90,7 @@ struct ModuleView: View {
             let f = m.faded[fi], keep = m.worked.steps.count - f.removed
             Block(top: 18) {
                 Heading(store.L("Your turn", "Du bist dran"), level: 2)
-                Passage(store.pick(f.question), small: true).padding(.top, 14)
+                PassageText(store.pick(f.question), small: true).padding(.top, 14)
             }
             ForEach(Array(m.worked.steps.enumerated()), id: \.offset) { i, ws in
                 Block {
@@ -120,9 +125,9 @@ struct ModuleView: View {
         case .independent:
             Block(top: 18) {
                 Heading(store.L("On your own", "Allein"), level: 2)
-                Passage(store.pick(m.independent.q), small: true).padding(.top, 14)
+                PassageText(store.pick(m.independent.q), small: true).padding(.top, 14)
             }
-            Rail(label: store.L("Structure", "Aufbau")) { Passage(store.pick(m.independent.hint), small: true, color: .ink2) }
+            Rail(label: store.L("Structure", "Aufbau")) { PassageText(store.pick(m.independent.hint), small: true, color: .ink2) }
             Block { ReflectField(text: text("ind"), placeholder: store.L("All four steps, in order.", "Alle vier Schritte, der Reihe nach."), minHeight: 180) }
             nav(m)
         case .transfer(let ti):

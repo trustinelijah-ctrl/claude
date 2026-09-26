@@ -27,7 +27,7 @@ struct LessonFlowView: View {
                     }
                     Group {
                         switch step {
-                        case 0: open(les)
+                        case 0: openStep(les)
                         case 1, 2: teaching(les, christian: step == 1)
                         case 3: compare(les)
                         case 4: check(les)
@@ -57,14 +57,14 @@ struct LessonFlowView: View {
 
     // MARK: 0 — open
 
-    @ViewBuilder func open(_ les: Lesson) -> some View {
+    @ViewBuilder func openStep(_ les: Lesson) -> some View {
         VStack(spacing: 0) {
             Rubric(store.L("Today's lesson", "Lektion des Tages")).padding(.top, 22)
             Plate(id: les.plate, height: 130).padding(.vertical, 14)
             Heading(title).multilineTextAlignment(.center)
             if let g = concept?.gloss { Cite(g).padding(.top, 6) }
         }.frame(maxWidth: .infinity)
-        Block { Passage(store.pick(les.intro), small: true) }
+        Block { PassageText(store.pick(les.intro), small: true) }
         if let bl = store.corpus.builds[id], let from = bl.from {
             let u = store.unitForLesson(id)
             let met = u.map(store.unitReady) ?? false
@@ -94,7 +94,7 @@ struct LessonFlowView: View {
         Block(top: 16) {
             Rubric(title).padding(.bottom, 10)
             Heading(christian ? store.L("The Christian teaching", "Die christliche Lehre") : store.L("The Stoic teaching", "Die stoische Lehre"))
-            Passage(store.pick(side.summary), small: true).padding(.top, 16)
+            PassageText(store.pick(side.summary), small: true).padding(.top, 16)
         }
         if let s = dep?.story { Rail(label: store.L("Where this comes from", "Woher das kommt")) { Paragraphs(text: store.pick(s)) } }
         Block {
@@ -119,7 +119,7 @@ struct LessonFlowView: View {
         if !christian, let obj = deep?.obj {
             Block {
                 Rubric(store.L("The objection you will meet", "Der Einwand, dem du begegnest")).padding(.bottom, 10)
-                Passage(store.pick(obj), small: true, color: .burgundy)
+                PassageText(store.pick(obj), small: true, color: .burgundy)
                 if let rep = deep?.rep { Paragraphs(text: store.pick(rep)).padding(.top, 14) }
             }
         }
@@ -128,10 +128,10 @@ struct LessonFlowView: View {
             Meta(store.L("Save any of these and you can learn them by heart, step by step.", "Speichere davon, was du willst — dann lernst du es Stufe für Stufe auswendig.") + " " + store.translationName)
                 .padding(.top, 6).padding(.bottom, 16)
             ForEach(side.quotes, id: \.self) { k in
-                QuoteCard(key: k, concept: id, why: store.corpus.qwhy[id + ":" + k].map(store.pick))
+                QuoteCard(key: k, concept: id, why: store.corpus.qwhy[id + ":" + k].map { store.pick($0) })
             }
         }
-        AskBlock(topic: id, tradition: christian ? "christian" : "stoic", summary: store.pick(side.summary), points: side.points.map(store.pick))
+        AskBlock(topic: id, tradition: christian ? "christian" : "stoic", summary: store.pick(side.summary), points: side.points.map { store.pick($0) })
         Block(rule: false) {
             Button(christian ? store.L("Now the Stoic teaching", "Nun die stoische Lehre") : store.L("Continue", "Weiter"), action: advance).buttonStyle(.solid)
             Button(store.L("Back", "Zurück"), action: back).buttonStyle(.ghost).padding(.top, 12)
@@ -278,7 +278,7 @@ struct ThinkBlock: View {
         Band(kind: .agree) { Rubric(store.L("One way", "So")); Paragraphs(text: store.pick(think.a)) }
         Band(kind: .tension) { Rubric(store.L("The other way", "Anders")); Paragraphs(text: store.pick(think.b)) }
         Block {
-            Passage(store.pick(think.q), small: true).padding(.bottom, 14)
+            PassageText(store.pick(think.q), small: true).padding(.bottom, 14)
             SpeakField(text: $text, speech: speech, lang: store.lang, secs: 120,
                        placeholder: store.L("For you. Nobody grades this.", "Für dich. Das benotet niemand."), minHeight: 120)
         }

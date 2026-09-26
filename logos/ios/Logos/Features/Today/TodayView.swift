@@ -97,7 +97,7 @@ struct TodayView: View {
                 ProgressRule(fraction: Double(st.pct) / 100).padding(.top, 10).padding(.bottom, 20)
                 Heading(store.unitTitle(nx.unit), level: 2)
                 Meta(store.unitKindName(nx.unit)).padding(.top, 8)
-                Passage(store.L("Afterwards you will be able to", "Danach kannst du") + ": " + store.pick(nx.unit.can), small: true).padding(.top, 14)
+                PassageText(store.L("Afterwards you will be able to", "Danach kannst du") + ": " + store.pick(nx.unit.can), small: true).padding(.top, 14)
                 if !nx.unit.assumes.isEmpty {
                     Meta(store.L("This assumes you can already do what", "Das setzt voraus, dass du bereits kannst, was") + " " +
                          nx.unit.assumes.compactMap(store.corpus.unit).map(store.unitTitle).joined(separator: ", ") + " " +
@@ -110,7 +110,7 @@ struct TodayView: View {
             }
         } else {
             Block {
-                Passage(store.L("You have been through every unit. Running a track again is not repetition — the speaking answers come out differently now.",
+                PassageText(store.L("You have been through every unit. Running a track again is not repetition — the speaking answers come out differently now.",
                                 "Du hast jede Einheit durchlaufen. Einen Weg erneut zu gehen ist keine Wiederholung — die Sprechantworten fallen jetzt anders aus."), small: true)
                 Button(store.L("Open the path", "Den Weg öffnen")) { router.tab = .path }.buttonStyle(.solid).padding(.top, 18)
             }
@@ -145,11 +145,11 @@ struct LeafBlock: View {
             if let lf = leaf, lf.kind == "voice", let v = store.corpus.voice(lf.id) {
                 Block {
                     Rubric(store.L("Today's voice", "Stimme des Tages") + " · " + v.name)
-                    Passage(store.pick(v.hook), italic: true).padding(.top, 14)
+                    PassageText(store.pick(v.hook), italic: true).padding(.top, 14)
                     Meta(store.pick(v.place)).padding(.top, 12)
                     VStack(alignment: .leading, spacing: 8) {
                         Rubric(store.L("Could you answer this?", "Könntest du darauf antworten?"))
-                        Passage(store.pick(v.drill.q), small: true, color: .ink2)
+                        PassageText(store.pick(v.drill.q), small: true, color: .ink2)
                     }.padding(.top, 20)
                     Button(store.L("Read the scene — about four minutes", "Die Szene lesen — etwa vier Minuten")) { router.push(.voice(v.id)) }
                         .buttonStyle(.outline).padding(.top, 18)
@@ -158,13 +158,13 @@ struct LeafBlock: View {
                 Block {
                     Rubric(store.L("Today's figure", "Figur des Tages") + " · " + store.pick(f.n))
                     if let k = f.specimens.first(where: { $0.k != nil })?.k, let q = store.quote(k) {
-                        Passage("“" + q.text + "”", italic: true).padding(.top, 14)
+                        PassageText("“" + q.text + "”", italic: true).padding(.top, 14)
                         Cite(q.label).padding(.top, 8)
                     }
                     Meta(store.pick(f.def)).padding(.top, 12)
                     VStack(alignment: .leading, spacing: 8) {
                         Rubric(store.L("Make this sentence land", "Bring diesen Satz zum Sitzen"))
-                        Passage(store.pick(f.flat), small: true, color: .ink2)
+                        PassageText(store.pick(f.flat), small: true, color: .ink2)
                     }.padding(.top, 20)
                     Button(store.L("Try it — about two minutes", "Versuch es — etwa zwei Minuten")) { router.push(.figure(f.id)) }
                         .buttonStyle(.outline).padding(.top, 18)
@@ -185,7 +185,7 @@ struct ContinuityBlock: View {
                 Rail(label: store.L("Where you left off", "Wo du stehen geblieben bist")) {
                     Meta(it.title + " · " + store.daysAgo(it.ts))
                     if !it.text.isEmpty {
-                        Passage("“" + (it.text.count > 180 ? String(it.text.prefix(177)) + "…" : it.text) + "”", small: true, color: .ink2)
+                        PassageText("“" + (it.text.count > 180 ? String(it.text.prefix(177)) + "…" : it.text) + "”", small: true, color: .ink2)
                     }
                     Rubric(store.L("The one thing to change", "Die eine Sache, die du ändern wolltest"), color: .burgundy).padding(.top, 6)
                     Text(it.fix).font(Typo.serif(16.5)).foregroundStyle(Color.ink).fixedSize(horizontal: false, vertical: true)

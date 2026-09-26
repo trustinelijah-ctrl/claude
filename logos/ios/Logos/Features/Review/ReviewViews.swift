@@ -17,7 +17,7 @@ struct ReviewView: View {
                     Meta(r.due == 1 ? store.L("item due now", "Eintrag jetzt fällig") : store.L("items due now", "Einträge jetzt fällig")).padding(.top, 4)
                     Button(store.L("Begin", "Beginnen")) { router.push(.memorySession) }.buttonStyle(.solid).padding(.top, 18)
                 } else {
-                    Passage(store.L("Nothing is due. That is the system working, not a gap — spacing them out is what makes them stick.",
+                    PassageText(store.L("Nothing is due. That is the system working, not a gap — spacing them out is what makes them stick.",
                                     "Nichts fällig. Das ist das System bei der Arbeit, keine Lücke — gerade die Abstände lassen es haften."), small: true)
                     if r.soon > 0 { Meta("\(r.soon) " + store.L("come due within two days.", "werden binnen zwei Tagen fällig.")).padding(.top, 12) }
                 }
@@ -172,7 +172,7 @@ struct MemorySessionView: View {
     var finished: some View {
         VStack(alignment: .leading, spacing: 0) {
             Heading(store.L("Review complete", "Wiederholung abgeschlossen")).padding(.top, 20)
-            Passage(total == 0 ? store.L("Nothing is due.", "Nichts ist fällig.")
+            PassageText(total == 0 ? store.L("Nothing is due.", "Nichts ist fällig.")
                     : store.L("You retrieved \(done) of \(total). What you failed on will return sooner than what you knew.",
                               "Du hast \(done) von \(total) abgerufen. Was misslang, kommt früher zurück als das Gewusste."), small: true).padding(.top, 16)
             HStack(spacing: 12) {
@@ -191,7 +191,7 @@ struct MemorySessionView: View {
                 .id(m.id)
         } else {
             Block(top: 34) {
-                Passage(store.pick(m.q))
+                PassageText(store.pick(m.q))
                 if let c = m.concept {
                     Meta(store.conceptTitle(c) + (m.ref.map { " · " + store.scriptureRef($0) } ?? "")).padding(.top, 10)
                 }
@@ -208,7 +208,7 @@ struct MemorySessionView: View {
                     }.buttonStyle(.solid).padding(.top, 18)
                 }
             } else {
-                AnswerBox { Rubric(store.L("Stored answer", "Hinterlegte Antwort")); Passage(store.pick(m.a), small: true) }
+                AnswerBox { Rubric(store.L("Stored answer", "Hinterlegte Antwort")); PassageText(store.pick(m.a), small: true) }
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
                 Block(rule: false) {
                     Rubric(store.L("How did that go?", "Wie lief das?")).padding(.bottom, 12)
@@ -293,7 +293,7 @@ struct MemoriseStaircase: View {
     var read: some View {
         VStack(alignment: .leading, spacing: 0) {
             Meta(store.L("Read it aloud, twice. Then cover it.", "Lies es zweimal laut. Dann deck es zu.")).padding(.top, 16).padding(.bottom, 16)
-            AnswerBox { Passage(text); Cite(label + " · " + store.translationName) }
+            AnswerBox { PassageText(text); Cite(label + " · " + store.translationName) }
             Button(store.L("I have read it", "Gelesen")) { advance() }.buttonStyle(.solid).padding(.top, 22)
         }
     }
@@ -385,7 +385,7 @@ struct MemoriseStaircase: View {
                     Cite(label)
                 }.padding(.top, 16)
                 if sc < 85 {
-                    if let meaning { Rail(label: store.L("By meaning", "Nach dem Sinn")) { Passage(meaning, small: true) } }
+                    if let meaning { Rail(label: store.L("By meaning", "Nach dem Sinn")) { PassageText(meaning, small: true) } }
                     else {
                         Button {
                             Task {

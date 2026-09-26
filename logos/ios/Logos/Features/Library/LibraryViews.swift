@@ -136,10 +136,14 @@ struct SearchPanel: View {
     @ViewBuilder func results(_ q: String) -> some View {
         let concepts = store.corpus.concepts.filter { c in
             hit(both(c.t) + both(c.overview) + both(c.christian) + both(c.stoic) + both(c.agree) + both(c.tension) + both(c.position)
-                + (c.lines ?? []).map(both).joined(), q)
+                + (c.lines ?? []).map { both($0) }.joined(), q)
         }
-        let scripture = store.corpus.scripture.filter { hit($0.value.en + $0.value.de + ($0.value.pen ?? "") + ($0.value.pde ?? "") + $0.value.ref, q) }.map(\.key).sorted()
-        let passages = store.corpus.passages.filter { hit($0.value.en + $0.value.de + $0.value.author + ($0.value.ref ?? ""), q) }.map(\.key).sorted()
+        let scripture = store.corpus.scripture.filter { e in
+            hit([e.value.en, e.value.de, e.value.pen ?? "", e.value.pde ?? "", e.value.ref].joined(separator: " "), q)
+        }.map(\.key).sorted()
+        let passages = store.corpus.passages.filter { e in
+            hit([e.value.en, e.value.de, e.value.author, e.value.ref ?? ""].joined(separator: " "), q)
+        }.map(\.key).sorted()
         let notes = store.captures.filter { hit($0["title"].string + " " + $0["body"].string, q) }
         let voices = store.corpus.voices.filter { hit($0.name + both($0.hook) + both($0.scene), q) }
         let args = store.corpus.arguments.filter { hit(both($0.question) + both($0.thesis), q) }
@@ -169,7 +173,7 @@ struct SearchPanel: View {
             ForEach(args) { a in Button { router.push(.argument(a.id)) } label: { RowLink(title: store.pick(a.question), titleSize: 17) }.buttonStyle(.plain) }
         }
         group(store.L("Speech bank", "Formulierungen"), speech.count) {
-            ForEach(speech) { s in VStack(alignment: .leading, spacing: 4) { Passage(store.lang == .de ? s.de : s.en, small: true); Meta(store.lang == .de ? s.en : s.de, color: .ink4) }.padding(.vertical, 8) }
+            ForEach(speech) { s in VStack(alignment: .leading, spacing: 4) { PassageText(store.lang == .de ? s.de : s.en, small: true); Meta(store.lang == .de ? s.en : s.de, color: .ink4) }.padding(.vertical, 8) }
         }
     }
 
@@ -243,7 +247,7 @@ struct ConceptView: View {
         if let lines = c.lines, !lines.isEmpty {
             Block {
                 Rubric(store.L("Memorable lines", "Merksätze")).padding(.bottom, 10)
-                ForEach(Array(lines.enumerated()), id: \.offset) { _, l in Passage(store.pick(l), small: true, italic: true).padding(.bottom, 10) }
+                ForEach(Array(lines.enumerated()), id: \.offset) { _, l in PassageText(store.pick(l), small: true, italic: true).padding(.bottom, 10) }
             }
         }
         if let a = c.application, !a.isEmpty { Rail(label: store.L("Try this week", "Diese Woche")) { Paragraphs(text: store.pick(a)) } }
@@ -264,9 +268,9 @@ struct ConceptView: View {
         section(store.L("My position", "Meine Position"), c.position)
         if let obs = c.objections, !obs.isEmpty {
             ForEach(Array(obs.enumerated()), id: \.offset) { i, o in
-                Band(kind: .tension) { Rubric(store.L("Objection", "Einwand") + " \(i + 1)"); Passage(store.pick(o), small: true) }
+                Band(kind: .tension) { Rubric(store.L("Objection", "Einwand") + " \(i + 1)"); PassageText(store.pick(o), small: true) }
                 if let r = c.responses, r.indices.contains(i) {
-                    Band(kind: .agree) { Rubric(store.L("Response", "Antwort")); Passage(store.pick(r[i]), small: true) }
+                    Band(kind: .agree) { Rubric(store.L("Response", "Antwort")); PassageText(store.pick(r[i]), small: true) }
                 }
             }
         }
@@ -343,7 +347,7 @@ struct ScriptureView: View {
                 if let ctx = s.ctx { Rail(label: store.L("In its setting", "Im Zusammenhang")) { Paragraphs(text: store.pick(ctx)) } }
                 Block {
                     Rubric(store.translation == "plain" ? store.L("Classic wording", "Klassischer Wortlaut") : store.L("Plain wording", "Einfacher Wortlaut")).padding(.bottom, 8)
-                    Passage(store.translation == "plain" ? (store.lang == .de ? s.de : s.en) : ((store.lang == .de ? s.pde : s.pen) ?? ""), small: true, color: .ink2)
+                    PassageText(store.translation == "plain" ? (store.lang == .de ? s.de : s.en) : ((store.lang == .de ? s.pde : s.pen) ?? ""), small: true, color: .ink2)
                 }
                 if !inConcepts.isEmpty {
                     Block {
@@ -366,7 +370,7 @@ struct ArgumentView: View {
             Page {
                 Heading(store.pick(a.question), level: 1).padding(.top, 12).padding(.bottom, 16)
                 DoubleRule()
-                Block { Rubric(store.L("Thesis", "These")).padding(.bottom, 8); Passage(store.pick(a.thesis)) }
+                Block { Rubric(store.L("Thesis", "These")).padding(.bottom, 8); PassageText(store.pick(a.thesis)) }
                 if let w = a.why { Block { Rubric(store.L("Why", "Warum")).padding(.bottom, 8); Paragraphs(text: store.pick(w)) } }
                 if !(a.scripture.isEmpty && a.sources.isEmpty) {
                     Block { Rubric(store.L("Grounds", "Gründe")).padding(.bottom, 12); ForEach(a.scripture + a.sources, id: \.self) { k in QuoteCard(key: k, concept: a.concept) } }
@@ -376,8 +380,8 @@ struct ArgumentView: View {
                 if let r = a.response { Band(kind: .agree) { Rubric(store.L("Response", "Antwort")); Paragraphs(text: store.pick(r)) } }
                 if let c = a.counter { Block { Rubric(store.L("Their counter", "Ihre Erwiderung")).padding(.bottom, 8); Paragraphs(text: store.pick(c)) } }
                 if let l = a.limits { Rail(label: store.L("Limits", "Grenzen")) { Paragraphs(text: store.pick(l)) } }
-                if let s = a.s30 { Block { Rubric(store.L("In thirty seconds", "In dreißig Sekunden")).padding(.bottom, 8); Passage(store.pick(s), small: true) } }
-                if let l = a.line { Block(rule: false) { Passage(store.pick(l), italic: true) } }
+                if let s = a.s30 { Block { Rubric(store.L("In thirty seconds", "In dreißig Sekunden")).padding(.bottom, 8); PassageText(store.pick(s), small: true) } }
+                if let l = a.line { Block(rule: false) { PassageText(store.pick(l), italic: true) } }
                 Ornament()
             }
             .logosNavigation()

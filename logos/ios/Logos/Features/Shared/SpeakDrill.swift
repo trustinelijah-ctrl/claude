@@ -36,9 +36,9 @@ struct SpeakDrill: View {
                     Cite("\(secs)s")
                 }
                 .padding(.bottom, 12)
-                Passage(question, small: true)
+                PassageText(question, small: true)
             }
-            if !hint.isEmpty { Rail(label: store.L("How to build it", "Wie du es baust")) { Passage(hint, small: true, color: .ink2) } }
+            if !hint.isEmpty { Rail(label: store.L("How to build it", "Wie du es baust")) { PassageText(hint, small: true, color: .ink2) } }
             if !previous.isEmpty { AttemptsView(previous: previous) }
 
             SpeakField(text: $text, speech: speech, lang: lang, secs: secs,
@@ -58,7 +58,7 @@ struct SpeakDrill: View {
                 }
                 .buttonStyle(.ghost).padding(.top, 14)
             } else if !model.isEmpty {
-                Rail(label: store.L("One way to say it", "Eine Art, es zu sagen")) { Passage(model, small: true) }
+                Rail(label: store.L("One way to say it", "Eine Art, es zu sagen")) { PassageText(model, small: true) }
                     .transition(.opacity)
             }
         }
@@ -216,14 +216,14 @@ struct CoachReply: View {
                 row("DEVICE", store.L("A move you could have used", "Ein Zug, den du hättest nutzen können"), c, .ink3)
             }
         } else {
-            AnswerBox { Passage(text, small: true) }
+            AnswerBox { PassageText(text, small: true) }
         }
     }
     @ViewBuilder func row(_ k: String, _ label: String, _ c: [String: String], _ color: Color, passage: Bool = false) -> some View {
         if let v = c[k], !v.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 Rubric(label, color: color)
-                if passage { Passage(v, small: true, italic: true) } else { Text(v).font(Typo.serif(16.5)).foregroundStyle(Color.ink).fixedSize(horizontal: false, vertical: true) }
+                if passage { PassageText(v, small: true, italic: true) } else { Text(v).font(Typo.serif(16.5)).foregroundStyle(Color.ink).fixedSize(horizontal: false, vertical: true) }
             }
             .padding(.vertical, 12)
             .overlay(alignment: .top) { Rectangle().fill(Color.ruleSoft).frame(height: 1) }
@@ -241,7 +241,7 @@ struct AttemptsView: View {
                 ForEach(Array(previous.enumerated().reversed()), id: \.offset) { i, a in
                     VStack(alignment: .leading, spacing: 6) {
                         Meta(store.L("Attempt", "Versuch") + " \(i + 1)")
-                        Passage(a["text"].string, small: true, color: .ink2)
+                        PassageText(a["text"].string, small: true, color: .ink2)
                         if !a["coach"].string.isEmpty { CoachReply(text: a["coach"].string) }
                     }
                 }
