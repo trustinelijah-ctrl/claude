@@ -9,16 +9,17 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const html = fs.readFileSync(path.join(root, "web/index.html"), "utf8");
-const m = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
-if (!m) throw new Error("app script not found");
-let src = m[1].replace(/\bboot\(\);\s*$/, "");
+// The app is the largest inline <script>; later small scripts are add-ons.
+const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
+if (!scripts.length) throw new Error("app script not found");
+let src = scripts.reduce((a, b) => (b.length > a.length ? b : a)).replace(/\bboot\(\);\s*$/, "");
 
 const KEYS = ["SCRIPTURE","PASSAGES","MASTERY","CONCEPTS","MEMORY_SEED","RHETORIC","RH_FOLLOW",
   "SPEECH","SPEECH_CATS","SOURCES","SOURCE_CATS","CAPTURE_SEED","KINDS","ARGUMENTS","FORMATS",
   "WHO","DIFF","EVENING_Q","LESSONS","PLAIN","TRANSLATIONS","PLANS","PATH","CARDS","VOICES",
   "VOICE_KIND","FIGURES","MODES","MODE_TIER","DIFF_TIER","DEPTH","DEEPEN","THINK","QWHY",
   "MODULES","BUILDS","PLAN_Q","PLAN_DEPTH","PLAN_THINK","SAIDW","PQWHY","CONCEPT_FILL",
-  "PLATES","SOURCE_PACKS","REF_ALIAS"];
+  "PLATES","SOURCE_PACKS","REF_ALIAS","LESSON_IDS"];
 src += "\n;globalThis.__OUT = {" + KEYS.map(k => `${k}: typeof ${k} === "undefined" ? null : ${k}`).join(",") + "};";
 
 const noop = () => {};

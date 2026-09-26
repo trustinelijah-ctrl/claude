@@ -9,6 +9,14 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="LOGOS">
+<meta name="description" content="Learn the Christian and Stoic traditions side by side, and practise saying them aloud — in English and German.">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta property="og:title" content="LOGOS">
+<meta property="og:description" content="Christian and Stoic thought, learned to be spoken.">
+<meta property="og:image" content="/icons/icon-512.png">
 <title>LOGOS</title>
 <style>
 :root{
@@ -13312,6 +13320,165 @@ Object.assign(RH_FOLLOW, {
 applyExactPassages();
 
 boot();
+</script>
+<script src="/sync.js"></script>
+<script>
+/* ============================================================
+   LOGOS — web add-ons shared with the iOS app
+   1. Installable and usable offline (manifest + service worker).
+   2. Sync: the same end-to-end-encrypted scheme the iPhone app
+      uses, so progress moves between browser and phone.
+   Kept apart from the app above so that code stays as it was.
+   ============================================================ */
+(function(){
+  "use strict";
+  if(typeof S === "undefined" || typeof VIEWS === "undefined") return;
+
+  /* 1. offline */
+  if("serviceWorker" in navigator && location.protocol === "https:"){
+    window.addEventListener("load", function(){ navigator.serviceWorker.register("/sw.js").catch(function(){}); });
+  }
+
+  /* The coach sometimes bolds its labels; keep the "**" out of the text. */
+  if(typeof coachParse === "function"){
+    const baseParse = coachParse;
+    coachParse = function(txt){
+      const out = baseParse(txt);
+      if(out) Object.keys(out).forEach(function(k){ out[k] = String(out[k]).replace(/^\s*\*+\s*/, ""); });
+      return out;
+    };
+  }
+
+  /* 2. sync */
+  const SYNC_KEY = "logos.sync", LAST_KEY = "logos.sync.last";
+  function ls(k, v){
+    try{ if(v === undefined) return localStorage.getItem(k); if(v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); }catch(e){}
+    return null;
+  }
+  function code(){ return window.LogosSync ? LogosSync.normalize(ls(SYNC_KEY)) : null; }
+  function lastSync(){ return parseFloat(ls(LAST_KEY + ":" + (code() || "")) || "0") || 0; }
+  function setLast(v){ ls(LAST_KEY + ":" + (code() || ""), String(v)); }
+
+  /* Every save stamps the document, which is how sync tells who changed last. */
+  const baseSave = save;
+  save = function(){ if(S.d) S.d.modified = Date.now(); return baseSave.apply(this, arguments); };
+
+  const UI = {status:"", conflict:null, busy:false, show:false, entry:""};
+
+  function apply(remote){
+    try{ S.rollback = JSON.parse(JSON.stringify(S.d)); }catch(e){ S.rollback = null; }
+    S.d = remote.data; S.d.modified = remote.updated;
+    blankFill(); S.lang = S.d.lang || S.lang;
+    saveNow(); setLast(remote.updated);
+    UI.conflict = null;
+    UI.status = L("Brought in the synced copy. Undo is available below.", "Abgeglichene Kopie übernommen. Rückgängig ist unten möglich.");
+  }
+  async function push(){
+    const c = code(); if(!c) return;
+    const updated = Math.max(S.d.modified || 0, Date.now());
+    S.d.modified = S.d.modified || updated;
+    await LogosSync.push(c, S.d, updated);
+    setLast(updated); UI.conflict = null;
+    UI.status = L("Uploaded. Your other devices pick this up when they sync.", "Hochgeladen. Deine anderen Geräte übernehmen das beim nächsten Abgleich.");
+  }
+  function describe(e){
+    const m = String(e && e.message || e);
+    if(m === "wrong-code") return L("That code does not open the synced copy.", "Dieser Code öffnet die abgeglichene Kopie nicht.");
+    if(m === "corrupt") return L("The synced copy is unreadable. Nothing was changed here.", "Die abgeglichene Kopie ist unlesbar. Hier wurde nichts verändert.");
+    if(m.indexOf("server:") === 0) return L("The sync server answered "+m.slice(7)+". Nothing was changed.", "Der Abgleich-Server antwortete "+m.slice(7)+". Nichts wurde verändert.");
+    return L("No connection. Nothing was changed.", "Keine Verbindung. Nichts wurde verändert.");
+  }
+  /* quiet: used on open and on leaving the page; never asks, never overwrites on conflict */
+  async function syncNow(quiet){
+    const c = code(); if(!c || UI.busy) return;
+    UI.busy = true; if(!quiet){ UI.status = ""; render(); }
+    try{
+      const remote = await LogosSync.pull(c);
+      const plan = LogosSync.decide(S.d.modified || 0, remote ? remote.updated : null, lastSync());
+      if(plan === "push") await push();
+      else if(plan === "pull") apply(remote);
+      else if(plan === "upToDate") UI.status = quiet ? UI.status : L("Up to date.", "Auf dem neuesten Stand.");
+      else {
+        const fresh = !lastSync() && !(S.d.extra || []).length && !Object.keys(S.d.lessons || {}).length;
+        if(fresh) apply(remote); else UI.conflict = remote;
+      }
+    }catch(e){ if(!quiet) UI.status = describe(e); }
+    UI.busy = false;
+    render();
+  }
+
+  function syncBlock(){
+    const c = code();
+    let h = '<section class="block" id="sync"><div class="rubric" style="margin-bottom:8px">'+L("Sync with your phone","Mit deinem Telefon abgleichen")+'</div>'+
+      '<p class="meta" style="margin-bottom:14px">'+L("Carry your progress between this browser, the LOGOS iPhone app and other devices. It is encrypted here with a code only you hold; the server stores something it cannot read.",
+        "Nimm deinen Fortschritt zwischen diesem Browser, der LOGOS-iPhone-App und anderen Geräten mit. Er wird hier mit einem Code verschlüsselt, den nur du hast; der Server speichert etwas, das er nicht lesen kann.")+'</p>';
+    if(!window.LogosSync || !(window.crypto && crypto.subtle)){
+      return h + '<p class="meta">'+L("This browser cannot encrypt, so sync is unavailable here.","Dieser Browser kann nicht verschlüsseln; der Abgleich ist hier nicht verfügbar.")+'</p></section>';
+    }
+    if(c){
+      const shown = UI.show ? LogosSync.display(c) : "••••-••••-••••-••••-" + c.slice(16);
+      h += '<div class="answerbox"><div class="rubric" style="margin-bottom:8px">'+L("Your sync code","Dein Abgleich-Code")+'</div>'+
+        '<p style="font-family:var(--mono);font-size:18px;letter-spacing:.04em;user-select:all">'+esc(shown)+'</p>'+
+        '<div class="rowflex" style="gap:10px;margin-top:10px;flex-wrap:wrap">'+
+        '<button class="btn sm ghost" data-act="sync-show">'+(UI.show?L("Hide","Verbergen"):L("Show","Zeigen"))+'</button>'+
+        '<button class="btn sm ghost" data-act="sync-copy">'+L("Copy","Kopieren")+'</button></div>'+
+        '<p class="meta" style="margin-top:10px">'+L("Enter it in the app under Settings → Sync. Keep it like a password: anyone with it can read and replace your synced data.",
+          "Gib ihn in der App unter Einstellungen → Abgleich ein. Bewahre ihn wie ein Passwort auf: Wer ihn hat, kann deine abgeglichenen Daten lesen und ersetzen.")+'</p></div>'+
+        '<div style="margin-top:14px"><button class="btn wide solid" data-act="sync-now"'+(UI.busy?' disabled':'')+'>'+(UI.busy?L("Syncing…","Gleiche ab …"):L("Sync now","Jetzt abgleichen"))+'</button></div>';
+      if(lastSync()) h += '<p class="meta" style="margin-top:10px">'+L("Last synced","Zuletzt abgeglichen")+' '+esc(daysAgo(lastSync()))+'</p>';
+      if(UI.conflict){
+        h += '<div class="answerbox" style="margin-top:14px"><div class="rubric" style="margin-bottom:8px;color:var(--burgundy)">'+L("Both sides changed","Beide Seiten haben sich geändert")+'</div>'+
+          '<p class="meta">'+L("This browser and the synced copy were both changed since the last sync. Choose which to keep.","Dieser Browser und die abgeglichene Kopie wurden beide geändert. Wähle, was bleibt.")+'</p>'+
+          '<div class="rowflex" style="gap:10px;margin-top:12px;flex-wrap:wrap"><button class="btn sm solid" data-act="sync-keep">'+L("Keep this browser","Diesen Browser behalten")+'</button>'+
+          '<button class="btn sm" data-act="sync-take">'+L("Take the other","Die andere nehmen")+'</button></div></div>';
+      }
+      h += '<div style="margin-top:12px"><button class="linkish" data-act="sync-off">'+L("Turn off sync in this browser","Abgleich in diesem Browser ausschalten")+'</button></div>';
+    } else {
+      h += '<button class="btn wide" data-act="sync-on">'+L("Turn on sync","Abgleich einschalten")+'</button>'+
+        '<div style="margin-top:16px"><label class="lbl rubric">'+L("Or enter a code from the app","Oder einen Code aus der App eingeben")+'</label>'+
+        '<input class="field" data-bind="syncEntry" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD-EFGH-JKLM-NPQR-STUV" value="'+esc(UI.entry)+'" style="font-family:var(--mono)">'+
+        '<div style="margin-top:12px"><button class="btn wide ghost" data-act="sync-connect">'+L("Connect","Verbinden")+'</button></div></div>';
+    }
+    if(UI.status) h += '<p class="meta" style="margin-top:12px">'+esc(UI.status)+'</p>';
+    return h + '</section>';
+  }
+
+  const basePractice = VIEWS.practice;
+  VIEWS.practice = function(){
+    const h = basePractice();
+    const marker = '<section class="block"><button class="linkish" data-act="werkstatt">';
+    return h.indexOf(marker) >= 0 ? h.replace(marker, syncBlock() + marker) : h + syncBlock();
+  };
+
+  document.addEventListener("input", function(e){
+    if(e.target.getAttribute && e.target.getAttribute("data-bind") === "syncEntry") UI.entry = e.target.value;
+  });
+  document.addEventListener("click", function(e){
+    const b = e.target.closest && e.target.closest("[data-act]"); if(!b) return;
+    const a = b.getAttribute("data-act");
+    if(a === "sync-on"){ ls(SYNC_KEY, LogosSync.generate()); UI.show = true; UI.status = ""; syncNow(false); }
+    else if(a === "sync-connect"){
+      const c = LogosSync.normalize(UI.entry);
+      if(!c){ UI.status = L("That code is not complete — it has 20 letters and digits.","Der Code ist unvollständig — er hat 20 Buchstaben und Ziffern."); render(); return; }
+      ls(SYNC_KEY, c); UI.entry = ""; syncNow(false);
+    }
+    else if(a === "sync-now") syncNow(false);
+    else if(a === "sync-show"){ UI.show = !UI.show; render(); }
+    else if(a === "sync-copy"){ try{ navigator.clipboard.writeText(LogosSync.display(code())); toast(L("Copied.","Kopiert.")); }catch(err){} }
+    else if(a === "sync-keep"){ UI.busy = true; render(); push().catch(function(err){ UI.status = describe(err); }).then(function(){ UI.busy = false; render(); }); }
+    else if(a === "sync-take"){ if(UI.conflict){ apply(UI.conflict); render(); } }
+    else if(a === "sync-off"){ ls(SYNC_KEY, null); UI.status = ""; UI.conflict = null; render(); }
+  });
+
+  /* quiet sync when the app opens and when it is put away */
+  function whenReady(fn){ if(S.ready) fn(); else setTimeout(function(){ whenReady(fn); }, 300); }
+  whenReady(function(){ if(code()) syncNow(true); });
+  document.addEventListener("visibilitychange", function(){
+    if(document.visibilityState === "hidden" && code() && S.d && (S.d.modified || 0) > lastSync()){
+      push().catch(function(){});
+    }
+  });
+})();
 </script>
 </body>
 </html>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+ <defs><filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="3" seed="7"/><feColorMatrix values="0 0 0 0 0.14  0 0 0 0 0.12  0 0 0 0 0.1  0 0 0 .08 0"/></filter>
+ <radialGradient id="g" cx="50%" cy="40%" r="75%"><stop offset="0" stop-color="#F6F2E8"/><stop offset="1" stop-color="#E6DCC7"/></radialGradient></defs>
+ <rect width="1024" height="1024" fill="url(#g)"/><rect width="1024" height="1024" filter="url(#n)"/>
+ <g transform="translate(-136 33.599999999999966) scale(5.4)" fill="none" stroke="#8A6A2F" color="#8A6A2F" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="120" cy="52" r="18"/><path d="M120 20v-8M120 92v8M88 52h-8M160 52h8M99 31l-6-6M141 31l6-6M99 73l-6 6M141 73l6 6" opacity=".6"/><path d="M74 100c8-6 15-6 23 0s15 6 23 0 15-6 23 0 15 6 23 0"/><path d="M74 110c8-6 15-6 23 0s15 6 23 0 15-6 23 0 15 6 23 0" opacity=".5"/></g>
+ <text x="512" y="810" text-anchor="middle" font-family="Iowan Old Style, Palatino, Georgia, serif" font-weight="700" font-size="112" letter-spacing="34" dx="17" fill="#23201C">LOGOS</text>
+</svg>

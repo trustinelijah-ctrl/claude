@@ -1,0 +1,73 @@
+name: LOGOS
+
+on:
+  push:
+    paths: ["logos/**", ".github/workflows/logos.yml"]
+  pull_request:
+    paths: ["logos/**", ".github/workflows/logos.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: logos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Web + corpus
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: logos } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      - name: Corpus is in sync with the web app
+        run: |
+          npm run corpus
+          git diff --exit-code -- content/corpus.json || (echo "::error::content/corpus.json is stale — run 'npm run corpus' in logos/ and commit" && exit 1)
+      - name: Web checks
+        run: npm run check
+      - name: Build (as Netlify does)
+        run: npm run build && test -s web/corpus.json
+
+  ios:
+    name: iOS app
+    runs-on: macos-15
+    defaults: { run: { working-directory: logos/ios } }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: xcodebuild -version && swift --version
+      - name: Core tests (model layer, against the real corpus)
+        run: swift test
+      - name: Generate Xcode project
+        run: brew install xcodegen && xcodegen generate
+      - name: Build for simulator
+        run: |
+          xcodebuild -project Logos.xcodeproj -scheme Logos -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO build > build.log 2>&1 || { grep -E "error:" build.log | sort -u | head -150; tail -40 build.log; exit 1; }
+          grep -E "warning:" build.log | grep -v "appintents" | sort -u | head -60 || true
+          tail -3 build.log
+      - name: Screenshots
+        run: |
+          set -x
+          UDID=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k,v in sorted(d.items(), reverse=True) if 'iOS' in k for x in v if x['name'].startswith('iPhone 16') or x['name'].startswith('iPhone 17')))")
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          APP=$(find build/Build/Products -name "LOGOS.app" -maxdepth 3 | head -1)
+          xcrun simctl install "$UDID" "$APP"
+          xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --batteryLevel 100 || true
+          mkdir -p shots
+          xcrun simctl launch "$UDID" school.logos.app; sleep 6
+          xcrun simctl io "$UDID" screenshot shots/1-today.png
+          for route in lesson path review voice/augustine figure/antithesis concept/control sync; do
+            xcrun simctl openurl "$UDID" "logos://$route"; sleep 4
+            xcrun simctl io "$UDID" screenshot "shots/$(echo $route | tr '/' '-').png"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-screenshots
+          path: logos/ios/shots
+          if-no-files-found: ignore

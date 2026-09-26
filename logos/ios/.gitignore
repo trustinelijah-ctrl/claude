@@ -1,0 +1,7 @@
+.swift-sealed.json
+.build/
+.swiftpm/
+Package.resolved
+Logos.xcodeproj/
+build/
+shots/
