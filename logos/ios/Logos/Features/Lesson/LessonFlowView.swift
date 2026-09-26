@@ -77,10 +77,10 @@ struct LessonFlowView: View {
         }
         Block(rule: false) {
             Button(store.L("Begin (6 min)", "Beginnen (6 Min.)"), action: advance).buttonStyle(.solid)
-            HStack(spacing: 10) {
-                Button(store.L("Choose a different topic", "Anderes Thema wählen")) { router.push(.pickLesson) }.buttonStyle(.ghostSmall)
-                Button(store.L("Skip to practice", "Zum Üben")) { router.tab = .practice }.buttonStyle(.ghostSmall)
-            }.padding(.top, 12)
+            HStack(spacing: 22) {
+                LinkButton(title: store.L("Choose a different topic", "Anderes Thema wählen")) { router.push(.pickLesson) }
+                LinkButton(title: store.L("Skip to practice", "Zum Üben")) { router.tab = .practice }
+            }.padding(.top, 16)
         }
     }
 
