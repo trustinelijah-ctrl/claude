@@ -58,7 +58,7 @@ Figures are estimates from public pricing as of September 2026; check [Gemini pr
 
 ## Notes
 
-- Verdicts are keyed by `(barcode, rubric_version, language)`. Bump `Verdict.rubricVersion` in the app when the scoring rules change.
+- Verdicts are keyed by `(barcode, rubric_version, language, score-payload hash)`. Bump `Verdict.rubricVersion` in the app when the scoring rules change.
 - Product facts for the prompt come from Open Food Facts or the `products` table, never from the client. Only the already-computed score is sent by the app, and it's clamped and trimmed.
 - Community label reads are stored first-write-wins. Add moderation (e.g. require two matching reads) before scaling.
 - Security details (rate limits, cache-poisoning protection, prompt-injection guard) are in [docs/SECURITY.md](../docs/SECURITY.md).
