@@ -190,7 +190,7 @@ struct CameraUnavailableBackdrop: View {
                 Image(systemName: "camera.metering.unknown")
                     .font(.system(size: 34, weight: .light))
                 Text("Camera unavailable")
-                    .font(HF.Font.display(20))
+                    .hfDisplay(20)
                 Text("Use a real device, or type a barcode below.")
                     .font(HF.Font.callout)
                     .foregroundStyle(.white.opacity(0.6))

@@ -52,14 +52,15 @@ struct ScoreBadge: View {
     var body: some View {
         let tier = ScoreTier(score: score)
         ZStack {
-            Circle().stroke(tier.color.opacity(0.18), lineWidth: size * 0.09)
+            Circle().stroke(HF.Palette.ink.opacity(0.08), lineWidth: size * 0.08)
             Circle()
                 .trim(from: 0, to: CGFloat(score) / 100)
-                .stroke(tier.color, style: StrokeStyle(lineWidth: size * 0.09, lineCap: .round))
+                .stroke(tier.color, style: StrokeStyle(lineWidth: size * 0.08, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Text("\(score)")
-                .font(.system(size: size * 0.36, weight: .semibold, design: .serif).monospacedDigit())
-                .foregroundStyle(HF.Palette.ink)
+                .font(.system(size: size * 0.36, weight: .bold).monospacedDigit())
+                .tracking(-0.4)
+                .foregroundStyle(tier.color)
         }
         .frame(width: size, height: size)
         .accessibilityElement(children: .ignore)

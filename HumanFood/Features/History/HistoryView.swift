@@ -4,7 +4,6 @@ import SwiftUI
 struct HistoryView: View {
     @Environment(AppServices.self) private var services
     @Environment(\.modelContext) private var context
-    @Environment(\.dismiss) private var dismiss
     @Query(sort: \ScanRecord.lastScannedAt, order: .reverse) private var records: [ScanRecord]
 
     enum Filter: String, CaseIterable, Identifiable {
@@ -31,67 +30,58 @@ struct HistoryView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            List {
-                Section {
-                    StatsHeader(records: records, streak: services.streak.days)
-                        .listRowInsets(EdgeInsets())
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
-
-                    Picker("Filter", selection: $filter) {
-                        ForEach(Filter.allCases) { Text($0.rawValue).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
+        List {
+            Section {
+                StatsHeader(records: records, streak: services.streak.days)
+                    .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 8, leading: HF.Space.gutter, bottom: 8, trailing: HF.Space.gutter))
-                }
 
-                if filtered.isEmpty {
-                    EmptyHistory(hasAny: !records.isEmpty)
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
+                Picker("Filter", selection: $filter) {
+                    ForEach(Filter.allCases) { Text($0.rawValue).tag($0) }
                 }
+                .pickerStyle(.segmented)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 8, leading: HF.Space.gutter, bottom: 8, trailing: HF.Space.gutter))
+            }
 
-                ForEach(filtered) { record in
-                    Button {
-                        Haptics.tap()
-                        selected = AnalysisModel.from(record: record, services: services)
-                    } label: {
-                        HistoryRow(record: record)
-                    }
-                    .buttonStyle(.plain)
+            if filtered.isEmpty {
+                EmptyHistory(hasAny: !records.isEmpty)
                     .listRowBackground(Color.clear)
-                    .listRowSeparatorTint(HF.Palette.hairline)
-                    .listRowInsets(EdgeInsets(top: 10, leading: HF.Space.gutter, bottom: 10, trailing: HF.Space.gutter))
-                    .swipeActions {
-                        Button(role: .destructive) {
-                            context.delete(record)
-                            try? context.save()
-                        } label: { Label("Delete", systemImage: "trash") }
-                        Button {
-                            record.isFavorite.toggle()
-                            try? context.save()
-                        } label: { Label("Favourite", systemImage: record.isFavorite ? "heart.slash" : "heart") }
-                            .tint(HF.Palette.accent)
-                    }
+                    .listRowSeparator(.hidden)
+            }
+
+            ForEach(filtered) { record in
+                Button {
+                    Haptics.tap()
+                    selected = AnalysisModel.from(record: record, services: services)
+                } label: {
+                    HistoryRow(record: record)
+                }
+                .buttonStyle(.plain)
+                .listRowBackground(Color.clear)
+                .listRowSeparatorTint(HF.Palette.hairline)
+                .listRowInsets(EdgeInsets(top: 10, leading: HF.Space.gutter, bottom: 10, trailing: HF.Space.gutter))
+                .swipeActions {
+                    Button(role: .destructive) {
+                        context.delete(record)
+                        try? context.save()
+                    } label: { Label("Delete", systemImage: "trash") }
+                    Button {
+                        record.isFavorite.toggle()
+                        try? context.save()
+                    } label: { Label("Favourite", systemImage: record.isFavorite ? "heart.slash" : "heart") }
+                        .tint(HF.Palette.accent)
                 }
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
-            .background(HF.Palette.canvas.ignoresSafeArea())
-            .searchable(text: $search, prompt: "Search your foods")
-            .navigationTitle("History")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(HF.Palette.ink)
-                }
-            }
-            .sheet(item: $selected) { ProductResultView(model: $0, animateReveal: false) }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(HF.Palette.canvas.ignoresSafeArea())
+        .searchable(text: $search, prompt: "Search your foods")
+        .navigationTitle("History")
+        .sheet(item: $selected) { ProductResultView(model: $0, animateReveal: false) }
     }
 }
 
@@ -168,7 +158,7 @@ private struct EmptyHistory: View {
                 .font(.system(size: 36, weight: .light))
                 .foregroundStyle(HF.Palette.inkTertiary)
             Text(hasAny ? "Nothing matches" : "Your first scan is waiting")
-                .font(HF.Font.display(20))
+                .hfDisplay(20)
             Text(hasAny ? "Try another filter or search." : "Everything you scan lands here, ready to revisit offline.")
                 .font(HF.Font.callout)
                 .foregroundStyle(HF.Palette.inkSecondary)

@@ -53,15 +53,14 @@ struct OnboardingView: View {
     private var intro: some View {
         VStack(alignment: .leading, spacing: 18) {
             Spacer()
-            Image(systemName: "leaf")
-                .font(.system(size: 34, weight: .light))
-                .foregroundStyle(HF.Palette.accent)
+            DotLabel(text: "Human Food")
             Text("Eat like\na human.")
-                .font(HF.Font.display(54))
+                .font(.system(size: 58, weight: .heavy))
+                .tracking(-2.6)
                 .foregroundStyle(HF.Palette.ink)
-                .lineSpacing(-4)
             Text("Scan anything in the aisle and see, in a second, how close it is to real food.")
                 .font(.system(size: 19))
+                .tracking(-0.3)
                 .foregroundStyle(HF.Palette.inkSecondary)
             Spacer()
             Spacer()
@@ -79,7 +78,7 @@ struct OnboardingView: View {
             }
             VStack(spacing: 10) {
                 Text("One number.\nThe whole story.")
-                    .font(HF.Font.display(34))
+                    .hfDisplay(36, weight: .heavy)
                     .multilineTextAlignment(.center)
                 Text("0 to 100, built from processing, nutrients, ingredients and additives — with healthier swaps whenever there's a better choice.")
                     .font(HF.Font.body)
@@ -95,7 +94,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 22) {
             Spacer()
             Text("Built on\nwhole-food science.")
-                .font(HF.Font.display(38))
+                .hfDisplay(40, weight: .heavy)
                 .foregroundStyle(HF.Palette.ink)
             VStack(alignment: .leading, spacing: 16) {
                 principle("leaf", "Whole foods over ultra-processed")

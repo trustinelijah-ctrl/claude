@@ -1,39 +1,51 @@
 import SwiftUI
 import UIKit
 
-/// Human Food design tokens. Warm bone canvas, near-black ink, editorial serif
-/// numerals and a muted, food-inspired score spectrum.
+/// Human Food design tokens. Cool paper canvas, green-black ink, heavy SF Pro
+/// headlines with tight tracking, monospaced tracked labels and a clean,
+/// food-inspired score spectrum.
 enum HF {
     enum Palette {
-        static let canvas = Color(light: 0xF4F2EC, dark: 0x0D0D0B)
-        static let surface = Color(light: 0xFFFFFF, dark: 0x191916)
-        static let surfaceRaised = Color(light: 0xFBFAF6, dark: 0x22221E)
-        static let ink = Color(light: 0x141412, dark: 0xF3F1EA)
-        static let inkSecondary = Color(light: 0x6B6A64, dark: 0x9C9A92)
-        static let inkTertiary = Color(light: 0xA3A198, dark: 0x5E5D57)
-        static let hairline = Color(light: 0x141412, dark: 0xF3F1EA).opacity(0.08)
-        static let accent = Color(light: 0x2F5A43, dark: 0x8CC49F)
+        static let canvas = Color(light: 0xF4F4F1, dark: 0x0B0D0C)
+        static let surface = Color(light: 0xFFFFFF, dark: 0x171A18)
+        static let surfaceRaised = Color(light: 0xF9F9F7, dark: 0x1F2320)
+        /// Light grey tiles ("Compare", summary rows).
+        static let surfaceMuted = Color(light: 0xECECE8, dark: 0x202522)
+        static let ink = Color(light: 0x0E1411, dark: 0xF1F3F0)
+        static let inkSecondary = Color(light: 0x6C716D, dark: 0x9BA29D)
+        static let inkTertiary = Color(light: 0xA4A9A5, dark: 0x5F6662)
+        static let hairline = Color(light: 0x0E1411, dark: 0xF1F3F0).opacity(0.07)
+        static let accent = Color(light: 0x1C8C4E, dark: 0x3FC47A)
+        /// Mint wash used on the home hero card.
+        static let mint = Color(light: 0xD7EEDF, dark: 0x16311F)
+        /// Deep green-black of the primary "Scan" tile.
+        static let forest = Color(light: 0x0D1812, dark: 0x0D1812)
+        static let forestLight = Color(light: 0x1C2C23, dark: 0x1E3327)
 
-        static let excellent = Color(light: 0x2E8A57, dark: 0x4CC482)
-        static let good = Color(light: 0x7FA43A, dark: 0xA6CF5B)
-        static let fair = Color(light: 0xD9A22B, dark: 0xF0BE4E)
-        static let limit = Color(light: 0xDD7433, dark: 0xF2925A)
-        static let rarely = Color(light: 0xC24A36, dark: 0xE8705C)
+        static let excellent = Color(light: 0x1C8C4E, dark: 0x3FC47A)
+        static let good = Color(light: 0x6FA83A, dark: 0x98CF5E)
+        static let fair = Color(light: 0xE0A526, dark: 0xF2BE4A)
+        static let limit = Color(light: 0xE7722E, dark: 0xF59255)
+        static let rarely = Color(light: 0xD2402F, dark: 0xF06A58)
     }
 
     enum Font {
-        static func display(_ size: CGFloat, weight: SwiftUI.Font.Weight = .regular) -> SwiftUI.Font {
-            .system(size: size, weight: weight, design: .serif)
+        /// Heavy SF Pro display face. Pair with `.tracking(-size * 0.035)` (see `hfDisplay`).
+        static func display(_ size: CGFloat, weight: SwiftUI.Font.Weight = .bold) -> SwiftUI.Font {
+            .system(size: size, weight: weight)
         }
         static func numeral(_ size: CGFloat) -> SwiftUI.Font {
-            .system(size: size, weight: .regular, design: .serif).monospacedDigit()
+            .system(size: size, weight: .bold).monospacedDigit()
         }
-        static let title = SwiftUI.Font.system(size: 28, weight: .regular, design: .serif)
+        static func mono(_ size: CGFloat, weight: SwiftUI.Font.Weight = .medium) -> SwiftUI.Font {
+            .system(size: size, weight: weight, design: .monospaced)
+        }
+        static let title = SwiftUI.Font.system(size: 30, weight: .bold)
         static let headline = SwiftUI.Font.system(size: 17, weight: .semibold)
         static let body = SwiftUI.Font.system(size: 16, weight: .regular)
-        static let callout = SwiftUI.Font.system(size: 14, weight: .regular)
+        static let callout = SwiftUI.Font.system(size: 15, weight: .regular)
         static let caption = SwiftUI.Font.system(size: 12, weight: .medium)
-        static let eyebrow = SwiftUI.Font.system(size: 11, weight: .semibold)
+        static let eyebrow = SwiftUI.Font.system(size: 12, weight: .medium, design: .monospaced)
     }
 
     enum Space {
@@ -46,8 +58,9 @@ enum HF {
     }
 
     enum Radius {
-        static let card: CGFloat = 22
-        static let control: CGFloat = 16
+        static let card: CGFloat = 28
+        static let hero: CGFloat = 34
+        static let control: CGFloat = 18
         static let chip: CGFloat = 12
     }
 
@@ -88,7 +101,7 @@ struct CardBackground: ViewModifier {
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(HF.Palette.surface, in: RoundedRectangle(cornerRadius: HF.Radius.card, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: HF.Radius.card, style: .continuous).strokeBorder(HF.Palette.hairline))
+            .shadow(color: .black.opacity(0.035), radius: 18, y: 6)
     }
 }
 
@@ -96,7 +109,7 @@ struct Eyebrow: ViewModifier {
     func body(content: Content) -> some View {
         content
             .font(HF.Font.eyebrow)
-            .tracking(1.6)
+            .tracking(3)
             .textCase(.uppercase)
             .foregroundStyle(HF.Palette.inkSecondary)
     }
@@ -105,6 +118,40 @@ struct Eyebrow: ViewModifier {
 extension View {
     func hfCard(padding: CGFloat = HF.Space.m + 4) -> some View { modifier(CardBackground(padding: padding)) }
     func eyebrow() -> some View { modifier(Eyebrow()) }
+
+    /// Heavy, tightly tracked headline — the signature type style.
+    func hfDisplay(_ size: CGFloat, weight: Font.Weight = .bold) -> some View {
+        font(HF.Font.display(size, weight: weight)).tracking(-size * 0.035)
+    }
+}
+
+/// "● BEGIN" style label: coloured dot + monospaced tracked caps.
+struct DotLabel: View {
+    var text: String
+    var color: Color = HF.Palette.accent
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Circle().fill(color).frame(width: 7, height: 7)
+            Text(text).eyebrow()
+        }
+    }
+}
+
+/// Monospaced eyebrow above a heavy section title, as in "SUMMARY / What you need to know".
+struct SectionTitle: View {
+    var eyebrow: String
+    var title: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(eyebrow).eyebrow()
+            Text(title)
+                .hfDisplay(28)
+                .foregroundStyle(HF.Palette.ink)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
 }
 
 /// Subtle press-down feel used on every tappable surface.
@@ -130,6 +177,7 @@ struct PrimaryButtonStyle: ButtonStyle {
             .padding(.vertical, 17)
             .background(tint, in: Capsule())
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .opacity(configuration.isPressed ? 0.92 : 1)
             .animation(HF.Motion.snappy, value: configuration.isPressed)
     }
 }
@@ -141,8 +189,7 @@ struct SecondaryButtonStyle: ButtonStyle {
             .foregroundStyle(HF.Palette.ink)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 15)
-            .background(HF.Palette.surface, in: Capsule())
-            .overlay(Capsule().strokeBorder(HF.Palette.hairline))
+            .background(HF.Palette.surfaceMuted, in: Capsule())
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(HF.Motion.snappy, value: configuration.isPressed)
     }

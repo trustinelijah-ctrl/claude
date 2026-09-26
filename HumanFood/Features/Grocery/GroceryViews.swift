@@ -122,7 +122,7 @@ struct GroceryRankingView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: HF.Space.l) {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Your basket, ranked").font(HF.Font.display(32))
+                        Text("Your basket, ranked").hfDisplay(32)
                         if let avg = average {
                             Text("Average score \(avg) · \(ranked.count) items")
                                 .font(HF.Font.callout)
@@ -238,7 +238,7 @@ private struct SwapHint: View {
             Text("One easy upgrade").eyebrow()
             Text(idea.map { "Try \($0.title.lowercased()) instead of your lowest-rated item." }
                  ?? "Look for a version with fewer ingredients.")
-                .font(HF.Font.display(20))
+                .hfDisplay(20)
                 .foregroundStyle(HF.Palette.ink)
             if let reason = idea?.reason {
                 Text(reason).font(HF.Font.callout).foregroundStyle(HF.Palette.inkSecondary)

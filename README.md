@@ -2,12 +2,15 @@
 
 *Eat like a human.* A premium, minimalist SwiftUI food scanner. Point it at a barcode and get a **0–100 score**, a plain-language verdict, the ingredients and nutrients decoded, and **healthier swaps**. Grocery mode ranks a whole basket at once.
 
-The design takes after **Scout** (a camera-first home with Barcode / Label / Grocery modes, a prominent score, collapsible "good / worth knowing" sections and a "healthier alternatives" section). It combines the best parts of Yuka (additive tiers, alternatives), Bobby Approved (ingredient red flags), Fig (a personal avoid list) and Olive (AI explanations). Every score is built on whole-food, plant-forward research (Campbell, Pollan, Greger, NOVA).
+The design takes after **Scout**: heavy SF Pro headlines, monospaced tracked labels, a mint "Scan a product." hero, a compact score dial beside the product photo, a tappable summary list (Beneficial ingredients · Worth watching · Processing), and a tab bar (Home · Shelf · You) with a floating green Scan button that opens the Barcode / Label / Grocery camera. It combines the best parts of Yuka (additive tiers, alternatives), Bobby Approved (ingredient red flags), Fig (a personal avoid list) and Olive (AI explanations). Every score is built on whole-food, plant-forward research (Campbell, Pollan, Greger, NOVA).
 
 ## Features
 
+- **Home** — "Scan a product." hero (pull down anywhere to scan), Scan / Compare tiles, recent scans, how it works.
+- **Shelf** — "Rank a shelf" plus your keepers (70+) and items worth swapping next, each with a suggested swap.
+- **You** — stats, history, streaks and settings.
 - **Instant scan** — VisionKit barcode scanner, with a breathing viewfinder that snaps and flashes on lock.
-- **The reveal** — the ring sweeps while the serif numeral counts up with rising haptic ticks. The colour moves through the tiers, then locks with a bloom. Good scores burst into leaves, and 85+ scores get stamped with the **HUMAN FOOD** seal. Then a toast: *"Food #27 decoded · 5-day streak"*.
+- **The reveal** — a full-screen ring sweeps while the number counts up with rising haptic ticks, then flies into the header dial. The colour moves through the tiers, then locks with a bloom. Good scores burst into leaves, and 85+ scores get stamped with the **HUMAN FOOD** seal. Then a toast: *"Food #27 decoded · 5-day streak"*.
 - **Score 0–100** — deterministic and explainable, computed on the device ([docs/SCORING.md](docs/SCORING.md)).
 - **Our take** — a short AI-written verdict, generated **once per product for all users** and cached. It falls back to a built-in writer when offline.
 - **What's good / Worth knowing** — every point added or removed, with its reason. Tap a row for the detail.
@@ -52,14 +55,17 @@ If the project won't open in your Xcode version, regenerate it: `brew install xc
 
 ```
 HumanFood/
-  App/              HumanFoodApp, RootView
+  App/              HumanFoodApp, RootView, MainTabView
   DesignSystem/     Theme tokens, haptics, ScoreRing, ParticleBurst, shared components
   Models/           Product, ScoreResult, Verdict, ScanRecord (SwiftData)
   Scoring/          ScoringEngine, AdditiveCatalog
   Services/         OpenFoodFactsClient, VerdictService (+ backend / Gemini), AlternativesService,
                     LocalVerdictWriter, SafeLanguage, Preferences, AppServices
   Features/
-    Scanner/        Camera home, modes, viewfinder, label capture, manual entry
+    Home/           Home tab (hero, tiles, recent, pull-to-scan)
+    Shelf/          Shelf tab (compare, keepers, swap next)
+    You/            You tab (stats, history, settings)
+    Scanner/        Full-screen camera, modes, viewfinder, label capture, manual entry
     Result/         ScoreHero reveal, result screen, sections
     Grocery/        Basket, tray, ranking podium
     History/        History list and stats

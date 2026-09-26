@@ -7,6 +7,8 @@ struct ScoreHero: View {
     let score: Int
     var animate: Bool = true
     var size: CGFloat = 228
+    /// When set, the ring can fly into the result header's dial (matched geometry).
+    var namespace: Namespace.ID? = nil
     var onFinished: () -> Void = {}
 
     @State private var value: Double = 0
@@ -29,17 +31,18 @@ struct ScoreHero: View {
                 RippleBurst(trigger: burst, color: finalTier.color)
                     .frame(width: size, height: size)
 
-                ScoreRing(value: value, lineWidth: size * 0.06)
+                ScoreRing(value: value, lineWidth: size * 0.055)
                     .frame(width: size, height: size)
 
                 VStack(spacing: 2) {
                     Text("\(Int(value.rounded()))")
                         .font(HF.Font.numeral(size * 0.36))
-                        .foregroundStyle(HF.Palette.ink)
+                        .tracking(-size * 0.012)
+                        .foregroundStyle(liveTier.color)
                         .contentTransition(.numericText(value: value))
+                        .animation(.easeInOut(duration: 0.25), value: liveTier)
                     Text("out of 100")
-                        .font(HF.Font.caption)
-                        .foregroundStyle(HF.Palette.inkTertiary)
+                        .eyebrow()
                 }
                 .scaleEffect(locked ? 1 : 0.94)
 
@@ -58,13 +61,14 @@ struct ScoreHero: View {
                 }
             }
             .frame(width: size, height: size)
+            .modifier(MatchedDial(namespace: namespace))
             .scaleEffect(locked ? 1 : 0.97)
 
             VStack(spacing: 8) {
                 TierPill(tier: liveTier)
                     .animation(HF.Motion.snappy, value: liveTier)
                 Text(finalTier.phrase)
-                    .font(HF.Font.display(22))
+                    .hfDisplay(22)
                     .foregroundStyle(HF.Palette.ink)
                     .opacity(locked ? 1 : 0)
                     .offset(y: locked ? 0 : 6)
@@ -113,6 +117,18 @@ struct ScoreHero: View {
             Haptics.lock()
         }
         onFinished()
+    }
+}
+
+struct MatchedDial: ViewModifier {
+    var namespace: Namespace.ID?
+
+    func body(content: Content) -> some View {
+        if let namespace {
+            content.matchedGeometryEffect(id: "dial", in: namespace)
+        } else {
+            content
+        }
     }
 }
 

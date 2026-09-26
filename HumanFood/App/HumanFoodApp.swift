@@ -21,7 +21,7 @@ struct RootView: View {
     var body: some View {
         ZStack {
             if services.preferences.hasOnboarded {
-                ScannerScreen()
+                MainTabView()
                     .transition(.opacity)
             } else {
                 OnboardingView {

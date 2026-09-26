@@ -1,110 +1,210 @@
-import SwiftUI
 import SwiftData
+import SwiftUI
 
+/// Result screen. New scans open on a full-screen reveal (the ring counts up,
+/// bursts, stamps), then the ring flies into the header dial and the details rise in.
 struct ProductResultView: View {
     @Environment(AppServices.self) private var services
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    @Bindable var model: AnalysisModel
-    var animateReveal: Bool = true
+    var model: AnalysisModel
+    var animateReveal: Bool
 
-    @State private var revealed = false
+    private enum Stage { case reveal, settled }
+
+    @State private var stage: Stage
+    @State private var didSetUp = false
     @State private var toast: RewardToast.Content?
     @State private var nested: AnalysisModel?
     @State private var foodsDecoded = 0
+    @Namespace private var dialSpace
+
+    init(model: AnalysisModel, animateReveal: Bool = true) {
+        self.model = model
+        self.animateReveal = animateReveal
+        _stage = State(initialValue: animateReveal ? .reveal : .settled)
+    }
+
+    private var tier: ScoreTier { model.score.tier }
 
     var body: some View {
         ZStack(alignment: .top) {
             HF.Palette.canvas.ignoresSafeArea()
 
             ScrollView {
-                VStack(spacing: HF.Space.l) {
+                VStack(alignment: .leading, spacing: 0) {
                     header
-                    ScoreHero(score: model.score.score, animate: animateReveal && !reduceMotion) {
-                        withAnimation(HF.Motion.soft) { revealed = true }
-                        celebrate()
-                    }
-                    .padding(.top, HF.Space.s)
-                    .padding(.bottom, HF.Space.m)
+                    verdictLine
+                        .padding(.top, 22)
 
                     Group {
                         allergenBanner
+                        SummaryListCard(score: model.score)
+                            .padding(.top, 26)
+
+                        SectionTitle(eyebrow: "Summary", title: "What you need to know")
+                            .padding(.top, 44)
                         VerdictCard(verdict: model.verdict, confidence: model.score.confidence)
-                        if let note = model.score.capNote { capNoteView(note) }
-                        FactorSection(title: "What's good", factors: model.score.positives, emptyText: "Nothing stood out on the plus side.")
-                        FactorSection(title: "Worth knowing", factors: model.score.considerations, emptyText: "Nothing notable to flag.")
-                        NutritionCard(product: model.product)
-                        IngredientsCard(product: model.product)
+                            .padding(.top, 18)
+                        if let note = model.score.capNote {
+                            Label(note, systemImage: "info.circle")
+                                .font(.system(size: 14))
+                                .foregroundStyle(HF.Palette.inkSecondary)
+                                .padding(.top, 14)
+                                .padding(.horizontal, 6)
+                        }
+
                         AlternativesSection(model: model) { nested = $0 }
+                            .padding(.top, 44)
+
+                        SectionTitle(eyebrow: "Nutrition", title: model.product.isBeverage ? "Per 100 ml" : "Per 100 g")
+                            .padding(.top, 44)
+                        NutritionCard(product: model.product)
+                            .padding(.top, 18)
+
+                        SectionTitle(eyebrow: "Ingredients", title: "What's inside")
+                            .padding(.top, 44)
+                        IngredientsCard(product: model.product)
+                            .padding(.top, 18)
+
                         footer
+                            .padding(.top, 36)
                     }
-                    .opacity(revealed || !animateReveal ? 1 : 0)
-                    .offset(y: revealed || !animateReveal ? 0 : 24)
+                    .opacity(stage == .settled ? 1 : 0)
+                    .offset(y: stage == .settled ? 0 : 40)
                 }
                 .padding(.horizontal, HF.Space.gutter)
-                .padding(.top, 56)
+                .padding(.top, 28)
                 .padding(.bottom, 48)
             }
             .scrollIndicators(.hidden)
+            .scrollDisabled(stage == .reveal)
 
-            topBar
+            if stage == .reveal {
+                revealStage
+                    .transition(.opacity)
+            }
 
             if let toast {
                 RewardToast(content: toast)
-                    .padding(.top, 58)
+                    .padding(.top, 10)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
         .task { await model.load(services: services, context: context) }
-        .sheet(item: $nested) { ProductResultView(model: $0) }
+        .sheet(item: $nested) { ProductResultView(model: $0, animateReveal: false) }
         .onAppear {
+            guard !didSetUp else { return }
+            didSetUp = true
             foodsDecoded = (try? context.fetchCount(FetchDescriptor<ScanRecord>())) ?? 0
-            if !animateReveal { revealed = true }
+            if reduceMotion && animateReveal {
+                stage = .settled
+                celebrate()
+            }
         }
     }
 
-    // MARK: Pieces
+    // MARK: - Reveal
 
-    private var topBar: some View {
-        HStack {
-            Capsule().fill(HF.Palette.ink.opacity(0.15)).frame(width: 36, height: 5)
-                .frame(maxWidth: .infinity)
-                .overlay(alignment: .trailing) {
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(HF.Palette.ink)
-                            .frame(width: 32, height: 32)
-                            .background(HF.Palette.ink.opacity(0.06), in: Circle())
-                    }
-                    .buttonStyle(PressableStyle())
-                    .accessibilityLabel("Close")
+    private var revealStage: some View {
+        ZStack {
+            HF.Palette.canvas.ignoresSafeArea()
+            VStack(spacing: 30) {
+                Spacer()
+                VStack(spacing: 10) {
+                    ProductThumb(url: model.product.imageURL, size: 64, corner: 18)
+                    Text(model.product.name)
+                        .font(.system(size: 20, weight: .bold))
+                        .tracking(-0.5)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .padding(.horizontal, 40)
                 }
+                ScoreHero(score: model.score.score, size: 250, namespace: dialSpace) {
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(650))
+                        withAnimation(.spring(response: 0.62, dampingFraction: 0.84)) { stage = .settled }
+                        celebrate()
+                    }
+                }
+                Spacer()
+                Spacer()
+            }
         }
-        .padding(.horizontal, HF.Space.gutter)
-        .padding(.top, 12)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            // Impatient? Tap to skip straight to the details.
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.86)) { stage = .settled }
+        }
     }
+
+    // MARK: - Header (photo · name · dial)
 
     private var header: some View {
-        HStack(spacing: 14) {
-            ProductThumb(url: model.product.imageURL, size: 72, corner: 18)
-            VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .top, spacing: 16) {
+            ProductThumb(url: model.product.imageURL, size: 112, corner: 28)
+                .overlay(alignment: .topLeading) {
+                    FloatingCircleButton(action: { dismiss() }) {
+                        Image(systemName: "arrow.left")
+                    }
+                    .offset(x: -6, y: -6)
+                    .accessibilityLabel("Close")
+                }
+
+            VStack(alignment: .leading, spacing: 6) {
                 if let brand = model.product.displayBrand {
                     Text(brand).eyebrow().lineLimit(1)
                 }
                 Text(model.product.name)
-                    .font(HF.Font.display(24))
+                    .font(.system(size: 26, weight: .bold))
+                    .tracking(-0.9)
                     .foregroundStyle(HF.Palette.ink)
                     .lineLimit(3)
-                    .minimumScaleFactor(0.8)
-                if let quantity = model.product.quantity, !quantity.isEmpty {
-                    Text(quantity).font(HF.Font.callout).foregroundStyle(HF.Palette.inkSecondary)
+                    .minimumScaleFactor(0.75)
+            }
+            .padding(.top, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            ZStack {
+                if stage == .settled {
+                    ScoreDial(score: model.score.score, size: 92)
+                        .matchedGeometryEffect(id: "dial", in: dialSpace)
+                } else {
+                    Color.clear
                 }
             }
-            Spacer(minLength: 0)
+            .frame(width: 92, height: 92)
+            .overlay(alignment: .topTrailing) {
+                ShareLink(item: shareText) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(HF.Palette.ink)
+                        .frame(width: 38, height: 38)
+                        .background(.regularMaterial, in: Circle())
+                        .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
+                }
+                .offset(x: 8, y: -10)
+                .opacity(stage == .settled ? 1 : 0)
+            }
+            .padding(.top, 10)
         }
+    }
+
+    /// "Rarely · Worth swapping when you can." in the tier colour.
+    private var verdictLine: some View {
+        Text("\(tier.title) · \(model.verdict?.headline ?? tier.phrase).")
+            .font(.system(size: 17, weight: .medium))
+            .tracking(-0.3)
+            .foregroundStyle(tier.color)
+            .contentTransition(.opacity)
+            .animation(HF.Motion.soft, value: model.verdict?.headline)
+            .opacity(stage == .settled ? 1 : 0)
+    }
+
+    private var shareText: String {
+        "\(model.product.name) scored \(model.score.score)/100 (\(tier.title)) on Human Food."
     }
 
     @ViewBuilder
@@ -125,23 +225,13 @@ struct ProductResultView: View {
                 Spacer(minLength: 0)
             }
             .hfCard()
+            .padding(.top, 22)
         }
-    }
-
-    private func capNoteView(_ note: String) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "info.circle").foregroundStyle(HF.Palette.inkSecondary)
-            Text(note).font(HF.Font.callout).foregroundStyle(HF.Palette.inkSecondary)
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 4)
     }
 
     private var footer: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Scored with the Human Food method · v\(Verdict.rubricVersion)")
-                .font(HF.Font.caption)
-                .foregroundStyle(HF.Palette.inkSecondary)
+            Text("Human Food method · v\(Verdict.rubricVersion)").eyebrow()
             Text(model.product.source == .openFoodFacts
                  ? "Product data: Open Food Facts contributors (ODbL)."
                  : "Product data: read from the label by the Human Food community.")
@@ -153,18 +243,13 @@ struct ProductResultView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 4)
-        .padding(.top, HF.Space.m)
     }
 
     private func celebrate() {
         guard !model.isRevisit else { return }
         let grew = services.streak.recordScan()
-        let content = RewardToast.Content(
-            foods: max(foodsDecoded, 1),
-            streak: services.streak.days,
-            streakGrew: grew,
-            tier: model.score.tier
-        )
+        let content = RewardToast.Content(foods: max(foodsDecoded, 1), streak: services.streak.days,
+                                          streakGrew: grew, tier: model.score.tier)
         withAnimation(HF.Motion.bouncy) { toast = content }
         Task {
             try? await Task.sleep(for: .seconds(2.6))
@@ -206,7 +291,6 @@ struct RewardToast: View {
         .padding(.horizontal, 18)
         .padding(.vertical, 12)
         .background(.regularMaterial, in: Capsule())
-        .overlay(Capsule().strokeBorder(HF.Palette.hairline))
-        .shadow(color: .black.opacity(0.08), radius: 16, y: 6)
+        .shadow(color: .black.opacity(0.1), radius: 16, y: 6)
     }
 }

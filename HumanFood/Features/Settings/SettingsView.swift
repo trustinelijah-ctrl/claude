@@ -4,96 +4,86 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(AppServices.self) private var services
     @Environment(\.modelContext) private var context
-    @Environment(\.dismiss) private var dismiss
     @State private var confirmClear = false
 
     var body: some View {
         @Bindable var prefs = services.preferences
-        NavigationStack {
-            List {
-                Section {
-                    ForEach(Preferences.Lens.allCases) { lens in
-                        Button {
-                            Haptics.tick()
-                            prefs.lens = lens
-                        } label: {
-                            HStack(alignment: .top, spacing: 12) {
-                                Image(systemName: prefs.lens == lens ? "largecircle.fill.circle" : "circle")
-                                    .foregroundStyle(prefs.lens == lens ? HF.Palette.accent : HF.Palette.inkTertiary)
-                                    .font(.system(size: 18))
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(lens.title).font(HF.Font.headline).foregroundStyle(HF.Palette.ink)
-                                    Text(lens.detail).font(HF.Font.callout).foregroundStyle(HF.Palette.inkSecondary)
-                                }
+        List {
+            Section {
+                ForEach(Preferences.Lens.allCases) { lens in
+                    Button {
+                        Haptics.tick()
+                        prefs.lens = lens
+                    } label: {
+                        HStack(alignment: .top, spacing: 12) {
+                            Image(systemName: prefs.lens == lens ? "largecircle.fill.circle" : "circle")
+                                .foregroundStyle(prefs.lens == lens ? HF.Palette.accent : HF.Palette.inkTertiary)
+                                .font(.system(size: 18))
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(lens.title).font(HF.Font.headline).foregroundStyle(HF.Palette.ink)
+                                Text(lens.detail).font(HF.Font.callout).foregroundStyle(HF.Palette.inkSecondary)
                             }
-                            .padding(.vertical, 4)
                         }
-                        .buttonStyle(.plain)
+                        .padding(.vertical, 4)
                     }
-                } header: {
-                    Text("Scoring lens")
-                } footer: {
-                    Text("Changes apply to new and revisited scans.")
+                    .buttonStyle(.plain)
                 }
+            } header: {
+                Text("Scoring lens")
+            } footer: {
+                Text("Changes apply to new and revisited scans.")
+            }
 
-                Section("Avoid list") {
-                    ForEach(Preferences.allergenOptions) { allergen in
-                        Toggle(allergen.name, isOn: Binding(
-                            get: { prefs.allergens.contains(allergen.tag) },
-                            set: { on in
-                                if on { prefs.allergens.insert(allergen.tag) } else { prefs.allergens.remove(allergen.tag) }
-                            }
-                        ))
-                        .tint(HF.Palette.accent)
-                    }
-                }
-
-                Section("Experience") {
-                    Toggle("Haptics", isOn: $prefs.hapticsEnabled).tint(HF.Palette.accent)
-                }
-
-                Section("About") {
-                    NavigationLink("How we score") { MethodologyView() }
-                    NavigationLink("Disclaimer") {
-                        ScrollView {
-                            Text(SafeLanguage.disclaimer)
-                                .font(HF.Font.body)
-                                .foregroundStyle(HF.Palette.ink)
-                                .padding(HF.Space.gutter)
+            Section("Avoid list") {
+                ForEach(Preferences.allergenOptions) { allergen in
+                    Toggle(allergen.name, isOn: Binding(
+                        get: { prefs.allergens.contains(allergen.tag) },
+                        set: { on in
+                            if on { prefs.allergens.insert(allergen.tag) } else { prefs.allergens.remove(allergen.tag) }
                         }
-                        .background(HF.Palette.canvas)
-                        .navigationTitle("Disclaimer")
-                    }
-                    Link(destination: URL(string: "https://world.openfoodfacts.org")!) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Product data by Open Food Facts").foregroundStyle(HF.Palette.ink)
-                            Text("Available under the Open Database Licence (ODbL).")
-                                .font(HF.Font.caption).foregroundStyle(HF.Palette.inkSecondary)
-                        }
-                    }
-                    LabeledContent("AI verdicts", value: services.config.hasAI ? "On" : "Local only")
-                    LabeledContent("Version", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0")
-                }
-
-                Section {
-                    Button("Clear history", role: .destructive) { confirmClear = true }
+                    ))
+                    .tint(HF.Palette.accent)
                 }
             }
-            .scrollContentBackground(.hidden)
-            .background(HF.Palette.canvas.ignoresSafeArea())
-            .navigationTitle("Settings")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(HF.Palette.ink)
-                }
+
+            Section("Experience") {
+                Toggle("Haptics", isOn: $prefs.hapticsEnabled).tint(HF.Palette.accent)
             }
-            .confirmationDialog("Clear all scanned foods?", isPresented: $confirmClear, titleVisibility: .visible) {
-                Button("Clear history", role: .destructive) {
-                    try? context.delete(model: ScanRecord.self)
-                    try? context.save()
+
+            Section("About") {
+                NavigationLink("How we score") { MethodologyView() }
+                NavigationLink("Disclaimer") {
+                    ScrollView {
+                        Text(SafeLanguage.disclaimer)
+                            .font(HF.Font.body)
+                            .foregroundStyle(HF.Palette.ink)
+                            .padding(HF.Space.gutter)
+                    }
+                    .background(HF.Palette.canvas)
+                    .navigationTitle("Disclaimer")
                 }
+                Link(destination: URL(string: "https://world.openfoodfacts.org")!) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Product data by Open Food Facts").foregroundStyle(HF.Palette.ink)
+                        Text("Available under the Open Database Licence (ODbL).")
+                            .font(HF.Font.caption).foregroundStyle(HF.Palette.inkSecondary)
+                    }
+                }
+                LabeledContent("AI verdicts", value: services.config.hasAI ? "On" : "Local only")
+                LabeledContent("Version", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0")
+            }
+
+            Section {
+                Button("Clear history", role: .destructive) { confirmClear = true }
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(HF.Palette.canvas.ignoresSafeArea())
+        .navigationTitle("Settings")
+        .confirmationDialog("Clear all scanned foods?", isPresented: $confirmClear, titleVisibility: .visible) {
+            Button("Clear history", role: .destructive) {
+                try? context.delete(model: ScanRecord.self)
+                try? context.save()
             }
         }
     }
@@ -124,7 +114,7 @@ struct MethodologyView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: HF.Space.l) {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("How we score").font(HF.Font.display(34))
+                    Text("How we score").hfDisplay(34)
                     Text("One transparent number from 0 to 100, calculated on your phone with the same rules for every product. AI only helps explain it — it never sets it.")
                         .font(HF.Font.body)
                         .foregroundStyle(HF.Palette.inkSecondary)

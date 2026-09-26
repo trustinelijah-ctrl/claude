@@ -1,117 +1,76 @@
 import SwiftUI
 
-// MARK: - Verdict
+// MARK: - Summary list (Scout-style, expandable)
 
-struct VerdictCard: View {
-    var verdict: Verdict?
-    var confidence: ScoreResult.Confidence
+/// "Beneficial ingredients · Worth watching · Processing" — tap a row to see its factors.
+struct SummaryListCard: View {
+    var score: ScoreResult
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Our take").eyebrow()
-                Spacer()
-                if let verdict {
-                    Label(verdict.origin == .ai ? "AI-assisted" : "Human Food", systemImage: verdict.origin == .ai ? "sparkles" : "leaf")
-                        .font(HF.Font.caption)
-                        .foregroundStyle(HF.Palette.inkTertiary)
-                }
-            }
-            if let verdict {
-                Text(verdict.headline)
-                    .font(HF.Font.display(22))
-                    .foregroundStyle(HF.Palette.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(verdict.summary)
-                    .font(HF.Font.body)
-                    .foregroundStyle(HF.Palette.inkSecondary)
-                    .lineSpacing(3)
-                    .fixedSize(horizontal: false, vertical: true)
-                if let tip = verdict.tip, !tip.isEmpty {
-                    HStack(alignment: .top, spacing: 10) {
-                        Image(systemName: "lightbulb")
-                            .foregroundStyle(HF.Palette.accent)
-                        Text(tip)
-                            .font(HF.Font.callout)
-                            .foregroundStyle(HF.Palette.ink)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(HF.Palette.accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
-                if confidence == .low {
-                    Label("Limited product data — treat as a rough guide.", systemImage: "questionmark.circle")
-                        .font(HF.Font.caption)
-                        .foregroundStyle(HF.Palette.inkTertiary)
-                }
-            } else {
-                SkeletonLines(lines: 4)
-                    .padding(.vertical, 4)
-            }
-        }
-        .hfCard()
-        .animation(HF.Motion.soft, value: verdict)
+    private enum Row: String { case good, watch, processing }
+    @State private var open: Row?
+
+    private var good: [ScoreFactor] { score.factors.filter { $0.impact > 0 && $0.group != .processing } }
+    private var watch: [ScoreFactor] { score.considerations.filter { $0.group != .processing } }
+    private var processing: ScoreFactor? { score.factors.first { $0.group == .processing } }
+
+    private var watchColor: Color {
+        guard let worst = watch.map(\.impact).min() else { return HF.Palette.inkTertiary }
+        return worst <= -8 ? HF.Palette.rarely : HF.Palette.limit
     }
-}
 
-// MARK: - Factors (collapsible, Scout-style)
-
-struct FactorSection: View {
-    var title: String
-    var factors: [ScoreFactor]
-    var emptyText: String
-    @State private var expanded = true
+    private var processingColor: Color {
+        switch processing?.impact ?? 0 {
+        case 10...: HF.Palette.excellent
+        case 0..<10: HF.Palette.good
+        case -9..<0: HF.Palette.fair
+        default: HF.Palette.limit
+        }
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Button {
-                Haptics.tick()
-                withAnimation(HF.Motion.snappy) { expanded.toggle() }
-            } label: {
-                HStack {
-                    Text(title).font(HF.Font.headline).foregroundStyle(HF.Palette.ink)
-                    Text("\(factors.count)")
-                        .font(HF.Font.caption)
-                        .foregroundStyle(HF.Palette.inkSecondary)
-                        .padding(.horizontal, 7).padding(.vertical, 2)
-                        .background(HF.Palette.ink.opacity(0.06), in: Capsule())
-                    Spacer()
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(HF.Palette.inkTertiary)
-                        .rotationEffect(.degrees(expanded ? 0 : -90))
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
+        ListCard {
+            row(.good, title: "Beneficial ingredients", value: "\(good.count)",
+                dot: good.isEmpty ? HF.Palette.inkTertiary : HF.Palette.excellent, factors: good)
+            row(.watch, title: "Worth watching", value: "\(watch.count)", dot: watchColor, factors: watch)
+            row(.processing, title: "Processing",
+                value: processing?.title.replacingOccurrences(of: "Whole or minimally processed", with: "Minimal") ?? "Unknown",
+                dot: processingColor, factors: processing.map { [$0] } ?? [], last: true)
+        }
+    }
 
-            if expanded {
-                VStack(spacing: 0) {
-                    if factors.isEmpty {
-                        Text(emptyText)
-                            .font(HF.Font.callout)
-                            .foregroundStyle(HF.Palette.inkSecondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.top, 14)
-                    }
-                    ForEach(factors) { factor in
-                        FactorRow(factor: factor)
-                        if factor.id != factors.last?.id {
-                            Divider().overlay(HF.Palette.hairline)
-                        }
+    @ViewBuilder
+    private func row(_ id: Row, title: String, value: String, dot: Color, factors: [ScoreFactor], last: Bool = false) -> some View {
+        Button {
+            guard !factors.isEmpty else { return }
+            Haptics.tick()
+            withAnimation(HF.Motion.snappy) { open = open == id ? nil : id }
+        } label: {
+            ValueRow(title: title, value: value, dot: dot, showsDivider: !last || open == id)
+        }
+        .buttonStyle(.plain)
+
+        if open == id {
+            VStack(spacing: 0) {
+                ForEach(factors) { factor in
+                    FactorRow(factor: factor)
+                    if factor.id != factors.last?.id {
+                        Rectangle().fill(HF.Palette.hairline).frame(height: 1).padding(.leading, 46)
                     }
                 }
-                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+            .padding(.horizontal, 22)
+            .padding(.bottom, 6)
+            .background(HF.Palette.surfaceRaised)
+            .transition(.opacity.combined(with: .move(edge: .top)))
+            if !last {
+                Rectangle().fill(HF.Palette.hairline).frame(height: 1)
             }
         }
-        .hfCard()
     }
 }
 
 struct FactorRow: View {
     var factor: ScoreFactor
-    @State private var showDetail = false
 
     private var tint: Color {
         switch factor.kind {
@@ -122,47 +81,81 @@ struct FactorRow: View {
     }
 
     var body: some View {
-        Button {
-            Haptics.tick()
-            withAnimation(HF.Motion.snappy) { showDetail.toggle() }
-        } label: {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 12) {
-                    Image(systemName: factor.symbol)
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(tint)
-                        .frame(width: 34, height: 34)
-                        .background(tint.opacity(0.1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(factor.title)
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundStyle(HF.Palette.ink)
-                            .multilineTextAlignment(.leading)
-                        Text(factor.group.title)
-                            .font(HF.Font.caption)
-                            .foregroundStyle(HF.Palette.inkTertiary)
-                    }
-                    Spacer()
-                    if factor.impact != 0 {
-                        Text(factor.impact > 0 ? "+\(factor.impact)" : "−\(abs(factor.impact))")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded).monospacedDigit())
-                            .foregroundStyle(tint)
-                    }
-                }
-                if showDetail {
-                    Text(factor.detail)
-                        .font(HF.Font.callout)
-                        .foregroundStyle(HF.Palette.inkSecondary)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.leading, 46)
-                        .transition(.opacity)
-                }
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: factor.symbol)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(tint)
+                .frame(width: 34, height: 34)
+                .background(tint.opacity(0.1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(factor.title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .tracking(-0.2)
+                    .foregroundStyle(HF.Palette.ink)
+                Text(factor.detail)
+                    .font(.system(size: 14))
+                    .foregroundStyle(HF.Palette.inkSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.vertical, 12)
-            .contentShape(Rectangle())
+            Spacer(minLength: 6)
+            if factor.impact != 0 {
+                Text(factor.impact > 0 ? "+\(factor.impact)" : "−\(abs(factor.impact))")
+                    .font(HF.Font.mono(14, weight: .semibold))
+                    .foregroundStyle(tint)
+                    .padding(.top, 2)
+            }
         }
-        .buttonStyle(.plain)
+        .padding(.vertical, 14)
+    }
+}
+
+// MARK: - Verdict
+
+struct VerdictCard: View {
+    var verdict: Verdict?
+    var confidence: ScoreResult.Confidence
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            if let verdict {
+                Text(verdict.summary)
+                    .font(.system(size: 20, weight: .regular))
+                    .tracking(-0.4)
+                    .lineSpacing(5)
+                    .foregroundStyle(HF.Palette.ink.opacity(0.85))
+                    .fixedSize(horizontal: false, vertical: true)
+                if let tip = verdict.tip, !tip.isEmpty {
+                    HStack(alignment: .top, spacing: 12) {
+                        Image(systemName: "lightbulb")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(HF.Palette.accent)
+                        Text(tip)
+                            .font(.system(size: 16))
+                            .tracking(-0.2)
+                            .foregroundStyle(HF.Palette.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(HF.Palette.accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                }
+                HStack(spacing: 8) {
+                    Image(systemName: verdict.origin == .ai ? "sparkles" : "leaf")
+                    Text(verdict.origin == .ai ? "AI-assisted summary" : "Human Food summary")
+                    if confidence == .low { Text("· limited data") }
+                }
+                .font(HF.Font.mono(11))
+                .foregroundStyle(HF.Palette.inkTertiary)
+            } else {
+                SkeletonLines(lines: 4)
+                    .padding(.vertical, 6)
+            }
+        }
+        .padding(26)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(HF.Palette.surface, in: RoundedRectangle(cornerRadius: HF.Radius.card, style: .continuous))
+        .shadow(color: .black.opacity(0.035), radius: 18, y: 6)
+        .animation(HF.Motion.soft, value: verdict)
     }
 }
 
@@ -186,38 +179,28 @@ struct NutritionCard: View {
         let bev = product.isBeverage
         var rows: [Row] = []
         if let v = n.energyKcal { rows.append(Row(name: "Energy", value: v, unit: "kcal")) }
-        if let v = n.fat { rows.append(Row(name: "Fat", value: v, unit: "g", bands: bev ? (low: 1.5, high: 8.75) : (low: 3, high: 17.5))) }
-        if let v = n.saturatedFat { rows.append(Row(name: "Saturated fat", value: v, unit: "g", bands: bev ? (low: 0.75, high: 2.5) : (low: 1.5, high: 5))) }
         if let v = n.sugars { rows.append(Row(name: "Sugars", value: v, unit: "g", bands: bev ? (low: 2.5, high: 11.25) : (low: 5, high: 22.5))) }
+        if let v = n.saturatedFat { rows.append(Row(name: "Saturated fat", value: v, unit: "g", bands: bev ? (low: 0.75, high: 2.5) : (low: 1.5, high: 5))) }
+        if let v = n.fat { rows.append(Row(name: "Fat", value: v, unit: "g", bands: bev ? (low: 1.5, high: 8.75) : (low: 3, high: 17.5))) }
+        if let v = n.salt { rows.append(Row(name: "Salt", value: v, unit: "g", bands: bev ? (low: 0.3, high: 0.75) : (low: 0.3, high: 1.5))) }
         if let v = n.fiber { rows.append(Row(name: "Fibre", value: v, unit: "g", bands: (low: 3, high: 6), higherIsBetter: true)) }
         if let v = n.protein { rows.append(Row(name: "Protein", value: v, unit: "g")) }
-        if let v = n.salt { rows.append(Row(name: "Salt", value: v, unit: "g", bands: bev ? (low: 0.3, high: 0.75) : (low: 0.3, high: 1.5))) }
         return rows
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            SectionHeader(title: "Nutrition", trailing: product.isBeverage ? "per 100 ml" : "per 100 g")
-            if rows.isEmpty {
-                Text("No nutrition data yet for this product.")
-                    .font(HF.Font.callout)
-                    .foregroundStyle(HF.Palette.inkSecondary)
-            } else {
-                VStack(spacing: 12) {
-                    ForEach(rows) { row in
-                        HStack {
-                            Circle().fill(color(for: row)).frame(width: 8, height: 8)
-                            Text(row.name).font(HF.Font.callout).foregroundStyle(HF.Palette.ink)
-                            Spacer()
-                            Text(format(row))
-                                .font(.system(size: 14, weight: .medium).monospacedDigit())
-                                .foregroundStyle(HF.Palette.ink)
-                        }
-                    }
+        if rows.isEmpty {
+            Text("No nutrition data yet for this product.")
+                .font(HF.Font.callout)
+                .foregroundStyle(HF.Palette.inkSecondary)
+                .hfCard()
+        } else {
+            ListCard {
+                ForEach(rows) { row in
+                    ValueRow(title: row.name, value: format(row), dot: color(for: row), showsDivider: row.id != rows.last?.id)
                 }
             }
         }
-        .hfCard()
     }
 
     private func color(for row: Row) -> Color {
@@ -241,19 +224,19 @@ struct IngredientsCard: View {
     @State private var expanded = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "Ingredients", trailing: product.ingredients.isEmpty ? nil : "\(product.ingredients.count)")
+        VStack(alignment: .leading, spacing: 14) {
             if let text = product.ingredientsText, !text.isEmpty {
                 Text(text)
-                    .font(HF.Font.callout)
+                    .font(.system(size: 16))
+                    .tracking(-0.2)
                     .foregroundStyle(HF.Palette.inkSecondary)
-                    .lineSpacing(3)
+                    .lineSpacing(4)
                     .lineLimit(expanded ? nil : 4)
                 Button(expanded ? "Show less" : "Show all") {
                     Haptics.tick()
                     withAnimation(HF.Motion.snappy) { expanded.toggle() }
                 }
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(HF.Palette.ink)
             } else {
                 Text("No ingredient list available.")
@@ -270,7 +253,10 @@ struct IngredientsCard: View {
                 }
             }
         }
-        .hfCard()
+        .padding(24)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(HF.Palette.surface, in: RoundedRectangle(cornerRadius: HF.Radius.card, style: .continuous))
+        .shadow(color: .black.opacity(0.035), radius: 18, y: 6)
     }
 }
 
@@ -281,21 +267,26 @@ struct AlternativesSection: View {
     var onOpen: (AnalysisModel) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 18) {
             if model.score.tier == .excellent {
-                HStack(spacing: 12) {
+                SectionTitle(eyebrow: "Swaps", title: "Already a great pick")
+                HStack(spacing: 14) {
                     Image(systemName: "checkmark.seal.fill")
-                        .font(.system(size: 22))
+                        .font(.system(size: 26))
                         .foregroundStyle(HF.Palette.excellent)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Already a great pick").font(HF.Font.headline)
-                        Text("Hard to beat. Keep it in the basket.")
-                            .font(HF.Font.callout).foregroundStyle(HF.Palette.inkSecondary)
+                    Text("Hard to beat. Keep it in the basket.")
+                        .font(.system(size: 17))
+                        .tracking(-0.3)
+                        .foregroundStyle(HF.Palette.inkSecondary)
+                }
+                .hfCard(padding: 22)
+            } else {
+                HStack(alignment: .lastTextBaseline) {
+                    SectionTitle(eyebrow: "Swaps", title: "Healthier picks")
+                    if !model.alternativesLoaded {
+                        ProgressView().padding(.bottom, 6)
                     }
                 }
-                .hfCard()
-            } else {
-                SectionHeader(title: "Healthier swaps", trailing: model.alternativesLoaded ? nil : "Searching…")
 
                 if !model.alternatives.isEmpty {
                     ScrollView(.horizontal) {
@@ -310,41 +301,42 @@ struct AlternativesSection: View {
                                 .buttonStyle(PressableStyle())
                             }
                         }
-                        .padding(.horizontal, 2)
+                        .padding(.horizontal, HF.Space.gutter)
+                        .padding(.vertical, 10)
                     }
                     .scrollIndicators(.hidden)
+                    .padding(.horizontal, -HF.Space.gutter)
                     .transition(.opacity)
-                } else if !model.alternativesLoaded {
-                    HStack(spacing: 12) {
-                        ForEach(0..<2, id: \.self) { _ in
-                            RoundedRectangle(cornerRadius: HF.Radius.card, style: .continuous)
-                                .fill(HF.Palette.surface)
-                                .frame(width: 168, height: 196)
-                                .overlay(SkeletonLines(lines: 3).padding())
-                        }
-                    }
                 }
 
                 if let ideas = model.verdict?.alternatives, !ideas.isEmpty {
-                    VStack(alignment: .leading, spacing: 0) {
+                    ListCard {
                         ForEach(ideas) { idea in
-                            HStack(alignment: .top, spacing: 12) {
+                            HStack(alignment: .top, spacing: 14) {
                                 Image(systemName: "arrow.triangle.swap")
                                     .font(.system(size: 14, weight: .semibold))
                                     .foregroundStyle(HF.Palette.accent)
-                                    .frame(width: 30, height: 30)
+                                    .frame(width: 34, height: 34)
                                     .background(HF.Palette.accent.opacity(0.1), in: Circle())
                                 VStack(alignment: .leading, spacing: 3) {
-                                    Text(idea.title).font(.system(size: 15, weight: .semibold)).foregroundStyle(HF.Palette.ink)
-                                    Text(idea.reason).font(HF.Font.callout).foregroundStyle(HF.Palette.inkSecondary)
+                                    Text(idea.title)
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .tracking(-0.3)
+                                        .foregroundStyle(HF.Palette.ink)
+                                    Text(idea.reason)
+                                        .font(.system(size: 14))
+                                        .foregroundStyle(HF.Palette.inkSecondary)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
                                 Spacer(minLength: 0)
                             }
-                            .padding(.vertical, 10)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 14)
+                            if idea.id != ideas.last?.id {
+                                Rectangle().fill(HF.Palette.hairline).frame(height: 1).padding(.leading, 68)
+                            }
                         }
                     }
-                    .hfCard()
                 }
             }
         }
@@ -359,23 +351,25 @@ struct AlternativeCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             ZStack(alignment: .topTrailing) {
-                ProductThumb(url: item.product.imageURL, size: 136, corner: 16)
-                ScoreBadge(score: item.score.score, size: 40)
+                ProductThumb(url: item.product.imageURL, size: 132, corner: 20)
+                ScoreDial(score: item.score.score, size: 42)
+                    .padding(3)
                     .background(HF.Palette.surface, in: Circle())
                     .offset(x: 8, y: -8)
             }
             Text(item.product.name)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: 15, weight: .semibold))
+                .tracking(-0.3)
                 .foregroundStyle(HF.Palette.ink)
                 .lineLimit(2, reservesSpace: true)
                 .multilineTextAlignment(.leading)
             Text("+\(delta) points")
-                .font(HF.Font.caption)
+                .font(HF.Font.mono(12, weight: .semibold))
                 .foregroundStyle(HF.Palette.excellent)
         }
-        .frame(width: 136)
+        .frame(width: 132)
         .padding(14)
-        .background(HF.Palette.surface, in: RoundedRectangle(cornerRadius: HF.Radius.card, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: HF.Radius.card, style: .continuous).strokeBorder(HF.Palette.hairline))
+        .background(HF.Palette.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: .black.opacity(0.035), radius: 14, y: 4)
     }
 }

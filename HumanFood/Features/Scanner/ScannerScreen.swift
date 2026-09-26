@@ -6,6 +6,7 @@ struct ScannerScreen: View {
     @Environment(AppServices.self) private var services
     @Environment(\.modelContext) private var context
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dismiss) private var dismiss
 
     enum Status: Equatable {
         case idle
@@ -15,7 +16,7 @@ struct ScannerScreen: View {
         case error(String)
     }
 
-    @State private var mode: ScanMode = .barcode
+    @State private var mode: ScanMode
     @State private var scanner = ScannerController()
     @State private var status: Status = .idle
     @State private var result: AnalysisModel?
@@ -23,16 +24,18 @@ struct ScannerScreen: View {
     @State private var ranking: [ScoredProduct]?
     @State private var labelShots: [UIImage] = []
     @State private var pendingBarcode: String?
-    @State private var showHistory = false
-    @State private var showSettings = false
     @State private var showManual = false
     @State private var torchOn = false
     @State private var lockPulse = 0
     @State private var lastCode: String?
     @State private var lastCodeAt: Date = .distantPast
 
+    init(initialMode: ScanMode = .barcode) {
+        _mode = State(initialValue: initialMode)
+    }
+
     private var scanningActive: Bool {
-        scenePhase == .active && result == nil && ranking == nil && !showHistory && !showSettings && !showManual
+        scenePhase == .active && result == nil && ranking == nil && !showManual
             && status != .reading && !isSearching
     }
 
@@ -72,10 +75,8 @@ struct ScannerScreen: View {
         .onChange(of: torchOn) { _, on in scanner.setTorch(on) }
         .sheet(item: $result, onDismiss: { lastCodeAt = .now }) { model in
             ProductResultView(model: model)
-                .presentationCornerRadius(34)
+                .presentationCornerRadius(38)
         }
-        .sheet(isPresented: $showHistory) { HistoryView() }
-        .sheet(isPresented: $showSettings) { SettingsView() }
         .sheet(isPresented: $showManual) {
             ManualEntrySheet { code in
                 showManual = false
@@ -93,12 +94,13 @@ struct ScannerScreen: View {
 
     private var topBar: some View {
         HStack {
-            GlassIconButton(systemName: "clock.arrow.circlepath") { showHistory = true }
-                .accessibilityLabel("History")
+            GlassIconButton(systemName: "xmark") { dismiss() }
+                .accessibilityLabel("Close")
             Spacer()
             VStack(spacing: 2) {
                 Text("Human Food")
-                    .font(HF.Font.display(20, weight: .medium))
+                    .font(.system(size: 19, weight: .bold))
+                    .tracking(-0.5)
                     .foregroundStyle(.white)
                 if services.streak.days > 1 {
                     Label("\(services.streak.days)-day streak", systemImage: "flame.fill")
@@ -107,8 +109,8 @@ struct ScannerScreen: View {
                 }
             }
             Spacer()
-            GlassIconButton(systemName: "slider.horizontal.3") { showSettings = true }
-                .accessibilityLabel("Settings")
+            GlassIconButton(systemName: "keyboard") { showManual = true }
+                .accessibilityLabel("Type a barcode")
         }
         .padding(.horizontal, HF.Space.gutter)
         .padding(.top, 6)
@@ -162,12 +164,8 @@ struct ScannerScreen: View {
     private var bottomControls: some View {
         switch mode {
         case .barcode:
-            HStack(spacing: 14) {
-                GlassIconButton(systemName: "keyboard") { showManual = true }
-                    .accessibilityLabel("Type a barcode")
-                GlassIconButton(systemName: torchOn ? "flashlight.on.fill" : "flashlight.off.fill") { torchOn.toggle() }
-                    .accessibilityLabel("Torch")
-            }
+            GlassIconButton(systemName: torchOn ? "flashlight.on.fill" : "flashlight.off.fill") { torchOn.toggle() }
+                .accessibilityLabel("Torch")
         case .label:
             labelControls
         case .grocery:
@@ -350,7 +348,7 @@ private struct NotFoundCard: View {
                 }
             }
             Text("This product isn't in the database yet.")
-                .font(HF.Font.display(20))
+                .hfDisplay(20)
                 .foregroundStyle(HF.Palette.ink)
             Text(canReadLabels
                  ? "Snap the label and we'll add it — for you and everyone who scans it next."
@@ -379,7 +377,7 @@ struct ManualEntrySheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text("Type a barcode").font(HF.Font.display(26))
+            Text("Type a barcode").hfDisplay(26)
             TextField("e.g. 3017620422003", text: $code)
                 .keyboardType(.numberPad)
                 .font(.system(size: 22, weight: .medium, design: .monospaced))
