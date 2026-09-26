@@ -95,29 +95,14 @@ private struct StatsHeader: View {
     }
 
     var body: some View {
-        HStack(spacing: 10) {
-            stat(value: "\(records.count)", label: "Foods decoded")
-            stat(value: records.isEmpty ? "–" : "\(average)", label: "Average score", tint: records.isEmpty ? nil : ScoreTier(score: average).color)
-            stat(value: "\(streak)", label: "Day streak", symbol: "flame.fill")
+        HStack(spacing: 12) {
+            StatTile(value: "\(records.count)", label: "Foods scanned")
+            StatTile(value: records.isEmpty ? "–" : "\(average)", label: "Average score",
+                     tint: records.isEmpty ? nil : ScoreTier(score: average).color)
+            StatTile(value: "\(streak)", label: "Day streak")
         }
         .padding(.horizontal, HF.Space.gutter)
         .padding(.top, 8)
-    }
-
-    private func stat(value: String, label: String, tint: Color? = nil, symbol: String? = nil) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 4) {
-                Text(value).font(HF.Font.numeral(30)).foregroundStyle(tint ?? HF.Palette.ink)
-                if let symbol {
-                    Image(systemName: symbol).font(.system(size: 14)).foregroundStyle(HF.Palette.limit)
-                }
-            }
-            Text(label).font(HF.Font.caption).foregroundStyle(HF.Palette.inkSecondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(HF.Palette.surface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(HF.Palette.hairline))
     }
 }
 
@@ -129,21 +114,22 @@ private struct HistoryRow: View {
             ProductThumb(url: record.imageURL, size: 54, corner: 14)
             VStack(alignment: .leading, spacing: 3) {
                 Text(record.name)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold))
+                    .tracking(-0.3)
                     .foregroundStyle(HF.Palette.ink)
                     .lineLimit(1)
                 HStack(spacing: 6) {
                     if let brand = record.brand { Text(brand).lineLimit(1) }
                     if record.isFavorite { Image(systemName: "heart.fill").foregroundStyle(HF.Palette.accent) }
                 }
-                .font(HF.Font.caption)
+                .font(.system(size: 14))
                 .foregroundStyle(HF.Palette.inkSecondary)
                 Text(record.lastScannedAt, format: .relative(presentation: .named))
-                    .font(HF.Font.caption)
+                    .font(HF.Font.mono(11))
                     .foregroundStyle(HF.Palette.inkTertiary)
             }
             Spacer(minLength: 0)
-            ScoreBadge(score: record.score, size: 46)
+            ScoreDial(score: record.score, size: 44)
         }
         .contentShape(Rectangle())
     }
@@ -157,7 +143,7 @@ private struct EmptyHistory: View {
             Image(systemName: hasAny ? "line.3.horizontal.decrease.circle" : "barcode.viewfinder")
                 .font(.system(size: 36, weight: .light))
                 .foregroundStyle(HF.Palette.inkTertiary)
-            Text(hasAny ? "Nothing matches" : "Your first scan is waiting")
+            Text(hasAny ? "Nothing matches" : "Nothing scanned yet")
                 .hfDisplay(20)
             Text(hasAny ? "Try another filter or search." : "Everything you scan lands here, ready to revisit offline.")
                 .font(HF.Font.callout)

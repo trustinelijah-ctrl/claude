@@ -15,6 +15,10 @@ const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? "";
 const VERDICT_MODEL = Deno.env.get("VERDICT_MODEL") ?? "gemini-3.5-flash-lite";
 const LABEL_MODEL = Deno.env.get("LABEL_MODEL") ?? "gemini-3.5-flash";
 const DAILY_AI_LIMIT = Number(Deno.env.get("DAILY_AI_LIMIT") ?? "2000");
+// Per client (hashed IP) per hour. Only requests that would call the AI count.
+const HOURLY_VERDICTS_PER_CLIENT = Number(Deno.env.get("HOURLY_VERDICTS_PER_CLIENT") ?? "60");
+const HOURLY_LABELS_PER_CLIENT = Number(Deno.env.get("HOURLY_LABELS_PER_CLIENT") ?? "10");
+const RATE_SALT = Deno.env.get("RATE_SALT") ?? Deno.env.get("SUPABASE_URL") ?? "human-food";
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
   auth: { persistSession: false },
@@ -56,11 +60,19 @@ async function postVerdict(req: Request): Promise<Response> {
   const language = String(body?.locale ?? "en").split(/[-_]/)[0].toLowerCase();
   const locale = /^[a-z]{2,3}$/.test(language) ? language : "en";
 
+  const score = sanitizeScore(body?.score);
+  if (!score) return json({ error: "bad_score" }, 400);
+  // The cache key includes a hash of the score payload: a tampered score can only
+  // create its own entry, never overwrite the one honest clients read.
+  const payloadHash = await sha256(JSON.stringify(score));
+
   // 1. Shared cache hit — the common case, costs nothing.
   const cached = await db.from("verdicts").select("verdict")
-    .eq("barcode", barcode).eq("rubric_version", rubric).eq("locale", locale).maybeSingle();
+    .eq("barcode", barcode).eq("rubric_version", rubric).eq("locale", locale).eq("payload_hash", payloadHash)
+    .maybeSingle();
   if (cached.data) {
-    db.rpc("bump_verdict_hits", { p_barcode: barcode, p_rubric: rubric, p_locale: locale }).then(() => {});
+    db.rpc("bump_verdict_hits", { p_barcode: barcode, p_rubric: rubric, p_locale: locale, p_hash: payloadHash })
+      .then(() => {});
     return json({ verdict: cached.data.verdict, cached: true });
   }
 
@@ -68,20 +80,18 @@ async function postVerdict(req: Request): Promise<Response> {
   const product = await loadProduct(barcode);
   if (!product) return json({ error: "unknown_product" }, 404);
 
-  const score = sanitizeScore(body?.score);
-  if (!score) return json({ error: "bad_score" }, 400);
-
   if (!GEMINI_API_KEY) return json({ error: "ai_not_configured" }, 503);
+  if (!(await withinClientLimit(req, "verdict", HOURLY_VERDICTS_PER_CLIENT))) return json({ error: "rate_limited" }, 429);
   if (!(await reserveAICall())) return json({ error: "daily_limit" }, 429);
 
-  const input = JSON.stringify({ product: product.summary, score });
+  const input = `<product_data>\n${JSON.stringify({ product: product.summary, score })}\n</product_data>`;
   const raw = await gemini(VERDICT_MODEL, verdictSystem(locale), [{ text: input }], verdictSchema);
   const verdict = shapeVerdict(raw, product.brand);
   if (!verdict) return json({ error: "ai_bad_output" }, 502);
 
   await db.from("verdicts").upsert(
-    { barcode, rubric_version: rubric, locale, verdict, score: score.value, model: VERDICT_MODEL },
-    { onConflict: "barcode,rubric_version,locale", ignoreDuplicates: true },
+    { barcode, rubric_version: rubric, locale, payload_hash: payloadHash, verdict, score: score.value, model: VERDICT_MODEL },
+    { onConflict: "barcode,rubric_version,locale,payload_hash", ignoreDuplicates: true },
   );
   return json({ verdict, cached: false });
 }
@@ -95,13 +105,16 @@ async function postLabel(req: Request): Promise<Response> {
   const requested = body?.barcode ? String(body.barcode) : null;
   if (requested && !BARCODE.test(requested)) return json({ error: "bad_barcode" }, 400);
 
-  // Already added by someone else? Serve that for consistency.
   if (requested) {
+    // Already added by someone else? Serve that for consistency.
     const existing = await db.from("products").select("data").eq("barcode", requested).maybeSingle();
     if (existing.data) return json({ product: existing.data.data });
+    // Never let a label read shadow a product that Open Food Facts already knows.
+    if (await fetchOFF(requested)) return json({ error: "already_in_open_food_facts" }, 409);
   }
 
   if (!GEMINI_API_KEY) return json({ error: "ai_not_configured" }, 503);
+  if (!(await withinClientLimit(req, "label", HOURLY_LABELS_PER_CLIENT))) return json({ error: "rate_limited" }, 429);
   if (!(await reserveAICall())) return json({ error: "daily_limit" }, 429);
 
   const parts = [
@@ -140,7 +153,13 @@ async function postLabel(req: Request): Promise<Response> {
 
 type LoadedProduct = { summary: Record<string, unknown>; brand: string | null };
 
+// Open Food Facts first (curated, and what the app itself shows); community reads
+// are only a fallback for products OFF doesn't have.
 async function loadProduct(barcode: string): Promise<LoadedProduct | null> {
+  if (BARCODE.test(barcode)) {
+    const off = await fetchOFF(barcode);
+    if (off) return off;
+  }
   const community = await db.from("products").select("data").eq("barcode", barcode).maybeSingle();
   if (community.data) {
     const p = community.data.data;
@@ -153,15 +172,18 @@ async function loadProduct(barcode: string): Promise<LoadedProduct | null> {
       },
     };
   }
-  if (!BARCODE.test(barcode)) return null;
+  return null;
+}
 
+async function fetchOFF(barcode: string): Promise<LoadedProduct | null> {
   const fields = "product_name,brands,quantity,categories_tags,nova_group,ingredients_text,additives_tags,labels_tags,nutriments";
   const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${barcode}.json?fields=${fields}`, {
     headers: { "User-Agent": "HumanFood-Backend/1.0" },
-  });
-  if (!res.ok) return null;
-  const body = await res.json();
-  if (body.status !== 1 || !body.product?.product_name) return null;
+    signal: AbortSignal.timeout(8000),
+  }).catch(() => null);
+  if (!res?.ok) return null;
+  const body = await res.json().catch(() => null); // OFF serves an HTML page during outages
+  if (body?.status !== 1 || !body.product?.product_name) return null;
   const p = body.product;
   const n = p.nutriments ?? {};
   const pick = (k: string) => (typeof n[k] === "number" ? Math.round(n[k] * 10) / 10 : undefined);
@@ -221,6 +243,20 @@ function shapeNutrients(n: any) {
 
 function strArray(v: unknown, max: number): string[] {
   return (Array.isArray(v) ? v : []).filter((s) => typeof s === "string" && s.trim()).slice(0, max).map((s) => s.trim());
+}
+
+async function sha256(text: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Buckets by a salted hash of the caller's IP — the raw IP is never stored.
+async function withinClientLimit(req: Request, kind: string, limit: number): Promise<boolean> {
+  const ip = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown";
+  const bucket = `${kind}:${(await sha256(RATE_SALT + ip)).slice(0, 32)}`;
+  const { data, error } = await db.rpc("hit_rate_limit", { p_bucket: bucket, p_limit: limit, p_window_seconds: 3600 });
+  if (error) console.error(error);
+  return data === true;
 }
 
 async function reserveAICall(): Promise<boolean> {

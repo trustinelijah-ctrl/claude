@@ -272,9 +272,9 @@ struct RewardToast: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            HStack(spacing: 6) {
-                Image(systemName: "sparkle").foregroundStyle(content.tier.color)
-                Text("Food #\(content.foods) decoded")
+            HStack(spacing: 7) {
+                Circle().fill(content.tier.color).frame(width: 7, height: 7)
+                Text("\(content.foods) foods scanned")
             }
             if content.streak > 0 {
                 Divider().frame(height: 14)

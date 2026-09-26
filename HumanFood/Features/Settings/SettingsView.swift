@@ -101,7 +101,7 @@ struct MethodologyView: View {
         .init(symbol: "leaf", title: "Processing first",
               body: "Every product starts from its NOVA processing group. Whole and minimally processed foods begin near the top; ultra-processed formulations start lower and can't score above 69."),
         .init(symbol: "cube", title: "Nutrients that matter",
-              body: "We lower the score for added sugar, salt, saturated fat, industrial trans fat and very high energy density, and raise it for fibre — which only plants provide."),
+              body: "We lower the score for added sugar, salt, saturated fat, industrial trans fat and very high energy density, and raise it for fibre, which only plants provide."),
         .init(symbol: "carrot", title: "Real ingredients",
               body: "Whole grains and legumes as the first ingredient, a high share of fruit, vegetables and nuts, and short, recognisable lists earn points. Refined flour, syrups, refined oils and flavourings cost points."),
         .init(symbol: "fork.knife", title: "Mostly plants",
@@ -115,7 +115,7 @@ struct MethodologyView: View {
             VStack(alignment: .leading, spacing: HF.Space.l) {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("How we score").hfDisplay(34)
-                    Text("One transparent number from 0 to 100, calculated on your phone with the same rules for every product. AI only helps explain it — it never sets it.")
+                    Text("A number from 0 to 100, calculated on your phone with the same rules for every product. AI writes the summary. It never sets the score.")
                         .font(HF.Font.body)
                         .foregroundStyle(HF.Palette.inkSecondary)
                 }
@@ -167,13 +167,13 @@ struct MethodologyView: View {
     }
 
     private let readingList = [
-        "T. Colin Campbell — The China Study; Whole",
-        "Michael Pollan — In Defense of Food; Food Rules",
-        "Michael Greger — How Not to Die",
-        "Caldwell Esselstyn — Prevent and Reverse Heart Disease",
-        "Chris van Tulleken — Ultra-Processed People",
-        "Monteiro et al. — The NOVA food classification",
-        "IARC Monographs, vol. 114 — red and processed meat",
+        "The China Study and Whole, T. Colin Campbell",
+        "In Defense of Food and Food Rules, Michael Pollan",
+        "How Not to Die, Michael Greger",
+        "Prevent and Reverse Heart Disease, Caldwell Esselstyn",
+        "Ultra-Processed People, Chris van Tulleken",
+        "The NOVA food classification, Monteiro et al.",
+        "IARC Monographs vol. 114, red and processed meat",
     ]
 
     private func range(for tier: ScoreTier) -> String {

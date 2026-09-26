@@ -25,14 +25,14 @@ struct ShelfView: View {
                 compareCard
 
                 if records.isEmpty {
-                    Text("Scan a few products and your keepers and swaps will line up here.")
+                    Text("Products you scan will be sorted here.")
                         .font(.system(size: 16))
                         .foregroundStyle(HF.Palette.inkSecondary)
                         .padding(.top, 12)
                 }
 
                 if !keepers.isEmpty {
-                    SectionTitle(eyebrow: "Keepers", title: "Great picks you've found")
+                    SectionTitle(eyebrow: "Keepers", title: "Scored 70 and up")
                         .padding(.top, 26)
                     ListCard {
                         ForEach(Array(keepers.prefix(8).enumerated()), id: \.element.barcode) { index, record in
@@ -42,7 +42,7 @@ struct ShelfView: View {
                 }
 
                 if !swaps.isEmpty {
-                    SectionTitle(eyebrow: "Swap next", title: "Worth upgrading")
+                    SectionTitle(eyebrow: "Swap next", title: "Scored under 50")
                         .padding(.top, 26)
                     ListCard {
                         ForEach(Array(swaps.prefix(8).enumerated()), id: \.element.barcode) { index, record in
@@ -78,7 +78,7 @@ struct ShelfView: View {
                 .tracking(-2)
                 .foregroundStyle(.white)
                 .padding(.top, 20)
-            Text("Sweep up to 12 products. We'll line them up from best pick to swap first.")
+            Text("Scan up to 12 products and we'll rank them, best first.")
                 .font(.system(size: 17))
                 .tracking(-0.3)
                 .foregroundStyle(.white.opacity(0.65))

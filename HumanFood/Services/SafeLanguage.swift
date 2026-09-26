@@ -10,8 +10,8 @@ enum SafeLanguage {
     private static let replacements: [(pattern: String, replacement: String)] = [
         (#"\bnon-toxic\b"#, "gentle"),
         (#"\btoxins?\b"#, "compounds of concern"),
-        (#"\btoxic\b"#, "of concern"),
-        (#"\bpoisonous\b"#, "of concern"),
+        (#"\btoxic\b"#, "concerning"),
+        (#"\bpoisonous\b"#, "concerning"),
         (#"\bpoisons?\b"#, "concerning ingredient"),
         (#"\bdangerous\b"#, "worth limiting"),
         (#"\bharmful\b"#, "less favourable"),
@@ -31,6 +31,9 @@ enum SafeLanguage {
         (#"\bterrible\b"#, "less favourable"),
         (#"\bdisgusting\b"#, "less appealing"),
         (#"\bgarbage\b"#, "highly processed"),
+        // House style: no em/en dashes or exclamation marks in generated prose.
+        (#"\s*—\s*|\s+–\s+"#, ", "),  // keeps numeric ranges like "2–3"
+        (#"!"#, "."),
     ]
 
     static func clean(_ text: String, brand: String? = nil) -> String {

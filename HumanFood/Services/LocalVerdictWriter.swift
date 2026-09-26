@@ -6,7 +6,7 @@ enum LocalVerdictWriter {
     static func write(product: Product, score: ScoreResult) -> Verdict {
         let tier = score.tier
         let headline: String = switch tier {
-        case .excellent: "A genuinely whole choice"
+        case .excellent: "A whole food, close to how it grows"
         case .good: "A solid everyday pick"
         case .fair: "Fine now and then"
         case .limit: "Best as an occasional food"
@@ -66,7 +66,7 @@ enum LocalVerdictWriter {
             return "Try making beans, lentils or tofu the centre of the plate a few times a week."
         }
         if score.tier == .excellent {
-            return "Foods like this are the backbone of a long, healthy diet. Enjoy."
+            return "Foods like this can make up most of what you eat."
         }
         return "Shorter ingredient lists with names you recognise are usually the better pick."
     }
@@ -114,13 +114,13 @@ enum LocalVerdictWriter {
             (["milks", "dairies", "dairy"], [
                 .init(title: "Unsweetened soy milk", reason: "Comparable protein, plant-based and fortified.")]),
             (["spread", "hazelnut"], [
-                .init(title: "Nut butter, no added sugar", reason: "Just nuts — nothing else needed.")]),
+                .init(title: "Nut butter, no added sugar", reason: "Just nuts. Nothing else needed.")]),
             (["breads", "bread"], [
                 .init(title: "100% whole-grain bread", reason: "Keeps the bran and germ with their fibre.")]),
             (["pasta", "noodles"], [
                 .init(title: "Whole-wheat or lentil pasta", reason: "More fibre and protein per plate.")]),
             (["sauce", "dressing", "condiment"], [
-                .init(title: "Homemade tomato sauce", reason: "Tomatoes, garlic and herbs — no added sugar."),
+                .init(title: "Homemade tomato sauce", reason: "Tomatoes, garlic and herbs, with no added sugar."),
                 .init(title: "Lemon and tahini dressing", reason: "Whole-food fats and bright flavour.")]),
             (["pizza", "meals", "ready", "frozen-foods"], [
                 .init(title: "Grain bowl with beans and vegetables", reason: "Quick to assemble from whole foods."),

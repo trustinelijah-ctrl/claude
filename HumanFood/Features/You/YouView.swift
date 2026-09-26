@@ -24,7 +24,7 @@ struct YouView: View {
                     .padding(.top, 20)
 
                     HStack(spacing: 12) {
-                        StatTile(value: "\(records.count)", label: "Foods decoded")
+                        StatTile(value: "\(records.count)", label: "Foods scanned")
                         StatTile(value: average.map(String.init) ?? "–", label: "Average score",
                                  tint: average.map { ScoreTier(score: $0).color })
                         StatTile(value: "\(services.streak.best)", label: "Best streak")
@@ -54,7 +54,7 @@ struct YouView: View {
                         }
                     }
 
-                    SectionTitle(eyebrow: "Settings", title: "Make it yours")
+                    SectionTitle(eyebrow: "Settings", title: "Preferences")
                         .padding(.top, 22)
                     ListCard {
                         NavigationLink { SettingsView() } label: {

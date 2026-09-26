@@ -77,10 +77,10 @@ struct OnboardingView: View {
                 Color.clear.frame(height: 280)
             }
             VStack(spacing: 10) {
-                Text("One number.\nThe whole story.")
+                Text("A score from\n0 to 100.")
                     .hfDisplay(36, weight: .heavy)
                     .multilineTextAlignment(.center)
-                Text("0 to 100, built from processing, nutrients, ingredients and additives — with healthier swaps whenever there's a better choice.")
+                Text("Built from processing, nutrients, ingredients and additives. When there's a better option on the shelf, we show it.")
                     .font(HF.Font.body)
                     .foregroundStyle(HF.Palette.inkSecondary)
                     .multilineTextAlignment(.center)
@@ -93,7 +93,7 @@ struct OnboardingView: View {
     private var principles: some View {
         VStack(alignment: .leading, spacing: 22) {
             Spacer()
-            Text("Built on\nwhole-food science.")
+            Text("Mostly plants,\nmostly whole.")
                 .hfDisplay(40, weight: .heavy)
                 .foregroundStyle(HF.Palette.ink)
             VStack(alignment: .leading, spacing: 16) {

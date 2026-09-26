@@ -106,18 +106,20 @@ struct CardBackground: ViewModifier {
 }
 
 struct Eyebrow: ViewModifier {
+    var color: Color = HF.Palette.inkSecondary
+
     func body(content: Content) -> some View {
         content
             .font(HF.Font.eyebrow)
             .tracking(3)
             .textCase(.uppercase)
-            .foregroundStyle(HF.Palette.inkSecondary)
+            .foregroundStyle(color)
     }
 }
 
 extension View {
     func hfCard(padding: CGFloat = HF.Space.m + 4) -> some View { modifier(CardBackground(padding: padding)) }
-    func eyebrow() -> some View { modifier(Eyebrow()) }
+    func eyebrow(_ color: Color = HF.Palette.inkSecondary) -> some View { modifier(Eyebrow(color: color)) }
 
     /// Heavy, tightly tracked headline — the signature type style.
     func hfDisplay(_ size: CGFloat, weight: Font.Weight = .bold) -> some View {

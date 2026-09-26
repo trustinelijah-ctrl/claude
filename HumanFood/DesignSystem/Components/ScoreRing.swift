@@ -44,28 +44,12 @@ struct ScoreRing: View {
     }
 }
 
-/// Compact ring + number used in lists, tray chips and alternatives.
+/// Compact ring + number used in lists. Same drawing as the result-header dial.
 struct ScoreBadge: View {
     var score: Int
     var size: CGFloat = 44
 
-    var body: some View {
-        let tier = ScoreTier(score: score)
-        ZStack {
-            Circle().stroke(HF.Palette.ink.opacity(0.08), lineWidth: size * 0.08)
-            Circle()
-                .trim(from: 0, to: CGFloat(score) / 100)
-                .stroke(tier.color, style: StrokeStyle(lineWidth: size * 0.08, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-            Text("\(score)")
-                .font(.system(size: size * 0.36, weight: .bold).monospacedDigit())
-                .tracking(-0.4)
-                .foregroundStyle(tier.color)
-        }
-        .frame(width: size, height: size)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Score \(score) out of 100, \(tier.title)")
-    }
+    var body: some View { ScoreDial(score: score, size: size) }
 }
 
 /// Pill with tier colour, e.g. "● Excellent".

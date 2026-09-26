@@ -140,8 +140,7 @@ struct VerdictCard: View {
                     .background(HF.Palette.accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 }
                 HStack(spacing: 8) {
-                    Image(systemName: verdict.origin == .ai ? "sparkles" : "leaf")
-                    Text(verdict.origin == .ai ? "AI-assisted summary" : "Human Food summary")
+                    Text(verdict.origin == .ai ? "Written with AI" : "Written by Human Food")
                     if confidence == .low { Text("· limited data") }
                 }
                 .font(HF.Font.mono(11))

@@ -351,7 +351,7 @@ private struct NotFoundCard: View {
                 .hfDisplay(20)
                 .foregroundStyle(HF.Palette.ink)
             Text(canReadLabels
-                 ? "Snap the label and we'll add it — for you and everyone who scans it next."
+                 ? "Photograph the label and we'll add it for everyone who scans it next."
                  : "Barcode \(barcode). You can add it to Open Food Facts to help everyone.")
                 .font(HF.Font.callout)
                 .foregroundStyle(HF.Palette.inkSecondary)

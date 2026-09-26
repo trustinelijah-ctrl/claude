@@ -8,3 +8,7 @@ HF_GEMINI_DEV_KEY =
 HF_GEMINI_MODEL = gemini-3.5-flash-lite
 
 #include? "Secrets.xcconfig"
+
+// Security: the dev key must never reach a Release build. Info.plist variables are
+// substituted in every configuration, so blank it explicitly for Release.
+HF_GEMINI_DEV_KEY[config=Release] =

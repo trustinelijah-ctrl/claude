@@ -121,13 +121,11 @@ struct GroceryRankingView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: HF.Space.l) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Your basket, ranked").hfDisplay(32)
+                    VStack(alignment: .leading, spacing: 8) {
                         if let avg = average {
-                            Text("Average score \(avg) · \(ranked.count) items")
-                                .font(HF.Font.callout)
-                                .foregroundStyle(HF.Palette.inkSecondary)
+                            Text("\(ranked.count) items · average \(avg)").eyebrow()
                         }
+                        Text("Your basket, ranked.").hfDisplay(34, weight: .heavy)
                     }
 
                     VStack(spacing: 10) {
@@ -193,39 +191,39 @@ private struct RankRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            Text("\(rank)")
-                .font(HF.Font.numeral(26))
+            Text(String(format: "%02d", rank))
+                .font(HF.Font.mono(15, weight: .semibold))
                 .foregroundStyle(isBest ? HF.Palette.excellent : HF.Palette.inkTertiary)
-                .frame(width: 28)
+                .frame(width: 26, alignment: .leading)
             ProductThumb(url: item.product.imageURL, size: 52, corner: 14)
             VStack(alignment: .leading, spacing: 3) {
                 if isBest {
-                    Label("Best pick", systemImage: "crown.fill")
-                        .font(HF.Font.caption)
-                        .foregroundStyle(HF.Palette.excellent)
+                    Text("Best pick").eyebrow(HF.Palette.excellent)
                 } else if isWorst {
-                    Label("Swap first", systemImage: "arrow.triangle.swap")
-                        .font(HF.Font.caption)
-                        .foregroundStyle(item.score.tier.color)
+                    Text("Swap first").eyebrow(item.score.tier.color)
                 }
                 Text(item.product.name)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 16, weight: .semibold))
+                    .tracking(-0.3)
                     .foregroundStyle(HF.Palette.ink)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
                 Text(item.score.tier.phrase)
-                    .font(HF.Font.caption)
+                    .font(.system(size: 14))
                     .foregroundStyle(HF.Palette.inkSecondary)
             }
             Spacer(minLength: 0)
-            ScoreBadge(score: item.score.score, size: 46)
+            ScoreDial(score: item.score.score, size: 46)
         }
-        .padding(14)
-        .background(HF.Palette.surface, in: RoundedRectangle(cornerRadius: HF.Radius.card, style: .continuous))
+        .padding(16)
+        .background(HF.Palette.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: HF.Radius.card, style: .continuous)
-                .strokeBorder(isBest ? HF.Palette.excellent.opacity(0.5) : HF.Palette.hairline, lineWidth: isBest ? 1.5 : 1)
+            if isBest {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .strokeBorder(HF.Palette.excellent.opacity(0.45), lineWidth: 1.5)
+            }
         }
+        .shadow(color: .black.opacity(0.035), radius: 14, y: 4)
     }
 }
 
