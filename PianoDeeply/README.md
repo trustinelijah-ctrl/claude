@@ -12,6 +12,15 @@ A native SwiftUI + SwiftData iPhone app for coming back to the piano: decide wha
 
 If you add or remove source files, regenerate the project from `project.yml` with `brew install xcodegen && xcodegen generate`, or add the files in Xcode as usual.
 
+## On the web
+
+A working browser version lives in `web/` (Vite + React + TypeScript) and is deployed at **https://piano-deeply.netlify.app** (Netlify project `piano-deeply`, base directory `PianoDeeply/web`).
+
+- Same features and wording as the iPhone app. The `PianoCore` rules are ported to `web/src/core` with the same tests: `cd web && npm install && npm test`.
+- Data stays in the browser on that device: records in `localStorage`, audio in IndexedDB. There's no account or server. Export JSON from Settings now and then.
+- Differences from the iPhone app: no reminders (a closed web page can't send them reliably), and recordings download as `.webm` or `.m4a` depending on the browser.
+- Run it locally with `npm run dev`. `npm run build` produces the static site in `dist/`.
+
 ## What's in it
 
 | Space | What it does |
