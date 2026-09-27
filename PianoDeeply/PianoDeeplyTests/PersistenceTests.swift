@@ -115,6 +115,24 @@ final class PersistenceTests: XCTestCase {
         XCTAssertTrue(try context.fetch(FetchDescriptor<Skill>()).isEmpty)
     }
 
+    func testABlankLatestNextStepHidesAnOlderOne() throws {
+        let task = PracticeTask(title: "Nocturne, bars 9–12")
+        context.insert(task)
+        let old = Attempt(task: task, phase: .cold, date: .now.addingTimeInterval(-60 * 86_400))
+        old.nextStep = "Slower"
+        let recent = Attempt(task: task, phase: .cold, date: .now.addingTimeInterval(-86_400))
+        context.insert(old)
+        context.insert(recent)
+        try context.save()
+
+        let snapshot = task.snapshot
+        XCTAssertNil(snapshot.nextStep, "a 60-day-old next step must not resurface as yesterday's")
+        XCTAssertEqual(snapshot.lastAttemptAt, recent.date)
+
+        recent.nextStep = "Turn at 66"
+        XCTAssertEqual(task.snapshot.nextStep, "Turn at 66")
+    }
+
     func testOnlyOneBottleneckAtATime() {
         let a = Skill(branch: .rhythm, name: "Pulse", evidence: "", sortOrder: 0)
         let b = Skill(branch: .ear, name: "Bass lines", evidence: "", sortOrder: 0)

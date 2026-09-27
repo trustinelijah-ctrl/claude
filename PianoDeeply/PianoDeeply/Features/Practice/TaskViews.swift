@@ -14,6 +14,7 @@ struct TaskDetailView: View {
     @State private var doingRetest: Retest?
     @State private var editing = false
     @State private var confirmingDelete = false
+    @State private var deleteOnExit = false
     @State private var feedback: ExperimentFeedback?
 
     private var comparisons: [BeforeNow] {
@@ -135,12 +136,17 @@ struct TaskDetailView: View {
         .sheet(isPresented: $editing) { TaskEditorView(mode: .edit(task)) }
         .confirmationDialog("Delete “\(task.title)”?", isPresented: $confirmingDelete, titleVisibility: .visible) {
             Button("Delete target and its attempts", role: .destructive) {
-                context.delete(task)
-                try? context.save()
+                deleteOnExit = true
                 dismiss()
             }
         } message: {
             Text("Its attempts and retests are deleted. Recordings stay in the Journal.")
+        }
+        // Delete only once this screen is gone, so nothing renders a deleted model.
+        .onDisappear {
+            guard deleteOnExit else { return }
+            context.delete(task)
+            try? context.save()
         }
         .feedbackBanner($feedback)
         .activeSessionBar()
@@ -182,6 +188,7 @@ struct AttemptEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var tempoText = ""
     @State private var confirmingDelete = false
+    @State private var deleteOnExit = false
 
     var body: some View {
         Form {
@@ -227,11 +234,13 @@ struct AttemptEditorView: View {
         .navigationTitle("Attempt")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { tempoText = attempt.tempo.map(String.init) ?? "" }
-        .onDisappear { try? context.save() }
+        .onDisappear {
+            if deleteOnExit { context.delete(attempt) }
+            try? context.save()
+        }
         .confirmationDialog("Delete this attempt?", isPresented: $confirmingDelete, titleVisibility: .visible) {
             Button("Delete attempt", role: .destructive) {
-                context.delete(attempt)
-                try? context.save()
+                deleteOnExit = true
                 dismiss()
             }
         } message: {

@@ -7,6 +7,7 @@ struct RootView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
+    @State private var didLaunch = false
 
     var body: some View {
         @Bindable var app = app
@@ -39,7 +40,14 @@ struct RootView: View {
             }
         }
         .task {
+            // .task runs again whenever a full-screen cover closes; this is
+            // launch-only work.
+            guard !didLaunch else { return }
+            didLaunch = true
             SkillSeeder.seedIfNeeded(context)
+            // Nothing can be recording yet at launch, so any file without a
+            // record is left over from a take that was cut off.
+            RecordingStore.reconcileOrphans(in: context)
             if !hasSeenWelcome { app.cover = .welcome }
         }
         .onChange(of: scenePhase) { _, phase in

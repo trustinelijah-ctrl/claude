@@ -156,8 +156,9 @@ public enum DayPhrase {
 }
 
 extension String {
-    var trimmed: String { trimmingCharacters(in: .whitespacesAndNewlines) }
-    var isBlank: Bool { trimmed.isEmpty }
+    /// Shared with the app so "blank" means the same thing everywhere.
+    public var trimmed: String { trimmingCharacters(in: .whitespacesAndNewlines) }
+    public var isBlank: Bool { trimmed.isEmpty }
 
     /// "Left-hand coordination" reads better mid-sentence as "left-hand
     /// coordination". Leaves acronyms and chord names like "ii–V–I" alone.

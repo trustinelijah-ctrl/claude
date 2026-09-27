@@ -58,11 +58,11 @@ struct SessionSetupView: View {
     @State private var didLoad = false
 
     private var activeTasks: [PracticeTask] { tasks.filter { !$0.isArchived } }
-    private var suggestion: Suggestion? { SuggestionProvider.current(tasks: tasks, retests: retests, skills: skills) }
     private var totalMinutes: Int { plan.reduce(0) { $0 + $1.minutes } }
 
     var body: some View {
-        NavigationStack {
+        let suggestion = SuggestionProvider.current(tasks: tasks, retests: retests, skills: skills)
+        return NavigationStack {
             Form {
                 if let session = running.first {
                     Section {
@@ -74,7 +74,7 @@ struct SessionSetupView: View {
                     }
                 } else {
                     lengthSection
-                    focusSection
+                    focusSection(suggestion)
                     planSection
                     Section {
                         Button(action: begin) {
@@ -93,7 +93,7 @@ struct SessionSetupView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
             }
-            .onAppear(perform: loadDefaults)
+            .onAppear { loadDefaults(suggestion) }
         }
     }
 
@@ -122,18 +122,28 @@ struct SessionSetupView: View {
         }
     }
 
-    private var focusSection: some View {
+    /// The suggested task, then whatever is selected (so an older target
+    /// opened from its own page still shows as chosen), then recent ones.
+    private func focusOptions(_ suggestion: Suggestion?) -> [PracticeTask] {
+        var ids: [UUID] = []
+        if let id = suggestion?.taskID { ids.append(id) }
+        if case .task(let id) = focus, !ids.contains(id) { ids.append(id) }
+        let pinned = ids.compactMap { id in tasks.first { $0.id == id } }
+        let recent = activeTasks.filter { !ids.contains($0.id) }.prefix(8)
+        return pinned + recent
+    }
+
+    private func focusSection(_ suggestion: Suggestion?) -> some View {
         Section {
             Picker("Focus", selection: $focus) {
-                if let suggestion, let id = suggestion.taskID, let task = activeTasks.first(where: { $0.id == id }) {
+                ForEach(focusOptions(suggestion)) { task in
                     VStack(alignment: .leading, spacing: 2) {
                         Text(task.title)
-                        Text(suggestion.reason).font(.footnote).foregroundStyle(Palette.inkSoft)
+                        if task.id == suggestion?.taskID, let reason = suggestion?.reason {
+                            Text(reason).font(.footnote).foregroundStyle(Palette.inkSoft)
+                        }
                     }
-                    .tag(Focus.task(id))
-                }
-                ForEach(activeTasks.filter { $0.id != suggestion?.taskID }.prefix(8)) { task in
-                    Text(task.title).tag(Focus.task(task.id))
+                    .tag(Focus.task(task.id))
                 }
                 Text("Something new…").tag(Focus.new)
                 Text("Decide during the session").tag(Focus.later)
@@ -174,12 +184,14 @@ struct SessionSetupView: View {
         plan = SessionPlanner.template(minutes: value)
     }
 
-    private func loadDefaults() {
+    private func loadDefaults(_ suggestion: Suggestion?) {
         guard !didLoad else { return }
         didLoad = true
         isCustom = !SessionPlanner.presetMinutes.contains(lastMinutes)
         setMinutes(lastMinutes)
-        if let id = preselectedTaskID ?? suggestion?.taskID, activeTasks.contains(where: { $0.id == id }) {
+        // An explicitly chosen task wins even if archived; a suggestion only
+        // ever names an active one.
+        if let id = preselectedTaskID ?? suggestion?.taskID, tasks.contains(where: { $0.id == id }) {
             focus = .task(id)
         }
     }

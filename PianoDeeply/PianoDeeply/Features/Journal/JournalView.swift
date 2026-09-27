@@ -57,8 +57,9 @@ struct JournalView: View {
 
     @State private var filter: Filter = .all
     @State private var writingNote = false
+    @State private var editingNote: JournalNote?
 
-    private var entries: [Entry] {
+    private func makeEntries() -> [Entry] {
         var result: [Entry] = []
         switch filter {
         case .all:
@@ -79,7 +80,7 @@ struct JournalView: View {
         return result.sorted { $0.date > $1.date }
     }
 
-    private var days: [(day: Date, entries: [Entry])] {
+    private func days(of entries: [Entry]) -> [(day: Date, entries: [Entry])] {
         let calendar = Calendar.current
         return Dictionary(grouping: entries) { calendar.startOfDay(for: $0.date) }
             .map { (day: $0.key, entries: $0.value.sorted { $0.date > $1.date }) }
@@ -91,12 +92,13 @@ struct JournalView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        let entries = makeEntries()
+        return NavigationStack {
             Group {
                 if entries.isEmpty && filter == .all {
                     emptyState
                 } else {
-                    list
+                    list(entries)
                 }
             }
             .background(Palette.canvas.ignoresSafeArea())
@@ -116,6 +118,7 @@ struct JournalView: View {
                 }
             }
             .sheet(isPresented: $writingNote) { NoteEditorView(note: nil) }
+            .sheet(item: $editingNote) { NoteEditorView(note: $0) }
             .activeSessionBar()
         }
     }
@@ -132,7 +135,7 @@ struct JournalView: View {
         }
     }
 
-    private var list: some View {
+    private func list(_ entries: [Entry]) -> some View {
         List {
             if filter == .all, let comparison,
                let task = attempts.first(where: { $0.task?.id == comparison.taskID })?.task {
@@ -148,7 +151,7 @@ struct JournalView: View {
                     .foregroundStyle(Palette.inkSoft)
             }
 
-            ForEach(days, id: \.day) { day in
+            ForEach(days(of: entries), id: \.day) { day in
                 Section(day.day.dayHeading) {
                     ForEach(day.entries) { entry in
                         row(for: entry)
@@ -173,10 +176,15 @@ struct JournalView: View {
         case .session(let session):
             NavigationLink { SessionDetailView(session: session) } label: { JournalSessionRow(session: session) }
         case .note(let note):
-            NavigationLink { NoteEditorView(note: note) } label: {
-                Label { Text(note.text).lineLimit(4) } icon: { Image(systemName: "text.quote").foregroundStyle(Palette.forest) }
-                    .padding(.vertical, 4)
+            Button { editingNote = note } label: {
+                Label { Text(note.text).lineLimit(4).foregroundStyle(Palette.ink) } icon: {
+                    Image(systemName: "text.quote").foregroundStyle(Palette.forest)
+                }
+                .padding(.vertical, 4)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
         case .piece(let piece):
             NavigationLink { PieceDetailView(piece: piece) } label: {
                 Label("Started \(piece.title)", systemImage: "music.quarternote.3")
@@ -315,6 +323,7 @@ struct NoteEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var text = ""
     @State private var loaded = false
+    @State private var deleteOnExit = false
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -326,8 +335,7 @@ struct NoteEditorView: View {
                 if let note {
                     Section {
                         Button("Delete note", role: .destructive) {
-                            context.delete(note)
-                            try? context.save()
+                            deleteOnExit = true
                             dismiss()
                         }
                     }
@@ -346,6 +354,11 @@ struct NoteEditorView: View {
                 text = note?.text ?? ""
                 focused = note == nil
             }
+        }
+        .onDisappear {
+            guard deleteOnExit, let note else { return }
+            context.delete(note)
+            try? context.save()
         }
     }
 

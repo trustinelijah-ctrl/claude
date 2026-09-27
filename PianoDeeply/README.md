@@ -76,5 +76,5 @@ The build ran in a Linux container. There was no Xcode, iOS SDK, or simulator.
 
 - MIDI input and automatic note evaluation. The seam for Core MIDI would sit beside `PianoCore`, feeding attempts; nothing pretends to listen.
 - Audio inside the JSON export. Recordings are shared one file at a time.
-- Recovering a take cut off by force-quitting the app mid-recording. The partial file stays in `Documents/Recordings` with no Journal entry, and it can't be played because it has no index. Stopping normally, leaving the screen, finishing the session, or locking the phone all keep the take.
+- Recovering the audio of a take cut off by force-quitting the app mid-recording. On the next launch the file shows up in the Journal as "Interrupted recording" so you can see and delete it, but it usually can't be played because it has no index. Stopping normally, leaving the screen, finishing the session, or locking the phone all keep the take.
 - iCloud sync and backup beyond the device's own backups.

@@ -110,10 +110,4 @@ final class PracticeSession {
         let minutes = Int((elapsed() / 60).rounded())
         return minutes < 1 ? "under a minute" : "\(minutes) min"
     }
-
-    var hasAnyWriting: Bool {
-        let fields = [focusSmallerExercise, focusCorrection, focusVariation, focusReintegration, closingEasier, closingNext]
-            + Array(stepNotes.values)
-        return fields.contains { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-    }
 }

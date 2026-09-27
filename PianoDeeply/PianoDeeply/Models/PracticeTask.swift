@@ -47,28 +47,29 @@ final class PracticeTask {
     var lastColdAttempt: Attempt? { attempts.filter { $0.phase == .cold }.max { $0.date < $1.date } }
     var pendingRetests: [Retest] { retests.filter { !$0.isCompleted }.sorted { $0.dueDate < $1.dueDate } }
 
-    /// The newest next step the user wrote, from an attempt or a session's
-    /// closing note.
-    var latestNextStep: (text: String, date: Date)? {
-        let fromAttempts = attempts
-            .filter { !$0.nextStep.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-            .map { (text: $0.nextStep, date: $0.date) }
+    /// The most recent thing done on this task and the next step written
+    /// there. Attempts always count; a focus session counts only if its
+    /// closing note says what's next. A blank next step on the latest attempt
+    /// means there is no pending next step, however old ones read.
+    var latestActivity: (date: Date, nextStep: String)? {
+        let fromAttempts = attempts.map { (date: $0.date, nextStep: $0.nextStep) }
         let fromSessions = focusSessions
-            .filter { !$0.closingNext.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-            .map { (text: $0.closingNext, date: $0.endedAt ?? $0.startedAt) }
+            .filter { !$0.closingNext.isBlank }
+            .map { (date: $0.endedAt ?? $0.startedAt, nextStep: $0.closingNext) }
         return (fromAttempts + fromSessions).max { $0.date < $1.date }
     }
 
     var snapshot: TaskSnapshot {
-        TaskSnapshot(
+        let latest = latestActivity
+        return TaskSnapshot(
             id: id,
             title: title,
             skillName: skill?.name,
             skillIsBottleneck: skill?.isBottleneck ?? false,
             createdAt: createdAt,
-            lastAttemptAt: [lastAttempt?.date, latestNextStep?.date].compactMap { $0 }.max(),
+            lastAttemptAt: latest?.date,
             lastColdAttemptAt: lastColdAttempt?.date,
-            nextStep: latestNextStep?.text,
+            nextStep: latest.flatMap { $0.nextStep.isBlank ? nil : $0.nextStep },
             isArchived: isArchived
         )
     }

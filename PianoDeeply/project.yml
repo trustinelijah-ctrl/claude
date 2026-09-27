@@ -28,6 +28,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.eli.pianodeeply
         PRODUCT_NAME: Piano Deeply
+        PRODUCT_MODULE_NAME: PianoDeeply
         INFOPLIST_FILE: PianoDeeply/Resources/Info.plist
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: "Piano, Deeply"

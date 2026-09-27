@@ -646,6 +646,7 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.eli.pianodeeply;
+				PRODUCT_MODULE_NAME = PianoDeeply;
 				PRODUCT_NAME = "Piano Deeply";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -673,6 +674,7 @@
 					"@executable_path/Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.eli.pianodeeply;
+				PRODUCT_MODULE_NAME = PianoDeeply;
 				PRODUCT_NAME = "Piano Deeply";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";

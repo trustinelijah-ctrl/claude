@@ -13,6 +13,7 @@ struct ActiveSessionView: View {
     @Environment(AudioRecorder.self) private var recorder
     @State private var feedback: ExperimentFeedback?
     @State private var confirmingDiscard = false
+    @State private var discardOnExit = false
 
     private var recordingOwner: String { "session-\(session.id)" }
 
@@ -33,6 +34,11 @@ struct ActiveSessionView: View {
         .onDisappear {
             UIApplication.shared.isIdleTimerDisabled = false
             recorder.stop(ifOwnedBy: recordingOwner)
+            // Delete only once the cover is gone, so nothing renders a deleted model.
+            if discardOnExit {
+                context.delete(session)
+                try? context.save()
+            }
         }
     }
 
@@ -41,6 +47,7 @@ struct ActiveSessionView: View {
             VStack(alignment: .leading, spacing: 28) {
                 SessionTimerHeader(session: session) { try? context.save() }
                 StepStrip(session: session)
+                PlanHint(session: session)
                 stepContent
                     .id(session.currentStepIndex)
                 stepNavigation
@@ -77,8 +84,7 @@ struct ActiveSessionView: View {
         .confirmationDialog("Discard this session?", isPresented: $confirmingDiscard, titleVisibility: .visible) {
             Button("Discard session", role: .destructive) {
                 recorder.stop(ifOwnedBy: recordingOwner)
-                context.delete(session)
-                try? context.save()
+                discardOnExit = true
                 dismiss()
             }
         } message: {
@@ -176,6 +182,25 @@ private struct SessionTimerHeader: View {
                     .background(Palette.forest, in: Circle())
             }
             .accessibilityLabel(session.isPaused ? "Resume" : "Pause")
+        }
+    }
+}
+
+/// A quiet line when the clock has moved past the step you're on. It never
+/// moves you; the plan is only a guide.
+private struct PlanHint: View {
+    let session: PracticeSession
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 30)) { timeline in
+            let steps = session.plan
+            if let index = SessionClock.stepIndex(for: session.elapsed(at: timeline.date), in: steps),
+               index > session.currentStepIndex, !session.isPaused {
+                Label("By the plan's clock you'd be on \(steps[index].kind.title.lowercased()). Move on whenever you're ready.",
+                      systemImage: "clock")
+                    .font(.subheadline)
+                    .foregroundStyle(Palette.inkSoft)
+            }
         }
     }
 }

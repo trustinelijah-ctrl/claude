@@ -178,11 +178,14 @@ struct BranchView: View {
                             }
                             .tint(Palette.brass)
                         }
-                }
-                .onDelete { offsets in
-                    let current = skills
-                    offsets.map { current[$0] }.forEach { context.delete($0) }
-                    try? context.save()
+                        // Rows with custom swipe actions lose the automatic
+                        // delete, so it's spelled out here.
+                        .swipeActions(edge: .trailing) {
+                            Button("Delete", role: .destructive) {
+                                context.delete(skill)
+                                try? context.save()
+                            }
+                        }
                 }
                 Button { showingAdd = true } label: { Label("Add subskill", systemImage: "plus") }
             } header: {

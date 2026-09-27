@@ -21,6 +21,24 @@ enum RecordingStore {
         !fileName.isEmpty && FileManager.default.fileExists(atPath: url(for: fileName).path(percentEncoded: false))
     }
 
+    /// Gives any audio file without a record (a take cut off by the app being
+    /// force-quit) an entry, so it shows up in the Journal instead of
+    /// silently taking space. Such files usually can't be played; the row
+    /// says so and can be deleted.
+    static func reconcileOrphans(in context: ModelContext) {
+        let known = Set(((try? context.fetch(FetchDescriptor<Recording>())) ?? []).map(\.fileName))
+        let keys: [URLResourceKey] = [.creationDateKey]
+        guard let files = try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: keys) else { return }
+        var added = false
+        for file in files where file.pathExtension == "m4a" && !known.contains(file.lastPathComponent) {
+            let created = (try? file.resourceValues(forKeys: Set(keys)).creationDate) ?? .now
+            context.insert(Recording(fileName: file.lastPathComponent, duration: 0,
+                                     title: "Interrupted recording", createdAt: created))
+            added = true
+        }
+        if added { try? context.save() }
+    }
+
     /// Removes the audio file and its record together. A file that is already
     /// missing is not an error; the record still goes.
     static func delete(_ recording: Recording, in context: ModelContext) {

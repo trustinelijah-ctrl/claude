@@ -28,7 +28,6 @@ struct TodayView: View {
     }
 
     private var running: PracticeSession? { sessions.first { $0.endedAt == nil } }
-    private var suggestion: Suggestion? { SuggestionProvider.current(tasks: tasks, retests: retests, skills: skills) }
     private var inventoryDone: Int { Inventory.doneCount(in: tasks) }
 
     private var lastPlayed: Date? {
@@ -40,11 +39,12 @@ struct TodayView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        let suggestion = SuggestionProvider.current(tasks: tasks, retests: retests, skills: skills)
+        return NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 32) {
                     header
-                    startBlock
+                    startBlock(suggestion)
                     if let suggestion { suggestionBlock(suggestion) }
                     if inventoryDone < InventorySample.allCases.count && !inventoryHidden { inventoryBlock }
                     piecesBlock
@@ -95,7 +95,7 @@ struct TodayView: View {
     }
 
     @ViewBuilder
-    private var startBlock: some View {
+    private func startBlock(_ suggestion: Suggestion?) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             if let running {
                 Button { app.open(running) } label: {
@@ -113,14 +113,14 @@ struct TodayView: View {
             } else {
                 Button("Start practice") { app.planSession() }
                     .buttonStyle(.primary)
-                Text(startCaption)
+                Text(startCaption(suggestion))
                     .font(.subheadline)
                     .foregroundStyle(Palette.inkSoft)
             }
         }
     }
 
-    private var startCaption: String {
+    private func startCaption(_ suggestion: Suggestion?) -> String {
         var parts = ["\(lastMinutes) min"]
         if let id = suggestion?.taskID, let task = tasks.first(where: { $0.id == id }) {
             parts.append("focus: \(task.title)")

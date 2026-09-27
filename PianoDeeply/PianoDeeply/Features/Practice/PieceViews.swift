@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import PianoCore
 
 struct PieceDetailView: View {
     @Bindable var piece: Piece
@@ -8,6 +9,7 @@ struct PieceDetailView: View {
     @State private var editing = false
     @State private var addingTask = false
     @State private var confirmingDelete = false
+    @State private var deleteOnExit = false
 
     var body: some View {
         List {
@@ -49,12 +51,17 @@ struct PieceDetailView: View {
         .sheet(isPresented: $addingTask) { TaskEditorView(mode: .new(skill: nil, piece: piece)) }
         .confirmationDialog("Delete “\(piece.title)”?", isPresented: $confirmingDelete, titleVisibility: .visible) {
             Button("Delete piece", role: .destructive) {
-                context.delete(piece)
-                try? context.save()
+                deleteOnExit = true
                 dismiss()
             }
         } message: {
             Text("Its targets and their attempts stay; they're just no longer linked to a piece.")
+        }
+        // Delete only once this screen is gone, so nothing renders a deleted model.
+        .onDisappear {
+            guard deleteOnExit else { return }
+            context.delete(piece)
+            try? context.save()
         }
         .activeSessionBar()
     }

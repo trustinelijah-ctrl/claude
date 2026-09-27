@@ -184,8 +184,3 @@ extension Date {
         return formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))
     }
 }
-
-extension String {
-    var isBlank: Bool { trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-    var trimmed: String { trimmingCharacters(in: .whitespacesAndNewlines) }
-}
