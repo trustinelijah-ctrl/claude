@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Piano, Deeply</title>
+<meta name="description" content="A personal piano practice studio for iPhone: decide what to play, work on one thing properly, and keep evidence that it's getting easier.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+  /* Tokens mirror PianoDeeply/Design/Theme.swift */
+  :root {
+    --canvas:#F5F0E6; --surface:#FFFCF5; --sunk:#EDE6D8; --hairline:#E0D8C7;
+    --ink:#1D1C19; --ink-soft:#57534B;
+    --forest:#2D5A43; --on-forest:#FBF7EE; --forest-wash:#E3ECE5;
+    --brass:#86611F; --brass-wash:#F1E6CC;
+    --white-key:#FFFDF7; --black-key:#23211E; --key-edge:#CFC6B3;
+    --page:#EAE3D5; --page-ink:#1D1C19; --page-soft:#57534B;
+    --sans: "Inter", system-ui, sans-serif;
+    --serif: "Newsreader", Georgia, serif;
+  }
+  .dark {
+    --canvas:#161513; --surface:#22211E; --sunk:#1C1B18; --hairline:#3A3833;
+    --ink:#F2EDE3; --ink-soft:#B9B2A5;
+    --forest:#88C2A2; --on-forest:#0E1A13; --forest-wash:#1D2B23;
+    --brass:#D8B46C; --brass-wash:#352C1A;
+    --white-key:#E8E2D5; --black-key:#0E0D0C; --key-edge:#6D675C;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --page:#121110; --page-ink:#F2EDE3; --page-soft:#B9B2A5; }
+  }
+  :root[data-theme="dark"] { --page:#121110; --page-ink:#F2EDE3; --page-soft:#B9B2A5; }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--page); color: var(--page-ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; }
+  .page { max-width: 1320px; margin: 0 auto; padding: 72px 16px 96px; }
+  .intro { max-width: 640px; margin: 0 auto 64px; text-align: center; }
+  .intro h1 { font-family: var(--serif); font-weight: 600; font-size: clamp(40px, 7vw, 64px); letter-spacing: -0.02em; line-height: 1.05; }
+  .intro p { margin-top: 18px; font-size: 19px; line-height: 1.5; color: var(--page-soft); }
+  .intro .note { margin-top: 22px; font-size: 14px; }
+  .gallery { display: flex; flex-wrap: wrap; justify-content: center; gap: 56px 40px; }
+  figure { display: flex; flex-direction: column; align-items: center; gap: 18px; max-width: 100%; }
+  figcaption { max-width: 360px; text-align: center; font-size: 15px; line-height: 1.45; color: var(--page-soft); }
+  figcaption b { display: block; color: var(--page-ink); font-weight: 600; font-size: 16px; margin-bottom: 2px; }
+  @media (max-width: 440px) { .device { transform: scale(.86); transform-origin: top center; margin-bottom: -125px; } }
+
+  /* ---------- device ---------- */
+  .device { width: 417px; height: 876px; padding: 12px; border-radius: 66px; background: #0d0d0c; box-shadow: 0 30px 60px -20px rgba(40,30,10,.35), inset 0 0 0 1.5px #3a3833; flex: none; }
+  .screen { position: relative; width: 393px; height: 852px; border-radius: 54px; overflow: hidden; background: var(--canvas); color: var(--ink); font-size: 17px; line-height: 1.3; letter-spacing: -0.01em; }
+  .island { position: absolute; top: 11px; left: 50%; width: 124px; height: 36px; margin-left: -62px; border-radius: 20px; background: #000; z-index: 20; }
+  .status { position: absolute; top: 0; left: 0; right: 0; height: 54px; display: flex; justify-content: space-between; align-items: center; padding: 6px 34px 0 50px; font-weight: 600; font-size: 17px; z-index: 10; }
+  .status .r { display: flex; gap: 6px; align-items: center; }
+  .batt { width: 26px; height: 12px; border: 1.5px solid currentColor; border-radius: 4px; padding: 1.5px; opacity: .9; }
+  .batt i { display: block; height: 100%; width: 80%; background: currentColor; border-radius: 1.5px; }
+  .content { position: absolute; top: 54px; left: 0; right: 0; bottom: 83px; overflow: hidden; }
+  .content.full { bottom: 0; }
+  .pad { padding: 0 20px; }
+  .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 83px; background: color-mix(in srgb, var(--surface) 88%, transparent); border-top: .5px solid var(--hairline); display: flex; justify-content: space-around; padding-top: 7px; z-index: 5; }
+  .tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; color: #8e8a82; width: 80px; }
+  .tab.on { color: var(--forest); }
+  .tab svg.i { width: 26px; height: 26px; }
+  .home-ind { position: absolute; bottom: 8px; left: 50%; width: 134px; margin-left: -67px; height: 5px; border-radius: 3px; background: var(--ink); opacity: .85; z-index: 30; }
+
+  /* ---------- UI atoms ---------- */
+  svg.i { width: 1em; height: 1em; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .navrow { height: 44px; display: flex; align-items: center; justify-content: flex-end; padding: 0 16px; color: var(--forest); font-size: 22px; gap: 18px; }
+  .navrow.split { justify-content: space-between; }
+  .navrow .t { font-size: 17px; font-weight: 600; color: var(--ink); }
+  .navrow .link { font-size: 17px; }
+  .large-title { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; padding: 2px 20px 10px; }
+  .display { font-family: var(--serif); font-weight: 600; font-size: 38px; letter-spacing: -0.015em; line-height: 1.1; }
+  .display-title { font-family: var(--serif); font-weight: 600; font-size: 25px; line-height: 1.15; }
+  .display-headline { font-family: var(--serif); font-weight: 600; font-size: 21px; line-height: 1.2; }
+  .title3 { font-size: 20px; line-height: 1.3; }
+  .soft { color: var(--ink-soft); }
+  .sub { font-size: 15px; }
+  .foot { font-size: 13px; }
+  .headline { font-size: 17px; font-weight: 600; }
+  .stack > * + * { margin-top: var(--gap, 12px); }
+  .btn-primary { display: flex; align-items: center; justify-content: center; min-height: 56px; border-radius: 16px; background: var(--forest); color: var(--on-forest); font-weight: 600; font-size: 17px; padding: 0 20px; }
+  .btn-secondary { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; border-radius: 14px; background: var(--forest-wash); color: var(--forest); font-weight: 600; font-size: 17px; padding: 0 16px; flex: 1; }
+  .btn-plain { display: flex; align-items: center; justify-content: center; min-height: 48px; color: var(--forest); font-weight: 600; flex: 1; }
+  .surface { background: var(--surface); border: .5px solid var(--hairline); border-radius: 20px; padding: 18px; }
+  .row2 { display: flex; gap: 10px; }
+  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 99px; }
+  .badge.cold { color: var(--forest); background: var(--forest-wash); }
+  .badge.warm { color: var(--brass); background: var(--brass-wash); }
+  .tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 99px; color: var(--forest); background: var(--forest-wash); }
+  .tag.strong { color: var(--on-forest); background: var(--forest); }
+  .chip { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: 99px; background: var(--sunk); font-size: 17px; }
+  .chip.on { background: var(--forest); color: var(--on-forest); font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .field { background: var(--surface); border: .5px solid var(--hairline); border-radius: 14px; padding: 14px; color: var(--ink); }
+  .field.ph { color: #a29d93; }
+  .dark .field.ph { color: #77726a; }
+
+  /* grouped list */
+  .list { padding: 0 16px; }
+  .sec-h { font-size: 13px; text-transform: uppercase; letter-spacing: .02em; color: var(--ink-soft); padding: 18px 16px 7px; }
+  .sec-f { font-size: 13px; color: var(--ink-soft); padding: 7px 16px 0; line-height: 1.35; }
+  .group { background: var(--surface); border-radius: 12px; overflow: hidden; }
+  .cell { padding: 11px 16px; display: flex; align-items: center; gap: 12px; min-height: 44px; position: relative; }
+  .cell + .cell::before { content: ""; position: absolute; top: 0; left: 16px; right: 0; border-top: .5px solid var(--hairline); }
+  .cell .grow { flex: 1; min-width: 0; }
+  .cell .chev { color: #b8b2a6; font-size: 14px; }
+  .cell .check { color: var(--forest); font-size: 18px; }
+  .stepper { display: flex; border-radius: 9px; background: var(--sunk); height: 32px; width: 94px; flex: none; }
+  .stepper span { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--ink); }
+  .stepper span + span { border-left: 1px solid var(--hairline); }
+  .seg { display: flex; background: var(--sunk); border-radius: 9px; padding: 2px; }
+  .seg span { flex: 1; text-align: center; font-size: 13px; font-weight: 500; padding: 6px 0; border-radius: 7px; }
+  .seg span.on { background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,.12); font-weight: 600; }
+  .dark .seg span.on { background: #3a3833; }
+  .mono { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="intro">
+    <h1>Piano, Deeply</h1>
+    <p>A personal piano practice studio for iPhone. Decide what to play, work on one thing properly, and keep evidence that it's getting easier. No streaks, no scores, no account.</p>
+    <p class="note">Design mockups drawn from the app's SwiftUI source (colors, type, copy, and sample data), not simulator screenshots.</p>
+  </header>
+
+  <section class="gallery">
+
+    <!-- 1. TODAY -->
+    <figure>
+      <div class="device" id="today"><div class="screen">
+        <div class="island"></div><div class="status"><span>9:41</span><span class="r">●●● <span class="batt"><i></i></span></span></div>
+        <div class="content">
+          <div class="navrow"><i data-icon="gear"></i></div>
+          <div class="pad stack" style="--gap:30px">
+            <div class="stack" style="--gap:10px">
+              <div data-kb="60-76" data-w="132" data-h="30"></div>
+              <div class="display">Good evening.</div>
+              <div class="title3 soft">Sunday 27 September</div>
+            </div>
+            <div class="stack" style="--gap:10px">
+              <div class="btn-primary">Start practice</div>
+              <div class="sub soft">30 min · focus: Familiar piece, cold</div>
+            </div>
+            <div class="surface stack" style="--gap:12px">
+              <div class="display-headline">Familiar piece, cold</div>
+              <div class="sub soft" style="display:flex;gap:8px"><span style="color:var(--brass);font-size:17px;margin-top:1px"><i data-icon="snowflake"></i></span>You set up this cold retest 4 weeks ago.</div>
+              <div class="row2"><div class="btn-secondary">Do the retest</div><div class="btn-plain">Open</div></div>
+            </div>
+            <div class="surface" style="padding:16px;display:flex;align-items:center;gap:14px">
+              <span style="color:var(--forest);font-size:26px"><i data-icon="note"></i></span>
+              <div style="flex:1"><div class="headline">Nocturne in E minor, Op. 72 No. 1</div><div class="sub soft">Chopin · last worked on 5 days ago</div></div>
+              <span class="soft" style="font-size:15px"><i data-icon="chev"></i></span>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px">
+              <span style="color:var(--forest);font-size:26px"><i data-icon="note"></i></span>
+              <div><div class="headline">Just play</div><div class="sub soft">No goals. A timer and recording only if you want them.</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="tabbar" data-tab="0"></div><div class="home-ind"></div>
+      </div></div>
+      <figcaption><b>Today</b>One clear start, and one suggestion that always says why.</figcaption>
+    </figure>
+
+    <!-- 2. ACTIVE SESSION -->
+    <figure>
+      <div class="device" id="session"><div class="screen">
+        <div class="island"></div><div class="status"><span>9:41</span><span class="r">●●● <span class="batt"><i></i></span></span></div>
+        <div class="content full">
+          <div class="navrow split"><i data-icon="chevdown"></i><i data-icon="ellipsis"></i></div>
+          <div style="position:absolute;top:50px;left:16px;right:16px;z-index:4;background:var(--surface);border:.5px solid var(--hairline);border-radius:20px;padding:16px;display:flex;gap:14px;align-items:center;box-shadow:0 8px 18px rgba(0,0,0,.12);min-height:98px">
+            <span style="position:relative;width:34px;height:34px;flex:none">
+              <span style="position:absolute;inset:-9px;border-radius:50%;background:var(--brass);opacity:.22"></span>
+              <span style="position:absolute;inset:0;border-radius:50%;background:var(--forest);color:var(--on-forest);display:flex;align-items:center;justify-content:center;font-size:17px"><i data-icon="check" data-w="2.6"></i></span>
+            </span>
+            <span style="font-weight:500">Even at 72 bpm. Try it cold next time.</span>
+          </div>
+          <div class="pad stack" style="--gap:26px;margin-top:8px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div><div class="mono" style="font-family:var(--serif);font-weight:400;font-size:60px;line-height:1">17:04</div><div class="sub soft" style="margin-top:4px">of 30 min planned</div></div>
+              <div style="width:64px;height:64px;border-radius:50%;background:var(--forest);display:flex;align-items:center;justify-content:center;gap:6px"><span style="width:6px;height:22px;border-radius:2px;background:var(--on-forest)"></span><span style="width:6px;height:22px;border-radius:2px;background:var(--on-forest)"></span></div>
+            </div>
+            <div style="display:flex;gap:8px;white-space:nowrap;margin-right:-20px;overflow:hidden">
+              <span class="chip" style="font-size:15px">Arrive</span><span class="chip" style="font-size:15px">Easy reading</span><span class="chip on" style="font-size:15px">One focused problem</span><span class="chip" style="font-size:15px">Back into music</span>
+            </div>
+            <div class="stack" style="--gap:6px">
+              <div class="display-title" style="display:flex;gap:10px;align-items:center"><i data-icon="scope"></i>One focused problem</div>
+              <div class="soft">Pick one thing that doesn't work yet and work on it. About 13 min.</div>
+            </div>
+            <div class="surface stack" style="--gap:6px"><div class="display-headline">Bars 9–12, left hand, no stops</div><div class="soft">Nocturne in E minor · Henle edition, fingering 5-2-1</div></div>
+            <div class="stack" style="--gap:10px">
+              <div class="headline">Try it cold</div>
+              <div class="surface stack" style="padding:14px;--gap:6px">
+                <div style="display:flex;gap:8px;align-items:center"><span class="badge cold"><i data-icon="snowflake"></i>Cold first pass</span><span class="sub soft mono">60 bpm</span></div>
+                <div class="sub" style="font-weight:500">Hands together</div>
+                <div>Left hand lands late on the jump into bar 11.</div>
+              </div>
+            </div>
+            <div class="stack" style="--gap:8px">
+              <div class="headline">Make it smaller</div>
+              <div class="field">Beats 3–4 of bar 10 only, then the jump into bar 11.</div>
+            </div>
+          </div>
+        </div>
+        <div class="home-ind"></div>
+      </div></div>
+      <figcaption><b>A session</b>The timer pauses and survives anything. A finished experiment that worked gets a warm glow; tapping around gets nothing.</figcaption>
+    </figure>
+
+    <!-- 3. JOURNAL -->
+    <figure>
+      <div class="device" id="journal"><div class="screen">
+        <div class="island"></div><div class="status"><span>9:41</span><span class="r">●●● <span class="batt"><i></i></span></span></div>
+        <div class="content">
+          <div class="navrow"><i data-icon="pencil"></i><i data-icon="filter"></i></div>
+          <div class="large-title">Journal</div>
+          <div class="list">
+            <div class="sec-h">Before → Now → Next</div>
+            <div class="group"><div class="cell" style="display:block;padding:16px">
+              <div class="display-headline">Bars 9–12, left hand, no stops</div>
+              <div class="sub soft" style="margin-top:4px">Cold first pass compared with cold first pass</div>
+              <div style="display:flex;gap:12px;margin-top:14px;align-items:flex-start">
+                <div style="flex:1" class="stack" ><div class="headline">Before</div><div class="sub soft" style="margin-top:3px">1 Sep 2026</div><div class="sub mono" style="margin-top:3px">56 bpm</div><div class="sub" style="margin-top:3px">Stopped twice at the jump into bar 11.</div></div>
+                <span class="soft" style="margin-top:2px"><i data-icon="arrow"></i></span>
+                <div style="flex:1"><div class="headline">Now</div><div class="sub soft" style="margin-top:3px">22 Sep 2026</div><div class="sub mono" style="margin-top:3px">68 bpm</div><div class="sub" style="margin-top:3px">No stops. Bar 12 turn rushed.</div></div>
+              </div>
+              <div class="sub" style="font-weight:500;margin-top:12px">12 bpm faster, by your own count.</div>
+              <div class="headline" style="margin-top:12px">Next</div>
+              <div>Bar 12 turn with the metronome on 2 and 4.</div>
+            </div></div>
+            <div class="sec-h">Fri 25 Sep</div>
+            <div class="group"><div class="cell"><span style="color:var(--forest)"><i data-icon="note"></i></span><span class="headline">Just played · 22 min</span></div></div>
+            <div class="sec-h">Tue 22 Sep</div>
+            <div class="group">
+              <div class="cell" style="display:block">
+                <div class="headline">Bars 9–12, left hand, no stops</div>
+                <div style="display:flex;gap:8px;align-items:center;margin-top:6px"><span class="badge cold"><i data-icon="snowflake"></i>Cold first pass</span><span class="sub soft mono">68 bpm</span><span class="sub soft">18:00</span></div>
+                <div style="margin-top:6px">No stops. Bar 12 turn rushed.</div>
+              </div>
+              <div class="cell" style="display:block"><div class="headline" style="display:flex;gap:8px;align-items:center"><i data-icon="keys"></i>Practice · 25 min</div><div class="sub soft" style="margin-top:4px">Focus: Bars 9–12, left hand, no stops</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="tabbar" data-tab="3"></div><div class="home-ind"></div>
+      </div></div>
+      <figcaption><b>Journal</b>Cold is only ever compared with cold, on the same task. Tempo appears only where you typed it.</figcaption>
+    </figure>
+
+    <!-- 4. MAP -->
+    <figure>
+      <div class="device" id="map"><div class="screen">
+        <div class="island"></div><div class="status"><span>9:41</span><span class="r">●●● <span class="batt"><i></i></span></span></div>
+        <div class="content">
+          <div class="navrow"></div>
+          <div class="large-title">Map</div>
+          <div class="list">
+            <div class="group" style="margin-top:6px"><div class="cell" style="display:block;padding:14px 16px">
+              <div class="display-headline" style="display:flex;gap:8px;align-items:center"><span style="color:var(--brass)"><i data-icon="alert"></i></span>Left-hand coordination</div>
+              <div class="sub" style="font-weight:500;margin-top:6px">Your current bottleneck, in technique &amp; touch.</div>
+              <div class="sub soft" style="margin-top:6px">Last time: Bars 9–12, left hand, no stops, 5 days ago. Cold first pass: No stops. Bar 12 turn rushed.</div>
+              <div class="btn-secondary" style="margin-top:12px">Practise it</div>
+            </div></div>
+            <div class="sec-h">Branches</div>
+            <div class="group">
+              <div class="cell" style="align-items:flex-start"><span style="color:var(--forest);font-size:21px;width:30px"><i data-icon="hand"></i></span><div class="grow"><div style="font-weight:600">Technique &amp; touch <span style="color:var(--brass)"><i data-icon="alert"></i></span></div><div class="sub soft">Getting the sound you mean with a hand that stays free.</div><div style="margin-top:6px"><span class="tag">Left-hand coordination</span></div></div><span class="chev"><i data-icon="chev"></i></span></div>
+              <div class="cell" style="align-items:flex-start"><span style="color:var(--forest);font-size:21px;width:30px"><i data-icon="metronome"></i></span><div class="grow"><div style="font-weight:600">Rhythm</div><div class="sub soft">Keeping time, feeling subdivision, landing together.</div></div><span class="chev"><i data-icon="chev"></i></span></div>
+              <div class="cell" style="align-items:flex-start"><span style="color:var(--forest);font-size:21px;width:30px"><i data-icon="list"></i></span><div class="grow"><div style="font-weight:600">Reading</div><div class="sub soft">Turning the page into sound without stopping.</div><div style="margin-top:6px"><span class="tag">Easy sight-reading</span></div></div><span class="chev"><i data-icon="chev"></i></span></div>
+              <div class="cell" style="align-items:flex-start"><span style="color:var(--forest);font-size:21px;width:30px"><i data-icon="keys"></i></span><div class="grow"><div style="font-weight:600">Harmony &amp; chords</div><div class="sub soft">Knowing what the chords are and where your hands go.</div><div style="margin-top:6px"><span class="tag">ii–V–I</span></div></div><span class="chev"><i data-icon="chev"></i></span></div>
+              <div class="cell" style="align-items:flex-start"><span style="color:var(--forest);font-size:21px;width:30px"><i data-icon="sparkles"></i></span><div class="grow"><div style="font-weight:600">Improvisation &amp; creation</div><div class="sub soft">Making things up, arranging, writing.</div><div style="margin-top:6px"><span class="tag strong">Free playing</span></div></div><span class="chev"><i data-icon="chev"></i></span></div>
+            </div>
+          </div>
+        </div>
+        <div class="tabbar" data-tab="2"></div><div class="home-ind"></div>
+      </div></div>
+      <figcaption><b>Map</b>Eight branches in plain words: Not explored, Understood, Slowly playable, Fluent, Reliable later, Usable freely. No percentages.</figcaption>
+    </figure>
+
+    <!-- 5. CHORDS -->
+    <figure>
+      <div class="device" id="chords"><div class="screen">
+        <div class="island"></div><div class="status"><span>9:41</span><span class="r">●●● <span class="batt"><i></i></span></span></div>
+        <div class="content full">
+          <div class="navrow split"><span class="link" style="display:flex;align-items:center;gap:4px"><i data-icon="chevleft"></i>Map</span><span class="t">Chords</span><span style="width:50px"></span></div>
+          <div class="pad stack" style="--gap:20px;margin-top:6px">
+            <div class="stack" style="--gap:8px"><div class="display-title">ii–V–I in F</div><div class="soft sub">You'll find it all over jazz standards and plenty of pop. Brass marks the lowest note.</div></div>
+            <div class="seg"><span class="on">F</span><span>C</span><span>B♭</span><span>G</span></div>
+            <div class="surface stack" style="--gap:12px">
+              <div style="display:flex;align-items:baseline;gap:8px"><span style="font-family:var(--serif);font-style:italic;font-size:21px;color:var(--brass)">ii</span><span class="display-headline">Gm7</span><span class="sub soft" style="margin-left:auto">Root position</span></div>
+              <div data-kb="53-77" data-h="96" data-marks="55:b,58,62,65" data-labels="55:G,58:B♭,62:D,65:F"></div>
+              <div class="seg"><span class="on">Root</span><span>1st</span><span>2nd</span><span>3rd</span></div>
+            </div>
+            <div class="surface stack" style="--gap:12px">
+              <div style="display:flex;align-items:baseline;gap:8px"><span style="font-family:var(--serif);font-style:italic;font-size:21px;color:var(--brass)">V</span><span class="display-headline">C7</span><span class="sub soft" style="margin-left:auto">2nd inversion</span></div>
+              <div data-kb="53-77" data-h="96" data-marks="55:b,58,60,64" data-labels="55:G,58:B♭,60:C,64:E"></div>
+              <div class="seg"><span>Root</span><span>1st</span><span class="on">2nd</span><span>3rd</span></div>
+            </div>
+            <div class="surface stack" style="--gap:12px">
+              <div style="display:flex;align-items:baseline;gap:8px"><span style="font-family:var(--serif);font-style:italic;font-size:21px;color:var(--brass)">I</span><span class="display-headline">Fmaj7</span><span class="sub soft" style="margin-left:auto">Root position</span></div>
+              <div data-kb="53-77" data-h="96" data-marks="53:b,57,60,64" data-labels="53:F,57:A,60:C,64:E"></div>
+            </div>
+          </div>
+        </div>
+        <div class="home-ind"></div>
+      </div></div>
+      <figcaption><b>ii–V–I explorer</b>Correct spelling (B♭, never A♯), inversions, and the smooth voice leading. The theory is unit-tested.</figcaption>
+    </figure>
+
+    <!-- 6. PLAN -->
+    <figure>
+      <div class="device" id="plan"><div class="screen">
+        <div class="island"></div><div class="status"><span>9:41</span><span class="r">●●● <span class="batt"><i></i></span></span></div>
+        <div class="content full">
+          <div class="navrow split"><span class="link">Cancel</span><span class="t">Plan a session</span><span style="width:52px"></span></div>
+          <div class="list">
+            <div class="sec-h">How long</div>
+            <div class="group"><div class="cell"><div class="chips"><span class="chip">20 min</span><span class="chip on">30 min</span><span class="chip">60 min</span><span class="chip">90 min</span><span class="chip">Custom</span></div></div></div>
+            <div class="sec-h">One focused problem</div>
+            <div class="group">
+              <div class="cell"><div class="grow"><div>Familiar piece, cold</div><div class="foot soft">You set up this cold retest 4 weeks ago.</div></div><span class="check"><i data-icon="check" data-w="2.4"></i></span></div>
+              <div class="cell"><div class="grow">Bars 9–12, left hand, no stops</div></div>
+              <div class="cell"><div class="grow">ii–V–I in F and B♭, smooth voice leading</div></div>
+              <div class="cell"><div class="grow">Something new…</div></div>
+            </div>
+            <div class="sec-h">Plan</div>
+            <div class="group">
+              <div class="cell"><span style="color:var(--forest)"><i data-icon="sparkles"></i></span><div class="grow">Arrive</div><span class="soft mono">4 min</span><div class="stepper"><span>−</span><span>+</span></div></div>
+              <div class="cell"><span style="color:var(--forest)"><i data-icon="list"></i></span><div class="grow">Easy reading</div><span class="soft mono">5 min</span><div class="stepper"><span>−</span><span>+</span></div></div>
+              <div class="cell"><span style="color:var(--forest)"><i data-icon="scope"></i></span><div class="grow">One focused problem</div><span class="soft mono">13 min</span><div class="stepper"><span>−</span><span>+</span></div></div>
+              <div class="cell"><span style="color:var(--forest)"><i data-icon="note"></i></span><div class="grow">Back into music</div><span class="soft mono">6 min</span><div class="stepper"><span>−</span><span>+</span></div></div>
+              <div class="cell"><span style="color:var(--forest)"><i data-icon="pencil"></i></span><div class="grow">Leave a note</div><span class="soft mono">2 min</span><div class="stepper"><span>−</span><span>+</span></div></div>
+            </div>
+            <div class="sec-f">A starting shape to change, not a rule. Adjust the minutes, or swipe left to drop a step.</div>
+            <div class="btn-primary" style="margin-top:18px">Begin · 30 min</div>
+          </div>
+        </div>
+        <div class="home-ind"></div>
+      </div></div>
+      <figcaption><b>Plan a session</b>20, 30, 60, 90 or custom minutes. The plan is a template you edit; it opens with today's suggestion already picked.</figcaption>
+    </figure>
+
+    <!-- 7. WELCOME -->
+    <figure>
+      <div class="device" id="welcome"><div class="screen">
+        <div class="island"></div><div class="status"><span>9:41</span><span class="r">●●● <span class="batt"><i></i></span></span></div>
+        <div class="content full"><div class="pad stack" style="--gap:26px;padding:24px">
+          <div data-kb="60-76" data-w="132" data-h="30"></div>
+          <div class="stack" style="--gap:12px"><div class="display">Piano, Deeply</div><div class="title3 soft">Decide what to play, work on one thing properly, and keep a record that shows it getting easier.</div></div>
+          <div class="stack" style="--gap:12px">
+            <div class="display-headline">Start with a six-sample inventory</div>
+            <div>Play six short things cold, about fifteen minutes in all. Nothing is scored. Four weeks later you play the same six again and listen to the difference.</div>
+            <div class="stack" style="--gap:11px;margin-top:4px">
+              <div style="display:flex;gap:12px;align-items:center"><span style="color:var(--forest)"><i data-icon="note"></i></span>A familiar piece</div>
+              <div style="display:flex;gap:12px;align-items:center"><span style="color:var(--forest)"><i data-icon="list"></i></span>Easy unseen reading</div>
+              <div style="display:flex;gap:12px;align-items:center"><span style="color:var(--forest)"><i data-icon="hand"></i></span>A scale or inversion</div>
+              <div style="display:flex;gap:12px;align-items:center"><span style="color:var(--forest)"><i data-icon="keys"></i></span>A chord progression</div>
+              <div style="display:flex;gap:12px;align-items:center"><span style="color:var(--forest)"><i data-icon="ear"></i></span>A short melody by ear</div>
+              <div style="display:flex;gap:12px;align-items:center"><span style="color:var(--forest)"><i data-icon="sparkles"></i></span>Two minutes of free playing</div>
+            </div>
+          </div>
+          <div><div class="btn-primary">Start the inventory</div><div class="btn-plain" style="margin-top:6px">I'll do this later</div></div>
+        </div></div>
+        <div class="home-ind"></div>
+      </div></div>
+      <figcaption><b>First launch</b>A six-sample inventory to compare against in four weeks, and a real way to skip it.</figcaption>
+    </figure>
+
+    <!-- 8. JUST PLAY (dark) -->
+    <figure>
+      <div class="device dark" id="justplay"><div class="screen">
+        <div class="island"></div><div class="status" style="color:var(--ink)"><span>9:41</span><span class="r">●●● <span class="batt"><i></i></span></span></div>
+        <div class="content full"><div class="pad" style="padding:24px;display:flex;flex-direction:column;align-items:center;gap:32px;text-align:center">
+          <div style="height:80px"></div>
+          <div data-kb="60-76" data-w="132" data-h="30"></div>
+          <div class="stack" style="--gap:12px"><div class="display">Just play.</div><div class="title3 soft">Nothing to get right. Close this when you're done.</div></div>
+          <div class="mono soft" style="font-family:var(--serif);font-size:48px;font-weight:400">12:37</div>
+          <div style="width:100%" class="stack" >
+            <div style="display:flex;justify-content:space-between;align-items:center;min-height:44px"><span>Show timer</span><span style="width:51px;height:31px;border-radius:16px;background:var(--forest);position:relative"><span style="position:absolute;right:2px;top:2px;width:27px;height:27px;border-radius:50%;background:#fff"></span></span></div>
+            <div class="btn-secondary" style="width:100%;margin-top:12px"><span style="color:#e5484d">●</span>Stop recording <span class="mono">3:12</span></div>
+          </div>
+          <div class="btn-primary" style="width:100%">Done</div>
+        </div></div>
+        <div class="home-ind"></div>
+      </div></div>
+      <figcaption><b>Just play, in dark mode</b>No goals, no error counts, no prompts to log more. Timer and recording are optional.</figcaption>
+    </figure>
+
+  </section>
+</main>
+
+<script>
+  const P = {
+    gear: "M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z M12 2.5v3 M12 18.5v3 M2.5 12h3 M18.5 12h3 M5.3 5.3l2.1 2.1 M16.6 16.6l2.1 2.1 M5.3 18.7l2.1-2.1 M16.6 7.4l2.1-2.1",
+    snowflake: "M12 3v18 M4.2 7.5l15.6 9 M4.2 16.5l15.6-9 M9.5 4.5 12 6l2.5-1.5 M9.5 19.5 12 18l2.5 1.5",
+    note: "M9 17a3 3 0 1 1-3-3 3 3 0 0 1 3 3zm0 0V4l9 2.5",
+    chev: "M9 5l7 7-7 7", chevleft: "M15 5l-7 7 7 7", chevdown: "M5 9l7 7 7-7",
+    check: "M5 12.5l4.5 4.5L19 7",
+    scope: "M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16z M12 1.5v5 M12 17.5v5 M1.5 12h5 M17.5 12h5",
+    ellipsis: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M8 12h.01 M12 12h.01 M16 12h.01",
+    pencil: "M4 20h4L19 9l-4-4L4 16z M13.5 6.5l4 4",
+    filter: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M7.5 9.5h9 M9.5 12.5h5 M11 15.5h2",
+    arrow: "M5 12h14 M13 6l6 6-6 6",
+    keys: "M4 5h16v14H4z M9.5 13v6 M14.5 13v6 M7.5 5v8h4V5 M12.5 5v8h4V5",
+    hand: "M8 13V6a1.5 1.5 0 0 1 3 0v5 M11 10.5V4.5a1.5 1.5 0 0 1 3 0V11 M14 10.5V6a1.5 1.5 0 0 1 3 0v8a6 6 0 0 1-6 6h-1a6 6 0 0 1-5-2.7L3.5 14a1.5 1.5 0 0 1 2.4-1.8L8 14",
+    metronome: "M8.5 3h7l3.5 18H5z M12 17l4.5-10 M8.5 14h7",
+    list: "M4 6h11 M4 11h11 M4 16h7 M19 4v11.5 M19 15.5a2.5 2.5 0 1 1-2.5-2.5",
+    ear: "M7 9a5 5 0 0 1 10 0c0 3-3 4-3 7a3 3 0 0 1-6 0 M10 9a2 2 0 0 1 4 0",
+    sparkles: "M11 3l1.8 5.2L18 10l-5.2 1.8L11 17l-1.8-5.2L4 10l5.2-1.8z M18.5 15l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z",
+    alert: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M12 7.5v5.5 M12 16.5h.01",
+    sun: "M3 18h18 M6.5 18a5.5 5.5 0 0 1 11 0 M12 5v2.5 M5.3 8.8l1.8 1.8 M18.7 8.8l-1.8 1.8",
+    map: "M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5z M9 4v13.5 M15 6.5V20",
+    book: "M4 19.5V5a2 2 0 0 1 2-2h14v15H6a2 2 0 0 0-2 2 2 2 0 0 0 2 2h14 M8 7h8",
+  };
+  const svg = (name, w = 1.8) => `<svg class="i" viewBox="0 0 24 24" style="stroke-width:${w}"><path d="${P[name]}"/></svg>`;
+  document.querySelectorAll("[data-icon]").forEach(el => { el.outerHTML = svg(el.dataset.icon, el.dataset.w || 1.8); });
+
+  document.querySelectorAll(".tabbar").forEach(bar => {
+    const tabs = [["sun","Today"],["keys","Practice"],["map","Map"],["book","Journal"]];
+    bar.innerHTML = tabs.map(([ic, label], i) =>
+      `<div class="tab ${i == bar.dataset.tab ? "on" : ""}">${svg(ic, i == bar.dataset.tab ? 2.1 : 1.7)}<span>${label}</span></div>`).join("");
+  });
+
+  // Same drawing as KeyboardView.swift.
+  const WHITE = new Set([0,2,4,5,7,9,11]);
+  document.querySelectorAll("[data-kb]").forEach(el => {
+    const [lo, hi] = el.dataset.kb.split("-").map(Number);
+    const marks = {}, labels = {};
+    (el.dataset.marks || "").split(",").filter(Boolean).forEach(m => { const [k, t] = m.split(":"); marks[k] = t === "b" ? "bass" : "tone"; });
+    (el.dataset.labels || "").split(",").filter(Boolean).forEach(m => { const [k, t] = m.split(":"); labels[k] = t; });
+    const H = +el.dataset.h, W = +(el.dataset.w || 0) || el.parentElement.clientWidth - 36;
+    const whites = []; for (let m = lo; m <= hi; m++) if (WHITE.has(m % 12)) whites.push(m);
+    const ww = W / whites.length, bw = ww * .62, bh = H * .6;
+    const fill = (m, white) => marks[m] === "bass" ? "var(--brass)" : marks[m] === "tone" ? "var(--forest)" : white ? "var(--white-key)" : "var(--black-key)";
+    let s = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="display:block">`;
+    whites.forEach((m, i) => {
+      const x = i * ww + .75, w = ww - 1.5;
+      s += `<path d="M${x} 0H${x+w}V${H-5}Q${x+w} ${H} ${x+w-5} ${H}H${x+5}Q${x} ${H} ${x} ${H-5}Z" fill="${fill(m, true)}" stroke="var(--key-edge)" stroke-width=".75"/>`;
+      if (labels[m]) s += `<text x="${i*ww+ww/2}" y="${H-10}" text-anchor="middle" font-family="Inter" font-weight="700" font-size="12" fill="var(--on-forest)">${labels[m]}</text>`;
+    });
+    for (let m = lo; m <= hi; m++) {
+      if (WHITE.has(m % 12)) continue;
+      const below = whites.filter(w => w < m).length; if (!below) continue;
+      const x = below * ww - bw / 2;
+      s += `<path d="M${x} 0H${x+bw}V${bh-3}Q${x+bw} ${bh} ${x+bw-3} ${bh}H${x+3}Q${x} ${bh} ${x} ${bh-3}Z" fill="${fill(m, false)}"/>`;
+      if (labels[m]) s += `<text x="${x+bw/2}" y="${bh-8}" text-anchor="middle" font-family="Inter" font-weight="700" font-size="11" fill="var(--on-forest)">${labels[m]}</text>`;
+    }
+    el.innerHTML = s + "</svg>";
+  });
+</script>
+</body>
+</html>
