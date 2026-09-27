@@ -27,7 +27,7 @@ final class ExportBundleTests: XCTestCase {
     func testNilOptionalsDoNotBreakDecoding() throws {
         var bundle = ExportBundle(exportedAt: Date(timeIntervalSince1970: 5))
         bundle.sessions = [SessionRecord(id: "S", kind: "justPlay", startedAt: Date(timeIntervalSince1970: 5), endedAt: nil,
-                                         plannedMinutes: 0, practisedSeconds: 0, plan: "", focusTaskID: nil, closingNote: "")]
+                                         plannedMinutes: 0, practisedSeconds: 0, plan: "", focusTaskID: nil)]
         XCTAssertEqual(try ExportBundle.decode(bundle.encoded()).sessions.first?.endedAt, nil)
         XCTAssertFalse(bundle.isEmpty)
     }

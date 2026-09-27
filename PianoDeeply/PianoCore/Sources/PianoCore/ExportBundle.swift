@@ -88,10 +88,20 @@ public struct SessionRecord: Codable, Equatable, Sendable {
     public var practisedSeconds: Int
     public var plan: String
     public var focusTaskID: String?
-    public var closingNote: String
-    public init(id: String, kind: String, startedAt: Date, endedAt: Date?, plannedMinutes: Int, practisedSeconds: Int, plan: String, focusTaskID: String?, closingNote: String) {
+    public var smallerExercise: String
+    public var correction: String
+    public var variation: String
+    public var backIntoMusic: String
+    public var stepNotes: [String: String]
+    public var whatGotEasier: String
+    public var nextTime: String
+    public init(id: String, kind: String, startedAt: Date, endedAt: Date?, plannedMinutes: Int, practisedSeconds: Int, plan: String,
+                focusTaskID: String?, smallerExercise: String = "", correction: String = "", variation: String = "",
+                backIntoMusic: String = "", stepNotes: [String: String] = [:], whatGotEasier: String = "", nextTime: String = "") {
         self.id = id; self.kind = kind; self.startedAt = startedAt; self.endedAt = endedAt; self.plannedMinutes = plannedMinutes
-        self.practisedSeconds = practisedSeconds; self.plan = plan; self.focusTaskID = focusTaskID; self.closingNote = closingNote
+        self.practisedSeconds = practisedSeconds; self.plan = plan; self.focusTaskID = focusTaskID
+        self.smallerExercise = smallerExercise; self.correction = correction; self.variation = variation
+        self.backIntoMusic = backIntoMusic; self.stepNotes = stepNotes; self.whatGotEasier = whatGotEasier; self.nextTime = nextTime
     }
 }
 

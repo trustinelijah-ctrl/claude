@@ -103,12 +103,15 @@ public enum EvidenceComparison {
 public enum ReturnGreeting {
     public static let longGapDays = 7
 
+    public static func isLongGap(lastPlayed: Date?, now: Date, calendar: Calendar = .current) -> Bool {
+        guard let last = lastPlayed,
+              let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: last), to: calendar.startOfDay(for: now)).day
+        else { return false }
+        return days >= longGapDays
+    }
+
     public static func headline(lastPlayed: Date?, now: Date, calendar: Calendar = .current) -> String {
-        if let last = lastPlayed,
-           let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: last), to: calendar.startOfDay(for: now)).day,
-           days >= longGapDays {
-            return "Welcome back."
-        }
+        if isLongGap(lastPlayed: lastPlayed, now: now, calendar: calendar) { return "Welcome back." }
         switch calendar.component(.hour, from: now) {
         case 5..<12: return "Good morning."
         case 12..<18: return "Good afternoon."

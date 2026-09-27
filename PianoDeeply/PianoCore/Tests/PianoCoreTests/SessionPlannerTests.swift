@@ -62,6 +62,8 @@ final class FeedbackAndGreetingTests: XCTestCase {
         let twoWeeksAgo = calendar.date(byAdding: .day, value: -14, to: now)!
         let headline = ReturnGreeting.headline(lastPlayed: twoWeeksAgo, now: now, calendar: calendar)
         XCTAssertEqual(headline, "Welcome back.")
+        XCTAssertTrue(ReturnGreeting.isLongGap(lastPlayed: twoWeeksAgo, now: now, calendar: calendar))
+        XCTAssertFalse(ReturnGreeting.isLongGap(lastPlayed: nil, now: now, calendar: calendar))
         XCTAssertFalse(headline.contains("14"))
         XCTAssertFalse(headline.lowercased().contains("streak"))
 
