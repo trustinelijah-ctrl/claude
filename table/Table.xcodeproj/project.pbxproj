@@ -7,7 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0971ED1034CF9FA0A69F6C58 /* CormorantGaramond-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F40CC3DD8421CF0133C245F1 /* CormorantGaramond-SemiBold.ttf */; };
 		1399589774D814D783C30E49 /* TableUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 267FFDF0701D7843A23213A6 /* TableUITests.swift */; };
+		13C75EEEBDE4AF37134C6743 /* CormorantGaramond-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 996FB127EC8EB3E2C9FBE1FA /* CormorantGaramond-OFL.txt */; };
 		198775DB1EFD9F95F1B56709 /* reset_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = 10D7ED3E0B1B4ED3CE09C934 /* reset_1.wav */; };
 		1B79958CC3489CD193493852 /* SettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D15DB82A7E6436222EE7C8B8 /* SettingsStore.swift */; };
 		1F7076EA316606BABC5BAEA7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DDF8AA316247F4B9FBD16A76 /* Assets.xcassets */; };
@@ -17,6 +19,8 @@
 		287FDE391073DCF7B9FD6AFB /* BoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CF76BBC82CA20C7C509912D /* BoardView.swift */; };
 		2A795D6C2543073525D1204D /* pickup_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = C994ACA6CBF865A5366ED39B /* pickup_1.wav */; };
 		3347B88D072EA4F117105D05 /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD996622CC8E47364ECF1432 /* HapticManager.swift */; };
+		33623B128AABC0E67623724D /* CormorantGaramond-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FFD46106D84B56F1CD311194 /* CormorantGaramond-Medium.ttf */; };
+		34DCF015D5CD19A22F90D89A /* CormorantGaramond-MediumItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F0E87FBA84BA6BA68B8FCD87 /* CormorantGaramond-MediumItalic.ttf */; };
 		36C1FE76C5D8F62EA2F0FCA7 /* BoardMarks.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB003D6E0FC0A0E2CEA62C7 /* BoardMarks.swift */; };
 		38636A59DD8EB876211D47F9 /* PieceToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7AA8A0BC6F787DE5F5B2EA7 /* PieceToken.swift */; };
 		3D0BCDA1B157D640A2190648 /* capture_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = 2B8F8273D4C04DEC6F506A07 /* capture_2.wav */; };
@@ -24,7 +28,6 @@
 		48585D79D0E0732D15AE475C /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA180AA74C4CE5306440EDD9 /* Theme.swift */; };
 		4F68F5FC1A0A2247B4EFAAB8 /* ResultOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 550B72072A0E48A16CD774CD /* ResultOverlay.swift */; };
 		500AE30B7EC99C6A2780C35B /* ChessCore in Frameworks */ = {isa = PBXBuildFile; productRef = 52214DB2A576FC61D5826009 /* ChessCore */; };
-		58B34064C00EC9882D87A925 /* PieceArtwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 653A7D90A413325AA49A3587 /* PieceArtwork.swift */; };
 		5BE47DF1BCBC3386137C944E /* ui_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = 9928067F4AFB2D1F6873F439 /* ui_1.wav */; };
 		5DF98C600BE5AEF966C65D9A /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07BDC399B1A47A14D2C716F2 /* RootView.swift */; };
 		5E26B71DF53FD8B2866255E1 /* PlayerPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A9493CFA32CFC6E1C23536 /* PlayerPanel.swift */; };
@@ -77,13 +80,13 @@
 		594A5A87F3DE650C783ED4AB /* TableUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = TableUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6369AA8C4DCB777A205FA707 /* ScreenshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotTests.swift; sourceTree = "<group>"; };
 		6497FD2D27C3032B2874287B /* BoardSurface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardSurface.swift; sourceTree = "<group>"; };
-		653A7D90A413325AA49A3587 /* PieceArtwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PieceArtwork.swift; sourceTree = "<group>"; };
 		6CF76BBC82CA20C7C509912D /* BoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardView.swift; sourceTree = "<group>"; };
 		6EF2CE2D6609F1928DE8428F /* place_4.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = place_4.wav; sourceTree = "<group>"; };
 		7D6EB486DBEE34E9FA05844A /* place_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = place_2.wav; sourceTree = "<group>"; };
 		7E653F4905C421AB625121F4 /* place_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = place_1.wav; sourceTree = "<group>"; };
 		8B6CEA11968AE4FAC5369335 /* place_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = place_3.wav; sourceTree = "<group>"; };
 		9928067F4AFB2D1F6873F439 /* ui_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = ui_1.wav; sourceTree = "<group>"; };
+		996FB127EC8EB3E2C9FBE1FA /* CormorantGaramond-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "CormorantGaramond-OFL.txt"; sourceTree = "<group>"; };
 		9D851CDEB81DDDF4ACDC53D3 /* PieceArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PieceArt.swift; sourceTree = "<group>"; };
 		A01188D82D12FCA438807D76 /* capture_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = capture_1.wav; sourceTree = "<group>"; };
 		AFC60DFF0A1EF8D7324AB986 /* SettingsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsCard.swift; sourceTree = "<group>"; };
@@ -102,8 +105,11 @@
 		DFC93B8C5118979FA101480B /* TokenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenView.swift; sourceTree = "<group>"; };
 		E2B7BBD5D735D705600A1829 /* FeedbackCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackCoordinator.swift; sourceTree = "<group>"; };
 		E5203106BA443D50ECE33CA9 /* capture_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = capture_3.wav; sourceTree = "<group>"; };
+		F0E87FBA84BA6BA68B8FCD87 /* CormorantGaramond-MediumItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-MediumItalic.ttf"; sourceTree = "<group>"; };
+		F40CC3DD8421CF0133C245F1 /* CormorantGaramond-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-SemiBold.ttf"; sourceTree = "<group>"; };
 		FA8F964D577B38F5929729B2 /* check_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = check_1.wav; sourceTree = "<group>"; };
 		FE4C2CD5A0FBD1FC59959379 /* promotion_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = promotion_1.wav; sourceTree = "<group>"; };
+		FFD46106D84B56F1CD311194 /* CormorantGaramond-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-Medium.ttf"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -122,7 +128,6 @@
 			isa = PBXGroup;
 			children = (
 				9D851CDEB81DDDF4ACDC53D3 /* PieceArt.swift */,
-				653A7D90A413325AA49A3587 /* PieceArtwork.swift */,
 			);
 			path = Pieces;
 			sourceTree = "<group>";
@@ -143,6 +148,17 @@
 				B7AA8A0BC6F787DE5F5B2EA7 /* PieceToken.swift */,
 			);
 			path = Session;
+			sourceTree = "<group>";
+		};
+		4C85A0D01443F1487C9C9E0D /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				FFD46106D84B56F1CD311194 /* CormorantGaramond-Medium.ttf */,
+				F0E87FBA84BA6BA68B8FCD87 /* CormorantGaramond-MediumItalic.ttf */,
+				996FB127EC8EB3E2C9FBE1FA /* CormorantGaramond-OFL.txt */,
+				F40CC3DD8421CF0133C245F1 /* CormorantGaramond-SemiBold.ttf */,
+			);
+			path = Fonts;
 			sourceTree = "<group>";
 		};
 		912E9E2E812BE0E7F9A0C5EA /* Board */ = {
@@ -170,6 +186,7 @@
 			isa = PBXGroup;
 			children = (
 				DDF8AA316247F4B9FBD16A76 /* Assets.xcassets */,
+				4C85A0D01443F1487C9C9E0D /* Fonts */,
 				B503EAF54261540DA68551B5 /* Sounds */,
 			);
 			path = Resources;
@@ -361,6 +378,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				1F7076EA316606BABC5BAEA7 /* Assets.xcassets in Resources */,
+				33623B128AABC0E67623724D /* CormorantGaramond-Medium.ttf in Resources */,
+				34DCF015D5CD19A22F90D89A /* CormorantGaramond-MediumItalic.ttf in Resources */,
+				13C75EEEBDE4AF37134C6743 /* CormorantGaramond-OFL.txt in Resources */,
+				0971ED1034CF9FA0A69F6C58 /* CormorantGaramond-SemiBold.ttf in Resources */,
 				D0B7E088DD4D451D0EF7B27C /* capture_1.wav in Resources */,
 				3D0BCDA1B157D640A2190648 /* capture_2.wav in Resources */,
 				A5501D4C5B619FA9A7D56B51 /* capture_3.wav in Resources */,
@@ -406,7 +427,6 @@
 				DF51F4DBE1A9B54CD513546A /* GameSession.swift in Sources */,
 				3347B88D072EA4F117105D05 /* HapticManager.swift in Sources */,
 				B8695BEB1E692DA858C9BD52 /* PieceArt.swift in Sources */,
-				58B34064C00EC9882D87A925 /* PieceArtwork.swift in Sources */,
 				38636A59DD8EB876211D47F9 /* PieceToken.swift in Sources */,
 				5E26B71DF53FD8B2866255E1 /* PlayerPanel.swift in Sources */,
 				4F68F5FC1A0A2247B4EFAAB8 /* ResultOverlay.swift in Sources */,

@@ -125,11 +125,54 @@ def slate_board():
     return board(light, dark, (30, 31, 33))
 
 
+def shagreen_tile(n, rng):
+    """Stingray leather: densely packed raised beads, each catching a little light."""
+    img = np.zeros((n, n))
+    yy, xx = np.mgrid[0:n, 0:n]
+    step = n / 24
+    for gy in range(-1, 29):
+        for gx in range(-1, 26):
+            cx = (gx + 0.5 * (gy % 2)) * step + rng.normal(0, step * 0.13)
+            cy = gy * step * 0.87 + rng.normal(0, step * 0.13)
+            r = step * rng.uniform(0.47, 0.6)
+            glow = rng.uniform(0.7, 1.0)
+            x0, x1 = int(max(0, cx - r - 2)), int(min(n, cx + r + 2))
+            y0, y1 = int(max(0, cy - r - 2)), int(min(n, cy + r + 2))
+            if x0 >= x1 or y0 >= y1:
+                continue
+            d = np.sqrt((xx[y0:y1, x0:x1] - cx) ** 2 + (yy[y0:y1, x0:x1] - cy) ** 2) / r
+            img[y0:y1, x0:x1] = np.maximum(img[y0:y1, x0:x1], np.clip(1 - d ** 2, 0, None) ** 0.7 * glow)
+    light = ndimage.gaussian_filter(img, 0.9)
+    lit = np.clip(ndimage.shift(light, (1.2, 1.2), order=1) * -0.35 + light, 0, 1)   # beads lit from the upper left
+    base = np.array([10, 32, 27], dtype=np.float64)
+    bead = np.array([40, 96, 82], dtype=np.float64)
+    out = base[None, None] * (1 - lit[..., None]) + bead[None, None] * lit[..., None]
+    out += normalize(value_noise(n, n, 3, 3, rng))[..., None] * 7
+    return out
+
+
+def salon_board():
+    def light(r, f):
+        field = normalize(value_noise(SQ, SQ, 70, 4, RNG)) * 0.3 + normalize(value_noise(SQ, SQ, 4, 4, RNG)) * 0.5
+        if (r + f) % 4 == 1:
+            field = field.T
+        tone = RNG.normal(0, 2.5)
+        return colorize(field, (219 + tone, 209 + tone, 188 + tone), (240 + tone, 233 + tone, 218 + tone), 0.42)
+
+    def dark(r, f):
+        return shagreen_tile(SQ, RNG) + RNG.normal(0, 2)
+
+    return board(light, dark, (8, 20, 17))
+
+
 def rim(kind):
     h, w = 512, 2048
     if kind == 'walnut':
         field = wood(h, w, RNG, ring_freq=26, warp=0.5, figure=0.5)
         return np.clip(colorize(field, (40, 24, 15), (84, 53, 34), 0.55), 0, 255).astype(np.uint8)
+    if kind == 'salon':
+        field = normalize(value_noise(h, w, 3, 10, RNG)) * 0.7 + normalize(RNG.standard_normal((h, w))) * 0.05
+        return np.clip(colorize(field, (9, 18, 15), (24, 38, 33), 0.6), 0, 255).astype(np.uint8)
     field = stone(h, w, RNG, veins=False)
     return np.clip(colorize(field, (38, 40, 44), (70, 74, 80), 0.6), 0, 255).astype(np.uint8)
 
@@ -145,6 +188,17 @@ def write_imageset(catalog, name, arr, quality=90):
 
 if __name__ == '__main__':
     catalog = sys.argv[1]
+    if len(sys.argv) > 2 and sys.argv[2] == 'salon':
+        write_imageset(catalog, "SalonSurface", salon_board())
+        write_imageset(catalog, "SalonRim", rim('salon'))
+        grain = (np.clip(RNG.normal(0.5, 0.18, (256, 256)), 0, 1) * 255).astype(np.uint8)
+        d = os.path.join(catalog, "Grain.imageset")
+        os.makedirs(d, exist_ok=True)
+        Image.fromarray(grain, 'L').save(os.path.join(d, "Grain.png"))
+        with open(os.path.join(d, "Contents.json"), "w") as fh:
+            json.dump({"images": [{"filename": "Grain.png", "idiom": "universal"}], "info": {"author": "xcode", "version": 1}}, fh, indent=2)
+        print("ok")
+        sys.exit(0)
     write_imageset(catalog, "WalnutSurface", walnut_board())
     write_imageset(catalog, "SlateSurface", slate_board())
     write_imageset(catalog, "WalnutRim", rim('walnut'))

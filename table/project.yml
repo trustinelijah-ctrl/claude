@@ -36,6 +36,10 @@ targets:
         UILaunchScreen:
           UIColorName: LaunchBackground
         UIStatusBarHidden: true
+        UIAppFonts:
+          - CormorantGaramond-Medium.ttf
+          - CormorantGaramond-SemiBold.ttf
+          - CormorantGaramond-MediumItalic.ttf
         UIRequiresFullScreen: false
         UIApplicationSupportsIndirectInputEvents: true
         UIApplicationSceneManifest:

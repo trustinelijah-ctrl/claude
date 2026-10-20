@@ -27,12 +27,17 @@ struct BoardSurface: View {
                                    startPoint: .top, endPoint: .bottom),
                     lineWidth: max(1, g.rim * 0.08))
 
-            // Inlay line just outside the playing surface
+            // Gilt tooling: a line just outside the playing surface, and a finer one near the edge
             Rectangle()
-                .strokeBorder(theme.inlay.opacity(0.85), lineWidth: max(0.75, g.rim * 0.05))
+                .strokeBorder(theme.inlay.opacity(0.9), lineWidth: max(0.75, g.rim * 0.055))
                 .frame(width: g.inner + g.rim * 0.42, height: g.inner + g.rim * 0.42)
                 .offset(x: g.rim * 0.79, y: g.rim * 0.79)
-                .opacity(0.9)
+            if theme.doubleTooling {
+                Rectangle()
+                    .strokeBorder(theme.inlay.opacity(0.55), lineWidth: max(0.5, g.rim * 0.025))
+                    .frame(width: g.size - g.rim * 0.36, height: g.size - g.rim * 0.36)
+                    .offset(x: g.rim * 0.18, y: g.rim * 0.18)
+            }
 
             // Playing surface, recessed a hair below the frame
             Image(theme.surfaceImage)
@@ -40,8 +45,13 @@ struct BoardSurface: View {
                 .interpolation(.high)
                 .frame(width: g.inner, height: g.inner)
                 .overlay {
+                    // The lamp's pool of light: brightest over the centre, falling off to the edges.
+                    RadialGradient(colors: [.clear, .black.opacity(theme.vignette)],
+                                   center: .center, startRadius: g.inner * 0.2, endRadius: g.inner * 0.78)
+                }
+                .overlay {
                     Rectangle()
-                        .strokeBorder(Color.black.opacity(theme.isDark ? 0.45 : 0.28), lineWidth: 1.5)
+                        .strokeBorder(Color.black.opacity(theme.isDark ? 0.5 : 0.28), lineWidth: 1.5)
                         .blur(radius: 1.2)
                         .clipped()
                 }
@@ -59,7 +69,7 @@ struct BoardSurface: View {
     /// Engraved file letters and rank numbers, set once for each player along their own edges.
     @ViewBuilder
     private func coordinates(_ g: BoardGeometry) -> some View {
-        let font = Font.system(size: max(7, g.rim * 0.42), weight: .medium, design: .serif)
+        let font = Typeface.display(max(8, g.rim * 0.5), bold: true)
         let files = Array("abcdefgh")
         ForEach(0..<8, id: \.self) { i in
             let x = g.rim + (CGFloat(i) + 0.5) * g.square

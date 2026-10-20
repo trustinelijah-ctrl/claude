@@ -30,13 +30,13 @@ final class ScreenshotTests: XCTestCase {
     }
 
     func test1Opening() {
-        shoot("01-opening", args: ["-fresh", "YES", "-theme", "walnut"])
-        shoot("01-opening", args: ["-fresh", "YES", "-theme", "walnut"], landscape: true)
+        shoot("01-opening", args: ["-fresh", "YES", "-theme", "salon"])
+        shoot("01-opening", args: ["-fresh", "YES", "-theme", "salon"], landscape: true)
     }
 
     func test2MidgameSelection() {
-        shoot("02-midgame-selected", args: ["-moves", midgame, "-select", "b1", "-theme", "walnut"])
-        shoot("02-midgame-selected", args: ["-moves", midgame, "-select", "f3", "-theme", "walnut"], landscape: true)
+        shoot("02-midgame-selected", args: ["-moves", midgame, "-select", "b1", "-theme", "salon"])
+        shoot("02-midgame-selected", args: ["-moves", midgame, "-select", "f3", "-theme", "salon"], landscape: true)
     }
 
     func test3SlateCheck() {
@@ -45,18 +45,18 @@ final class ScreenshotTests: XCTestCase {
     }
 
     func test4Checkmate() {
-        shoot("04-checkmate", args: ["-moves", "e2e4 e7e5 f1c4 b8c6 d1h5 g8f6 h5f7", "-showResult", "YES", "-theme", "walnut"])
+        shoot("04-checkmate", args: ["-moves", "e2e4 e7e5 f1c4 b8c6 d1h5 g8f6 h5f7", "-showResult", "YES", "-theme", "salon"])
         shoot("04-checkmate", args: ["-moves", "e2e4 e7e5 f1c4 b8c6 d1h5 g8f6 h5f7", "-showResult", "YES", "-theme", "slate"], landscape: true)
     }
 
     func test5Settings() {
-        shoot("05-settings-black", args: ["-moves", midgame, "-openSettings", "black", "-theme", "walnut"])
+        shoot("05-settings-black", args: ["-moves", midgame, "-openSettings", "black", "-theme", "salon"])
         shoot("05-settings-white", args: ["-moves", midgame, "-openSettings", "white", "-theme", "slate"], landscape: true)
     }
 
     func test6Promotion() {
         let moves = "a2a4 b7b5 a4b5 a7a6 b5a6 c8b7 a6b7 b8c6"
-        shoot("06-promotion", args: ["-moves", moves, "-theme", "walnut"]) { app in
+        shoot("06-promotion", args: ["-moves", moves, "-theme", "salon"]) { app in
             let board = app.descendants(matching: .any)["board"].firstMatch
             let size = board.frame.width
             let rim = max(10, (size * 0.036).rounded())
@@ -79,6 +79,6 @@ final class ScreenshotTests: XCTestCase {
     }
 
     func test8NoCoordinatesFacingWhite() {
-        shoot("08-plain", args: ["-moves", midgame, "-showCoordinates", "NO", "-pieceFacing", "white", "-showMoveHints", "NO"])
+        shoot("08-plain", args: ["-moves", midgame, "-theme", "walnut", "-showCoordinates", "NO", "-pieceFacing", "white", "-showMoveHints", "NO"])
     }
 }

@@ -27,14 +27,14 @@ final class SettingsStore {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         defaults.register(defaults: [
-            Keys.theme: ThemeID.walnut.rawValue,
+            Keys.theme: ThemeID.salon.rawValue,
             Keys.sound: true,
             Keys.volume: 0.8,
             Keys.coordinates: true,
             Keys.hints: true,
             Keys.facing: PieceFacing.eachPlayer.rawValue,
         ])
-        themeID = ThemeID(rawValue: defaults.string(forKey: Keys.theme) ?? "") ?? .walnut
+        themeID = ThemeID(rawValue: defaults.string(forKey: Keys.theme) ?? "") ?? .salon
         soundEnabled = defaults.bool(forKey: Keys.sound)
         volume = defaults.double(forKey: Keys.volume)
         showCoordinates = defaults.bool(forKey: Keys.coordinates)

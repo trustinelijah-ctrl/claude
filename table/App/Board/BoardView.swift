@@ -98,12 +98,24 @@ struct BoardView: View {
                           hold: hold(for: token, gripped: isGripped, dragging: dragging),
                           translation: dragging ? grip.translation : .zero,
                           lift: dragging ? g.liftOffset(for: token.piece.color) : .zero,
-                          revealed: revealed)
-                    .zIndex(dragging ? 3 : (token.id == session.movingTokenID ? 2 : (token.isCaptured ? 0 : 1)))
+                          revealed: revealed,
+                          shadowStrength: settings.theme.pieceShadow)
+                    .zIndex(depth(of: token, dragging: dragging))
             }
         }
         .frame(width: g.size, height: g.size)
         .allowsHitTesting(false)
+    }
+
+    /// Pieces nearer their own player are drawn in front, so a tall crown reaching into the
+    /// square behind passes behind the piece standing there.
+    private func depth(of token: PieceToken, dragging: Bool) -> Double {
+        if dragging { return 30 }
+        if token.id == session.movingTokenID { return 20 }
+        if token.isCaptured { return 0 }
+        let towardViewer = settings.pieceFacing == .eachPlayer && token.piece.color == .black
+            ? Double(token.square.rank) : Double(7 - token.square.rank)
+        return 1 + towardViewer
     }
 
     private func hold(for token: PieceToken, gripped: Bool, dragging: Bool) -> HoldState {

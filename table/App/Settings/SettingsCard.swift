@@ -39,7 +39,7 @@ struct SettingsCard: View {
     private var sections: some View {
         VStack(alignment: .leading, spacing: 22) {
             section("Board") {
-                HStack(spacing: 14) {
+                HStack(alignment: .top, spacing: 12) {
                     ForEach(ThemeID.allCases) { id in
                         ThemeSwatch(theme: .with(id), selected: settings.themeID == id, ink: theme) {
                             session.feedback.ui()
@@ -93,11 +93,11 @@ struct SettingsCard: View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 3) {
                 Text("TABLE")
-                    .font(.system(size: 22, weight: .medium, design: .serif))
-                    .tracking(7)
+                    .font(Typeface.display(28))
+                    .tracking(8)
                     .foregroundStyle(theme.ink)
                 Text("Chess, together.")
-                    .font(.system(size: 13, design: .serif).italic())
+                    .font(Typeface.italic(17))
                     .foregroundStyle(theme.inkSecondary)
             }
             Spacer()
@@ -237,7 +237,7 @@ struct ThemeSwatch: View {
                     Text(theme.name).font(.system(size: 13, weight: .semibold)).foregroundStyle(ink.ink)
                     Text(theme.subtitle).font(.system(size: 11)).foregroundStyle(ink.inkSecondary).lineLimit(2)
                 }
-                .frame(width: 150, alignment: .leading)
+                .frame(width: 100, alignment: .leading)
             }
             .contentShape(Rectangle())
         }

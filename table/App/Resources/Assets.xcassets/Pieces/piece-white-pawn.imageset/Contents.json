@@ -1,0 +1,12 @@
+{
+  "images": [
+    {
+      "filename": "piece-white-pawn.png",
+      "idiom": "universal"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

@@ -1,43 +1,59 @@
 #!/usr/bin/env python3
-"""App icon: a boxwood king standing on a walnut square, with a fine gilt inlay.
+"""App icon: the ivory king from the 3D set on emerald shagreen, framed by a fine gilt line.
   python3 tools/icon.py App/Resources/Assets.xcassets
+(run tools/render3d.py --catalog and tools/materials.py ... salon first)
 """
-import json, os, sys
-sys.path.insert(0, os.path.dirname(__file__))
-import cairosvg
-from pieces import svg_piece
+import json
+import os
+import sys
+
+import numpy as np
+from PIL import Image, ImageDraw, ImageFilter
+
 
 def main(catalog):
     s = 1024
-    svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{s}" height="{s}" viewBox="0 0 {s} {s}">
-<defs>
-  <radialGradient id="bg" cx="0.5" cy="0.38" r="0.75">
-    <stop offset="0" stop-color="#4A2F1F"/><stop offset="0.55" stop-color="#2A1A11"/><stop offset="1" stop-color="#140C08"/>
-  </radialGradient>
-  <radialGradient id="pool" cx="0.5" cy="0.86" r="0.3">
-    <stop offset="0" stop-color="#000" stop-opacity="0.45"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
-  </radialGradient>
-</defs>
-<rect width="{s}" height="{s}" fill="url(#bg)"/>
-<rect x="92" y="92" width="840" height="840" fill="none" stroke="#C9A66B" stroke-opacity="0.55" stroke-width="5"/>
-<ellipse cx="512" cy="872" rx="300" ry="60" fill="url(#pool)"/>
-{svg_piece('king', 'white', 152, 132, 720)}
-</svg>'''
-    d = os.path.join(catalog, 'AppIcon.appiconset')
-    os.makedirs(d, exist_ok=True)
-    cairosvg.svg2png(bytestring=svg.encode(), write_to=os.path.join(d, 'AppIcon.png'), output_width=s, output_height=s)
+    surf = Image.open(os.path.join(catalog, 'SalonSurface.imageset', 'SalonSurface.jpg')).convert('RGB')
+    sq = surf.width // 8
+    # four shagreen squares, trimmed of their seams, tiled 2 x 2
+    tile = Image.new('RGB', (s, s))
+    m = int(sq * 0.05)
+    for i, (f, rk) in enumerate([(0, 0), (2, 0), (1, 1), (3, 1)]):
+        x0, y0 = f * sq + m, (7 - rk) * sq + m
+        part = surf.crop((x0, y0, x0 + sq - 2 * m, y0 + sq - 2 * m)).resize((s // 2, s // 2), Image.LANCZOS)
+        tile.paste(part, ((i % 2) * s // 2, (i // 2) * s // 2))
+    yy, xx = np.mgrid[0:s, 0:s]
+    r = np.sqrt((xx - s / 2) ** 2 + (yy - s * 0.42) ** 2) / (s * 0.75)
+    light = np.clip(1.15 - r ** 1.6 * 0.9, 0.25, 1.15)[..., None]
+    icon = Image.fromarray(np.clip(np.asarray(tile).astype(float) * light, 0, 255).astype(np.uint8))
+    d = ImageDraw.Draw(icon)
+    d.rectangle([84, 84, s - 84, s - 84], outline=(201, 163, 90), width=6)
+    d.rectangle([104, 104, s - 104, s - 104], outline=(201, 163, 90), width=2)
+    king = Image.open(os.path.join(catalog, 'Pieces', 'piece-white-king.imageset', 'piece-white-king.png')).convert('RGBA')
+    size = 820
+    king = king.resize((size, size), Image.LANCZOS)
+    base_y = 846
+    shadow = Image.new('L', (s, s), 0)
+    ImageDraw.Draw(shadow).ellipse([s / 2 - 230, base_y - 70, s / 2 + 230, base_y + 70], fill=170)
+    shadow = shadow.filter(ImageFilter.GaussianBlur(34))
+    icon.paste((0, 0, 0), (0, 0), shadow)
+    icon.paste(king, (int(s / 2 - size / 2), int(base_y - size * 0.81)), king)
+    out = os.path.join(catalog, 'AppIcon.appiconset')
+    os.makedirs(out, exist_ok=True)
+    icon.save(os.path.join(out, 'AppIcon.png'))
     json.dump({"images": [{"filename": "AppIcon.png", "idiom": "universal", "platform": "ios", "size": "1024x1024"}],
-               "info": {"author": "xcode", "version": 1}}, open(os.path.join(d, 'Contents.json'), 'w'), indent=2)
+               "info": {"author": "xcode", "version": 1}}, open(os.path.join(out, 'Contents.json'), 'w'), indent=2)
 
-    def color(name, r, g, b):
+    def color(name, rgb):
         cd = os.path.join(catalog, f'{name}.colorset')
         os.makedirs(cd, exist_ok=True)
+        r, g, b = rgb
         json.dump({"colors": [{"idiom": "universal", "color": {"color-space": "srgb", "components": {
             "red": f"{r/255:.3f}", "green": f"{g/255:.3f}", "blue": f"{b/255:.3f}", "alpha": "1.000"}}}],
             "info": {"author": "xcode", "version": 1}}, open(os.path.join(cd, 'Contents.json'), 'w'), indent=2)
-    color('LaunchBackground', 0x14, 0x0F, 0x0C)
-    color('AccentColor', 0xD9, 0xB1, 0x72)
-    json.dump({"info": {"author": "xcode", "version": 1}}, open(os.path.join(catalog, 'Contents.json'), 'w'), indent=2)
+    color('LaunchBackground', (0x04, 0x08, 0x07))
+    color('AccentColor', (0xD6, 0xB2, 0x6B))
+
 
 if __name__ == '__main__':
     main(sys.argv[1])

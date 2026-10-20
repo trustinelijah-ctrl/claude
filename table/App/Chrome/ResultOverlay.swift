@@ -73,17 +73,14 @@ struct ResultOverlay: View {
         let compact = boardSize < 520
         return VStack(spacing: compact ? 10 : 14) {
             if let w = result.winner {
-                PieceGlyph(piece: Piece(w, .king))
-                    .frame(width: compact ? 34 : 44, height: compact ? 34 : 44)
+                StandingPiece(piece: Piece(w, .king), size: compact ? 54 : 72, shadow: 0.4)
             }
             VStack(spacing: 4) {
                 Text(ResultText.headline(result))
-                    .font(.system(size: compact ? 24 : 30, weight: .regular, design: .serif))
+                    .font(Typeface.display(compact ? 32 : 44))
                     .foregroundStyle(theme.ink)
                 Text(won ? "Well played" : ResultText.detail(result))
-                    .font(.system(size: compact ? 12 : 13, weight: .medium))
-                    .textCase(.uppercase)
-                    .tracking(1.4)
+                    .font(Typeface.italic(compact ? 18 : 22))
                     .foregroundStyle(won ? theme.accent : theme.inkSecondary)
                     .multilineTextAlignment(.center)
             }
