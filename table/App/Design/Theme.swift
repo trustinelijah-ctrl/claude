@@ -112,8 +112,8 @@ enum Motion {
     /// The moment within a travel animation at which the piece reads as landed.
     static let landingFraction = 0.78
 
-    static let lift = Animation.spring(response: 0.14, dampingFraction: 0.78)
-    static let settle = Animation.spring(response: 0.17, dampingFraction: 0.86)
+    static let lift = Animation.spring(response: 0.15, dampingFraction: 0.8)
+    static let settle = Animation.spring(response: 0.16, dampingFraction: 0.85)
     static let settleLanding = 0.075
     static let returnHome = Animation.spring(response: 0.22, dampingFraction: 0.84)
     static let undo = Animation.spring(response: 0.26, dampingFraction: 0.9)

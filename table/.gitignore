@@ -7,3 +7,4 @@ xcuserdata/
 shots/
 results/
 *.log
+__pycache__/

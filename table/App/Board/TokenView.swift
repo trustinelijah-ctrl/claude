@@ -58,7 +58,7 @@ struct PieceBody: View {
                 .fill(RadialGradient(colors: [.black.opacity(lifted ? 0.30 : 0.42), .black.opacity(0)],
                                      center: .center, startRadius: 0, endRadius: size * 0.31 * (1 + rise * 0.35)))
                 .frame(width: size * (0.60 + rise * 0.16), height: size * (0.15 + rise * 0.08))
-                .offset(y: size * (0.415 + rise * 0.06))
+                .offset(y: size * (PieceRenderer.baseline - 0.5 - 0.01 + rise * 0.06))
             PieceGlyph(piece: piece)
                 .frame(width: size, height: size)
                 .offset(y: -size * 0.02 * rise)

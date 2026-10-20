@@ -146,8 +146,9 @@ struct BoardView: View {
         }
         guard let origin = grip.origin, grip.tokenID != nil else { return }
         let t = value.translation
-        if !grip.isDragging, hypot(t.width, t.height) > dragThreshold {
+        if !grip.isDragging, hypot(t.width, t.height) > dragThreshold, let id = grip.tokenID {
             grip.isDragging = true
+            session.beginDrag(id)
         }
         if grip.isDragging {
             grip.translation = t

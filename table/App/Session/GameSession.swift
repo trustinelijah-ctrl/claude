@@ -120,6 +120,14 @@ final class GameSession {
         return .moved
     }
 
+    /// The piece leaves the board surface: its lift toward the player animates in, while the
+    /// finger tracking that follows is applied without animation.
+    func beginDrag(_ tokenID: Int) {
+        guard let i = tokens.firstIndex(where: { $0.id == tokenID }) else { return }
+        tokens[i].motion = Motion.lift
+        tokens[i].revision += 1
+    }
+
     /// Animates a token back to its square, e.g. after an illegal drop or a drop on its own square.
     func settleBack(_ tokenID: Int) {
         guard let i = tokens.firstIndex(where: { $0.id == tokenID }) else { return }
@@ -133,6 +141,7 @@ final class GameSession {
         tokens[i].motion = dragged ? Motion.settle : travel(from: from, to: to).animation
         tokens[i].revision += 1
         movingTokenID = token.id
+        clearSelection()
         pendingPromotion = PendingPromotion(from: from, to: to, color: token.piece.color, tokenID: token.id)
         let landing = dragged ? Motion.settleLanding : travel(from: from, to: to).landing
         feedback.audio.play(.place, delay: landing, gain: 0.6)

@@ -93,13 +93,21 @@ struct PieceMaterial {
 }
 
 enum PieceRenderer {
+    static let artScale: CGFloat = 1.07
+    /// Where the foot of a piece sits, as a fraction of the square's height.
+    static let baseline: CGFloat = 0.93
+
     /// Draws a piece into `rect` of a graphics context. Everything is vector, so it is sharp at any size.
     static func draw(_ piece: Piece, in context: inout GraphicsContext, rect: CGRect) {
         let art = PieceArtwork.art(for: piece.kind)
         let m = PieceMaterial.of(piece.color)
         var ctx = context
-        ctx.translateBy(x: rect.minX, y: rect.minY)
-        ctx.scaleBy(x: rect.width / 100, y: rect.height / 100)
+        // Pieces stand on a common baseline near the foot of the square, drawn slightly larger
+        // than the 100-unit art box so they have presence without touching their neighbours.
+        let k = rect.width / 100 * artScale
+        ctx.translateBy(x: rect.midX, y: rect.minY + rect.height * baseline)
+        ctx.scaleBy(x: k, y: k)
+        ctx.translateBy(x: -50, y: -92)
 
         // Outline first; the fill then covers its inner half, leaving one clean edge around overlaps.
         let outline = StrokeStyle(lineWidth: 2.7, lineCap: .round, lineJoin: .round)
