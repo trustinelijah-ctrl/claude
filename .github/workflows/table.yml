@@ -74,11 +74,12 @@ jobs:
             -destination "id=$AIR11" -only-testing:TableUITests/TableUITests \
             -resultBundlePath results/ui.xcresult > ui.log 2>&1 || status=$?
           grep -E "Test Case .*(passed|failed)|error:|XCTAssert" ui.log | head -80 || true
+          grep -A3 "DIAG" ui.log | grep -v "^--$" | head -400 || true
           tail -5 ui.log
           exit $status
 
       - name: Screenshots
-        if: always()
+        if: always() && !contains(github.event.head_commit.message, '[ui-only]')
         run: |
           cat > /tmp/collect.py <<'PY'
           import json, os, shutil, sys
