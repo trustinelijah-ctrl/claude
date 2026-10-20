@@ -214,7 +214,8 @@ struct BoardView: View {
         let side = session.sideToMove == .white ? "White" : "Black"
         let last = session.game.lastMove.map { " Last move \($0.san)." } ?? ""
         if let r = session.result { return "\(ResultText.headline(r)).\(last)" }
-        return "\(side) to move. \(session.game.history.count) moves played.\(last)"
+        let selected = session.selection.map { " Selected \($0.name)." } ?? ""
+        return "\(side) to move. \(session.game.history.count) moves played.\(last)\(selected)"
     }
 }
 

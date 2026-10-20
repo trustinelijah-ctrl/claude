@@ -58,6 +58,19 @@ final class TableUITests: XCTestCase {
         settle(0.5)
     }
 
+    /// Prints the hierarchy and what a tap does, for diagnosing touch problems from CI logs.
+    func testADiagnostics() {
+        launch()
+        print("DIAG board frame:", board.frame, "window:", app.windows.firstMatch.frame)
+        print("DIAG hierarchy:\n", app.debugDescription)
+        point("e2").tap()
+        settle(0.4)
+        print("DIAG after tap e2:", boardValue)
+        point("e4").tap()
+        settle(0.6)
+        print("DIAG after tap e4:", boardValue)
+    }
+
     func testOpensStraightToAPlayableBoard() {
         launch()
         XCTAssertTrue(boardValue.hasPrefix("White to move. 0 moves played"), boardValue)

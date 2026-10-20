@@ -95,7 +95,6 @@ struct RootView: View {
             theme.tableEdge
             RadialGradient(colors: [theme.tableCenter, theme.tableEdge.opacity(0)],
                            center: .center, startRadius: 0, endRadius: reach)
-                .scaleEffect(x: size.width > size.height ? 1.15 : 0.95, y: size.width > size.height ? 0.9 : 1.1)
             Image("Grain")
                 .resizable(resizingMode: .tile)
                 .blendMode(theme.isDark ? .overlay : .multiply)
@@ -109,16 +108,20 @@ struct RootView: View {
     private func turnLight(_ theme: BoardTheme, size: CGSize) -> some View {
         let whiteToMove = session.sideToMove == .white
         let active = !session.isOver
-        return Ellipse()
-            .fill(RadialGradient(colors: [theme.turnGlow.opacity(theme.isDark ? 0.20 : 0.16), theme.turnGlow.opacity(0)],
-                                 center: .center, startRadius: 0, endRadius: size.width * 0.6))
-            .frame(width: size.width * 1.3, height: max(size.height * 0.42, 320))
-            .position(x: size.width / 2, y: whiteToMove ? size.height + size.height * 0.06 : -size.height * 0.06)
-            .opacity(active ? 1 : 0)
-            .animation(.easeInOut(duration: 0.6), value: whiteToMove)
-            .animation(.easeInOut(duration: 0.6), value: active)
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
+        let reach = max(size.width, size.height) * 0.5
+        let strength = theme.isDark ? 0.22 : 0.16
+        return ZStack {
+            RadialGradient(colors: [theme.turnGlow.opacity(strength), theme.turnGlow.opacity(0)],
+                           center: UnitPoint(x: 0.5, y: 1.04), startRadius: 0, endRadius: reach)
+                .opacity(active && whiteToMove ? 1 : 0)
+            RadialGradient(colors: [theme.turnGlow.opacity(strength), theme.turnGlow.opacity(0)],
+                           center: UnitPoint(x: 0.5, y: -0.04), startRadius: 0, endRadius: reach)
+                .opacity(active && !whiteToMove ? 1 : 0)
+        }
+        .animation(.easeInOut(duration: 0.6), value: whiteToMove)
+        .animation(.easeInOut(duration: 0.6), value: active)
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
     }
 
     /// One player's side of the table. Both are laid out as if for White; Black's is then
