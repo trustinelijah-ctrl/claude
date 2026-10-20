@@ -368,6 +368,10 @@ def render(name, material, size=512, ss=2):
     else:
         shade = np.where(gilt[:, None], metal, dielectric * m['exposure'])
 
+    # turned ivory darkens a little toward its silhouette, so it reads on pale squares
+    if material == 'ivory':
+        shade = shade * (0.70 + 0.30 * np.sqrt(ndv))[:, None]
+
     # filmic tone map
     shade = shade / (shade + 0.62) * 1.25
     out[idx[0], idx[1], :3] = shade

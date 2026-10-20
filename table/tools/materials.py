@@ -114,7 +114,7 @@ def slate_board():
     def light(r, f):
         field = stone(SQ, SQ, RNG, veins=RNG.random() < 0.7)
         tone = RNG.normal(0, 2.5)
-        return colorize(field, (219 + tone, 211 + tone, 196 + tone), (244 + tone, 239 + tone, 228 + tone), 0.5)
+        return colorize(field, (206 + tone, 199 + tone, 185 + tone), (232 + tone, 227 + tone, 216 + tone), 0.5)
 
     def dark(r, f):
         field = stone(SQ, SQ, RNG, veins=False)
