@@ -31,7 +31,7 @@ struct PlayerPanel: View {
         HStack(alignment: .center, spacing: 14) {
             VStack(alignment: .leading, spacing: layout.compact ? 4 : 8) {
                 identity
-                if !layout.compact || !captures.isEmpty { capturedRow(size: layout.compact ? 16 : 22) }
+                if !layout.compact || !captures.isEmpty { capturedRow(size: layout.compact ? 20 : 28) }
             }
             Spacer(minLength: 8)
             if session.canClaimDraw && isTurn { claimDraw }
@@ -45,7 +45,7 @@ struct PlayerPanel: View {
     private var column: some View {
         VStack(alignment: .leading, spacing: 14) {
             Spacer(minLength: 0)
-            capturedRows(size: layout.compact ? 18 : 24)
+            capturedRows(size: layout.compact ? 22 : 28)
             identity
             if session.canClaimDraw && isTurn { claimDraw }
             controls
@@ -107,7 +107,7 @@ struct PlayerPanel: View {
             overlapped(captures, size: size)
             if lead > 0 { leadLabel }
         }
-        .frame(height: size)
+        .frame(height: size * 1.12)
         .animation(.easeOut(duration: 0.2), value: captures.count)
     }
 
@@ -119,25 +119,32 @@ struct PlayerPanel: View {
                 overlapped(pieces, size: size)
                 if lead > 0 && pawns.isEmpty { leadLabel }
             }
-            .frame(height: size)
+            .frame(height: size * 1.12)
             if !pawns.isEmpty {
                 HStack(spacing: 6) {
                     overlapped(pawns, size: size)
                     if lead > 0 { leadLabel }
                 }
-                .frame(height: size)
+                .frame(height: size * 1.12)
             }
         }
         .animation(.easeOut(duration: 0.2), value: captures.count)
     }
 
+    /// Taken pieces stand on a small felt tray, so ebony pieces stay legible on a dark table.
+    @ViewBuilder
     private func overlapped(_ pieces: [Piece], size: CGFloat) -> some View {
-        HStack(spacing: -size * 0.42) {
-            ForEach(Array(pieces.enumerated()), id: \.offset) { item in
-                PieceGlyph(piece: item.element)
-                    .frame(width: size, height: size)
-                    .transition(.scale(scale: 0.6).combined(with: .opacity))
+        if !pieces.isEmpty {
+            HStack(spacing: -size * 0.38) {
+                ForEach(Array(pieces.enumerated()), id: \.offset) { item in
+                    PieceGlyph(piece: item.element)
+                        .frame(width: size, height: size)
+                        .transition(.scale(scale: 0.6).combined(with: .opacity))
+                }
             }
+            .padding(.horizontal, size * 0.22)
+            .padding(.vertical, size * 0.06)
+            .background(Capsule().fill(theme.isDark ? Color(hex: 0x8A7258, opacity: 0.30) : Color(hex: 0x24262A, opacity: 0.06)))
         }
     }
 

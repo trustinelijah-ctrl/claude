@@ -57,7 +57,7 @@ struct ResultOverlay: View {
         .frame(width: width)
         .background(
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(theme.isDark ? Color(hex: 0x1B1511, opacity: 0.96) : Color(hex: 0xFAF7F1, opacity: 0.97))
+                .fill(theme.isDark ? Color(hex: 0x1B1511) : Color(hex: 0xFAF7F1))
                 .shadow(color: .black.opacity(0.5), radius: 40, y: 0)
         )
         .overlay(
