@@ -28,8 +28,8 @@ struct PlayerPanel: View {
     /// Captured pieces are drawn at a size that suits the room the panel has.
     private var trophySize: CGFloat {
         switch layout.arrangement {
-        case .strips: return min(64, max(30, layout.panel.height * 0.42))
-        case .columns: return min(52, max(28, layout.panel.width * 0.2))
+        case .strips: return min(78, max(34, layout.panel.height * 0.5))
+        case .columns: return min(60, max(32, layout.panel.width * 0.24))
         }
     }
 
