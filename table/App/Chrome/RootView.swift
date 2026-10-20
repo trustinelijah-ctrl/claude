@@ -99,6 +99,7 @@ struct RootView: View {
                 .resizable(resizingMode: .tile)
                 .blendMode(theme.isDark ? .overlay : .multiply)
                 .opacity(theme.grain * (theme.isDark ? 1.6 : 0.8))
+                .accessibilityHidden(true)
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)

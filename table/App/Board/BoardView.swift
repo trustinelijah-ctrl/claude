@@ -33,7 +33,14 @@ struct BoardView: View {
         let theme = settings.theme
         ZStack(alignment: .topLeading) {
             BoardSurface(theme: theme, geometry: g, showCoordinates: settings.showCoordinates)
-                .accessibilityElement(children: .ignore)
+                .accessibilityHidden(true)
+            // The board as one accessibility element, framed exactly to the board. (The frame
+            // texture is laid out wider than the board and only clipped, so it cannot carry this.)
+            Rectangle()
+                .fill(Color.white.opacity(0.001))
+                .frame(width: g.size, height: g.size)
+                .allowsHitTesting(false)
+                .accessibilityElement()
                 .accessibilityIdentifier("board")
                 .accessibilityLabel("Chessboard")
                 .accessibilityValue(accessibilitySummary)
@@ -105,6 +112,7 @@ struct BoardView: View {
         }
         .frame(width: g.size, height: g.size)
         .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     /// Pieces nearer their own player are drawn in front, so a tall crown reaching into the
