@@ -72,7 +72,7 @@ struct PieceBody: View {
         let local = rotated ? CGSize(width: -drift.width, height: -drift.height) : drift
         ZStack {
             Ellipse()
-                .fill(RadialGradient(colors: [.black.opacity(shadowStrength * (1 - 0.35 * rise)), .black.opacity(0)],
+                .fill(RadialGradient(colors: [.black.opacity(shadowStrength * Double(1 - 0.35 * rise)), .black.opacity(0)],
                                      center: .center, startRadius: 0, endRadius: size * 0.36 * (1 + rise * 0.3)))
                 .frame(width: size * (0.74 + rise * 0.2), height: size * (0.34 + rise * 0.12))
                 .offset(x: local.width, y: size * PieceSprite.baseOffset + local.height)

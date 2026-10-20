@@ -219,14 +219,16 @@ def build(name):
             t = thick * (0.80 + 0.30 * np.clip((ax - 18) / 50, 0, 1))
             inset = np.clip(-d2, 0, None)
             # thickness swells from the edge inward: a rounded, hand-carved section
-            tz = t * np.sqrt(1 - np.exp(-inset / 3.2))
-            return np.maximum(d2, (np.abs(z) - tz)) * F32(0.55)
+            tz = t * (1 - np.exp(-inset / 3.0))
+            # the swell's slope is about t / 3, so step conservatively
+            return np.maximum(d2, (np.abs(z) - tz)) * F32(0.34)
         def sdf(x, y, z):
-            h = np.maximum(head_sdf(x, y, z), hy(72.6) - y)
-            # a turned collar seats the head on its base
+            h = np.maximum(head_sdf(x, y, z), hy(71.0) - y)
+            # a short turned stem seats the head on its base, as on the other pieces
             rho = np.sqrt(x * x + z * z)
-            collar = np.maximum(rho - 15.2, np.abs(y - hy(73.4)) - 2.8) * F32(0.8)
-            return smin(smin(Lb.sdf(x, y, z), collar, 1.0), h, 1.6)
+            r = np.interp(y, [hy(76.5), hy(73.5), hy(70.0)], [17.0, 13.6, 12.2]).astype(F32)
+            stem = np.maximum(np.maximum(rho - r, y - hy(70.0)), hy(76.5) - y) * F32(0.45)
+            return smin(smin(Lb.sdf(x, y, z), stem, 1.4), h, 2.4)
         # engraved eye, nostril, mane and cheek lines, used to darken the surface
         marks = silhouette_mask(art['cut'], 1000)
         lines = ' '.join(P.svg_path(dl) for dl in art['detail'][:7])

@@ -47,7 +47,7 @@ table/
     Design/             Themes and motion constants
     Resources/          Asset catalog (board materials, icon) and Sounds/
   UITests/              Interaction tests and screenshot capture
-  tools/                Scripts that generate the pieces, materials, icon and sounds
+  tools/                Scripts that generate the pieces (3D), materials, icon and sounds
 ```
 
 **Rules engine.** `ChessCore` is a self-contained engine written for this project
@@ -72,17 +72,28 @@ larger. Margins are symmetric so the two halves mirror exactly. Works in portrai
 landscape, Split View and Stage Manager windows; rotation and resizing re-layout without
 touching game state.
 
-**Pieces.** An original set drawn as vector paths: symmetric pieces are authored as a
-lathe profile (one side of a turned piece) and mirrored, the knight is drawn freehand,
-and all share one base and one stroke weight. `tools/pieces.py` is the single source;
-it renders preview sheets and generates `PieceArtwork.swift`. Pieces are rendered with
-SwiftUI `Canvas`: cylindrical shading lit from the upper left, a fine rim light so dark
-pieces read on dark squares, and turned grooves.
+**Art direction.** The board is treated as a beautiful object on a table under a single
+lamp. The default theme, **Salon**, pairs emerald shagreen (stingray leather) with bone
+squares inside a dark lacquer frame with double gilt tooling. The table is a deep green
+lit by a warm pool of light that falls off toward the edges, and every piece casts its
+shadow outward from the lamp over the centre of the table. The light gathers on the side
+of the player whose move it is. Names and moments are set in Cormorant Garamond (bundled
+under the SIL Open Font License); small print uses the system face. Two further themes,
+Walnut Nocturne and Ivory & Slate, are in settings.
 
-**Materials.** `tools/materials.py` builds each board surface the way a veneered board is
-assembled: 64 separately cut squares with their own grain offset, direction and tone,
-plus hairline seams. Walnut Nocturne uses black walnut and maple with a gilt inlay;
-Ivory & Slate uses honed ivory stone and slate.
+**Pieces.** An original set, rendered in 3D. Symmetric pieces are authored in
+`tools/pieces.py` as lathe profiles (one side of a turned piece). `tools/render3d.py`
+spins them into solids, adds the finials (crown balls, cross, mitre bead), carves the rook's
+crenels and the bishop's mitre cut, and extrudes the knight's drawn head into a rounded,
+carved form with gilded mane lines. The solids are ray-marched with an orthographic
+camera 35° above the table, lit by a warm key light, cool fill and rim light with ambient
+occlusion and studio reflections, and written as sprites: turned ivory, glossy ebony and
+gilt rings. Each player's pieces stand upright toward that player.
+
+**Materials.** `tools/materials.py` builds each board surface the way a real board is
+assembled: 64 separately cut squares with their own pattern offset, direction and tone,
+plus hairline seams. Shagreen is generated bead by bead; walnut and maple from warped
+growth rings; ivory stone and slate from layered noise.
 
 **Touch.** One `DragGesture(minimumDistance: 0)` on the board handles both styles:
 tap a piece then a square, or press and drag. Pressing a piece selects and lifts it at
@@ -130,7 +141,7 @@ change to Application Support and restored on launch. Settings live in UserDefau
 | `-openSettings white\|black` | Open settings facing that player |
 | `-showResult YES` | Show the result card if the game is over |
 | `-simulateWindow half\|third\|square` | Confine the app to a Split View / Stage Manager sized region |
-| `-theme slate`, `-soundEnabled NO`, `-showCoordinates NO`, `-pieceFacing white` | Override settings |
+| `-theme salon\|walnut\|slate`, `-soundEnabled NO`, `-showCoordinates NO`, `-pieceFacing white` | Override settings |
 
 ## Status
 
@@ -146,7 +157,7 @@ See the bottom of this file for the hardware checklist.
   draw claims (threefold, fifty-move), resignation, draw by agreement.
 - Two themes, coordinates and move hints toggles, piece-facing option, sound on/off and
   volume, all persisted.
-- Original vector pieces, procedural board materials, synthesized sound palette, app icon.
+- Original 3D-rendered piece set, procedural board materials, synthesized sound palette, app icon.
 - Responsive layout for every iPad size, both orientations, Split View and Stage Manager.
 
 ### Not yet / known limitations
@@ -181,3 +192,15 @@ See the bottom of this file for the hardware checklist.
 9. **Silent mode / volume.** With the volume at zero or sound off in settings, nothing plays.
 10. **Haptics.** On an iPad without a Taptic Engine, nothing vibrates. (No current iPad
     has one; this path is there for completeness.)
+
+## Regenerating assets
+
+```
+python3 tools/render3d.py --catalog App/Resources/Assets.xcassets     # piece sprites
+python3 tools/materials.py App/Resources/Assets.xcassets salon        # Salon surface, frame, grain
+python3 tools/materials.py App/Resources/Assets.xcassets              # Walnut and Slate surfaces
+python3 tools/icon.py App/Resources/Assets.xcassets                   # app icon
+python3 tools/sounds.py App/Resources/Sounds                          # sound palette
+```
+
+Requires Python 3 with numpy, scipy, pillow and cairosvg.
