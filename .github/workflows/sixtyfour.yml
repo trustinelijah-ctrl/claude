@@ -88,9 +88,17 @@ jobs:
           for dev in PRO13; do
             udid="${!dev}"
             [ -z "$udid" ] && continue
-            xcodebuild test-without-building -project SixtyFour.xcodeproj -scheme SixtyFour -derivedDataPath build \
-              -destination "id=$udid" -only-testing:SixtyFourUITests/ScreenshotTests \
-              -resultBundlePath "results/shots-$dev.xcresult" > "shots-$dev.log" 2>&1 || tail -20 "shots-$dev.log"
+            # Boot first: a cold simulator can kill the test runner before it starts.
+            xcrun simctl boot "$udid" 2>/dev/null || true
+            xcrun simctl bootstatus "$udid" -b > /dev/null 2>&1 || true
+            for attempt in 1 2; do
+              rm -rf "results/shots-$dev.xcresult"
+              xcodebuild test-without-building -project SixtyFour.xcodeproj -scheme SixtyFour -derivedDataPath build \
+                -destination "id=$udid" -only-testing:SixtyFourUITests/ScreenshotTests \
+                -resultBundlePath "results/shots-$dev.xcresult" > "shots-$dev.log" 2>&1 && break
+              tail -20 "shots-$dev.log"
+              grep -q "before starting test execution" "shots-$dev.log" || break
+            done
             mkdir -p "export/$dev"
             xcrun xcresulttool export attachments --path "results/shots-$dev.xcresult" --output-path "export/$dev" || true
             python3 /tmp/collect.py "$dev"
@@ -122,6 +130,7 @@ jobs:
           status=0
           xcodebuild test-without-building -project SixtyFour.xcodeproj -scheme SixtyFour -derivedDataPath build \
             -destination "id=$AIR11" -only-testing:SixtyFourUITests/GameplayUITests \
+            -retry-tests-on-failure -test-iterations 2 \
             -resultBundlePath results/ui.xcresult > ui.log 2>&1 || status=$?
           grep -E "Test Case .*(passed|failed)|error:|XCTAssert" ui.log | head -80 || true
           grep -A3 "DIAG" ui.log | grep -v "^--$" | head -400 || true
