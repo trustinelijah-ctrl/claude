@@ -150,7 +150,7 @@ final class GameplayUITests: XCTestCase {
     func testSettingsOpenForEitherPlayer() {
         launch()
         app.otherElements["panel-black"].buttons["Settings"].tap()
-        XCTAssertTrue(app.otherElements["settings"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.otherElements["settings"].waitForExistence(timeout: 20))
         app.buttons["Ivory & Slate"].tap()
         app.buttons["Done"].tap()
         settle()

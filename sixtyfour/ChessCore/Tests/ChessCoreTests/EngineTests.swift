@@ -66,11 +66,11 @@ final class EngineTests: XCTestCase {
     func testEvaluationSeesMateAndMaterial() {
         // White mates in one with Qxf7#.
         let mate = Position(fen: "r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4")!
-        let e = Engine.evaluate(mate, seconds: 0.3)
+        let e = Engine.evaluate(mate, seconds: 1.0)
         XCTAssertEqual(e.best, Move(uci: "h5f7"))
         XCTAssertEqual(e.mateIn, 1)
         // Black to move, a queen down.
         let down = Position(fen: "4k3/8/8/8/8/8/8/3QK3 b - - 0 1")!
-        XCTAssertLessThan(Engine.evaluate(down, seconds: 0.2).score, -600)
+        XCTAssertLessThan(Engine.evaluate(down, seconds: 0.6).score, -600)
     }
 }

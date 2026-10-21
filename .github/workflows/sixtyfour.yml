@@ -29,7 +29,11 @@ jobs:
 
       - name: Chess rules tests
         working-directory: sixtyfour/ChessCore
-        run: swift test 2>&1 | tail -15
+        run: |
+          swift test > test.log 2>&1 || true
+          tail -8 test.log
+          # Fail the step (and show which test) on any failure; a plain tail hid them before.
+          if grep -qE "with [1-9][0-9]* failures?" test.log; then grep -E "error:|failed" test.log | head -20; exit 1; fi
 
       - name: Project is up to date with project.yml
         run: |
