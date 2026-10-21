@@ -35,29 +35,7 @@ struct ReplayView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let s = proxy.size
-            let safe = proxy.safeAreaInsets
-            let wide = s.width > s.height
-            let boardSize = floor(wide ? min(s.height - safe.top - safe.bottom - 40, s.width * 0.6)
-                                       : min(s.width - 32, s.height - safe.top - safe.bottom - 330))
-            ZStack {
-                OnboardingBackdrop(theme: theme, page: 1)
-                let layout = wide ? AnyLayout(HStackLayout(spacing: 32)) : AnyLayout(VStackLayout(spacing: 20))
-                layout {
-                    if !wide { header }
-                    board(size: boardSize)
-                    VStack(spacing: 18) {
-                        if wide { header }
-                        moveList
-                        controls
-                    }
-                    .frame(maxWidth: wide ? 360 : 640)
-                }
-                .padding(.top, safe.top + 12)
-                .padding(.bottom, safe.bottom + 12)
-                .padding(.horizontal, 16)
-            }
-            .frame(width: s.width, height: s.height)
+            content(size: proxy.size, safe: proxy.safeAreaInsets)
         }
         .ignoresSafeArea()
         .environment(\.colorScheme, .dark)
@@ -75,6 +53,39 @@ struct ReplayView: View {
     }
 
     // MARK: Parts
+
+    private func content(size s: CGSize, safe: EdgeInsets) -> some View {
+        let wide = s.width > s.height
+        let boardSize = boardSide(size: s, safe: safe, wide: wide)
+        let layout: AnyLayout = wide ? AnyLayout(HStackLayout(spacing: 32)) : AnyLayout(VStackLayout(spacing: 20))
+        return ZStack {
+            OnboardingBackdrop(theme: theme, page: 1)
+            layout {
+                if !wide { header }
+                board(size: boardSize)
+                sidePanel(wide: wide)
+            }
+            .padding(.top, safe.top + 12)
+            .padding(.bottom, safe.bottom + 12)
+            .padding(.horizontal, 16)
+        }
+        .frame(width: s.width, height: s.height)
+    }
+
+    private func boardSide(size s: CGSize, safe: EdgeInsets, wide: Bool) -> CGFloat {
+        let tall = s.height - safe.top - safe.bottom
+        let side: CGFloat = wide ? min(tall - 40, s.width * 0.6) : min(s.width - 32, tall - 330)
+        return floor(max(side, 200))
+    }
+
+    private func sidePanel(wide: Bool) -> some View {
+        VStack(spacing: 18) {
+            if wide { header }
+            moveList
+            controls
+        }
+        .frame(maxWidth: wide ? 360 : 640)
+    }
 
     private var header: some View {
         HStack(alignment: .center) {
