@@ -527,6 +527,8 @@ private struct Search {
     var killers = [[SMove]](repeating: [], count: 128)
     var nodes = 0
     var stopped = false
+    /// Deepest iteration fully completed so far.
+    var depthReached = 0
     let deadline: ContinuousClock.Instant
     let clock = ContinuousClock()
 
@@ -582,9 +584,10 @@ private struct Search {
             if stopped { break }
             scored.sort { $0.score > $1.score }
             completed = scored
+            depthReached = depth
             rootMoves = scored.map { (move: $0.move, score: $0.score) }
             if scored[0].score > Search.mate - 100 { break }      // forced mate found
-            if clock.now > deadline { break }
+            if depth >= 2, clock.now > deadline { break }
             depth += 1
         }
         if completed.isEmpty { completed = rootMoves.map { ($0.move, $0.score) } }
@@ -637,7 +640,9 @@ private struct Search {
 
     private mutating func checkTime() {
         nodes += 1
-        if nodes & 1023 == 0, clock.now > deadline { stopped = true }
+        // The first full pass (depth 1 and 2) always completes, however slow the device, so
+        // there is always a properly scored move to choose from.
+        if nodes & 1023 == 0, depthReached >= 2, clock.now > deadline { stopped = true }
     }
 
     private mutating func negamax(_ depth: Int, _ alphaIn: Int, _ beta: Int, ply: Int, extensions: Int) -> Int {

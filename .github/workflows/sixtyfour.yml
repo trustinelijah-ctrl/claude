@@ -72,7 +72,7 @@ jobs:
           xcrun simctl list devices available | grep -i ipad
 
       - name: Screenshots
-        if: always() && !contains(github.event.head_commit.message, '[ui-only]')
+        if: success() && !contains(github.event.head_commit.message, '[ui-only]')
         run: |
           cat > /tmp/collect.py <<'PY'
           import json, os, shutil, sys
