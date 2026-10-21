@@ -66,11 +66,11 @@ final class GameSession {
     @ObservationIgnored private var thinkTask: Task<Void, Never>?
     @ObservationIgnored private var rippleID = 0
 
-    init(feedback: FeedbackCoordinator, store: GameStore = GameStore(), library: GameLibrary = GameLibrary(),
+    init(feedback: FeedbackCoordinator, store: GameStore = GameStore(), library: GameLibrary? = nil,
          initialGame: ChessGame? = nil) {
         self.feedback = feedback
         self.store = store
-        self.library = library
+        self.library = library ?? GameLibrary()
         game = initialGame ?? store.load() ?? ChessGame()
         if game.history.isEmpty { startedAt = Date() }
         rebuildTokens()

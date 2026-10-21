@@ -1,7 +1,8 @@
 # TABLE — Chess, together.
 
 A native iPad app that turns the whole iPad into a chessboard for two people sitting
-opposite each other. No accounts, no network, no onboarding: open it and play.
+opposite each other, or one person against TABLE's own quiet opponent. A short welcome
+on first launch, then straight to the board; no network needed.
 
 Swift + SwiftUI, iPadOS 17 or later, iPad only, works fully offline.
 
@@ -12,6 +13,17 @@ Swift + SwiftUI, iPadOS 17 or later, iPad only, works fully offline.
 3. To run on a device, choose your team under *Signing & Capabilities* (the project
    ships with automatic signing and no team).
 4. Run (⌘R).
+
+**TABLE Pro in Xcode.** The **Table** scheme runs with `Table.storekit`, a local StoreKit
+configuration holding the one Pro product (`app.table.chess.pro`, $4.99 non-consumable),
+so the purchase sheet works on the simulator and on a development iPad without App
+Store Connect. Use *Debug ▸ StoreKit ▸ Manage Transactions* to refund and try again.
+For the App Store, create the same product ID in App Store Connect.
+
+**Sign in with Apple** needs the *Sign in with Apple* capability, which free (personal)
+developer teams cannot use, so the project ships without it and the app says so
+plainly and offers *Continue as Guest*. With a paid team, add the capability under
+*Signing & Capabilities* and the button works as is.
 
 The project is generated from `project.yml` by [XcodeGen](https://github.com/yonaskolb/XcodeGen).
 The generated `Table.xcodeproj` is committed, so you do not need XcodeGen to build. After
@@ -151,13 +163,31 @@ change to Application Support and restored on launch. Settings live in UserDefau
 | `-openSettings white\|black` | Open settings facing that player |
 | `-showResult YES` | Show the result card if the game is over |
 | `-simulateWindow half\|third\|square` | Confine the app to a Split View / Stage Manager sized region |
-| `-theme salon\|walnut\|slate`, `-soundEnabled NO`, `-showCoordinates NO`, `-pieceFacing white` | Override settings |
+| `-theme salon\|walnut\|slate\|marble\|rosewood\|midnight`, `-pieceSet classic\|gilded`, `-soundEnabled NO`, `-showCoordinates NO`, `-pieceFacing white` | Override settings |
+| `-onboarded NO`, `-onboardingPage 0…4` | Show the welcome, from a given page |
+| `-pro YES` | Unlock Pro without a purchase |
+| `-showCaptures white\|black`, `-showPaywall YES`, `-showLibrary YES` | Open those views |
+| `-seedLibrary YES`, `-showReplay YES` | Add the launch game to the library; open its replay |
 
 ## Status
 
 See the bottom of this file for the hardware checklist.
 
 ### Finished
+
+- Welcome: five pages with live scenes (an opening played across the board, the pieces
+  under a moving gleam, a knight lifted and set down with its knock, TABLE moving by
+  itself), ending in Sign in with Apple / Continue as Guest and the Pro offer.
+- TABLE Pro (StoreKit 2, one purchase): Marble Noir, Rosewood and Midnight boards, the
+  Gilded set (gold against gunmetal), Master and Grandmaster opponents, the full game
+  library. Locked choices open the offer; restore is in the offer and in Settings.
+- Game library and replay: every finished game is kept; replay it move by move, scrub,
+  or let it play itself with sound.
+- Trays show the most recent captures with a gold +N counter; touching a tray opens a
+  frosted view of everything taken, grouped by piece.
+- Game end: the beaten king tips over (resigning tips your own), the table dims, gold
+  leaf falls, and the result card shows moves, captures, time and a running record
+  against each strength of TABLE, with a win streak.
 
 - Complete legal chess with automated tests, including every special rule and draw rule.
 - Tap-to-move and drag-to-move with lift, finger offset, drop target, settle and return.
@@ -209,6 +239,8 @@ See the bottom of this file for the hardware checklist.
 python3 tools/render3d.py --catalog App/Resources/Assets.xcassets     # piece sprites
 python3 tools/materials.py App/Resources/Assets.xcassets salon        # Salon surface, frame, grain
 python3 tools/materials.py App/Resources/Assets.xcassets              # Walnut and Slate surfaces
+python3 tools/materials.py App/Resources/Assets.xcassets pro          # Marble, Rosewood, Midnight
+python3 tools/render3d.py --gilded App/Resources/Assets.xcassets      # Gilded piece set
 python3 tools/icon.py App/Resources/Assets.xcassets                   # app icon
 python3 tools/sounds.py App/Resources/Sounds                          # sound palette
 ```

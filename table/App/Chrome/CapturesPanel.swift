@@ -41,7 +41,7 @@ struct CapturesPanel: View {
                     .foregroundStyle(theme.inkSecondary)
             }
             HStack(alignment: .bottom, spacing: 14) {
-                ForEach(Array(groups.enumerated()), id: \.element.kind) { i, g in
+                ForEach(Array(groups.enumerated()), id: \.offset) { i, g in
                     VStack(spacing: 2) {
                         ZStack {
                             // Several of a kind stand in a little row, one behind the other.
