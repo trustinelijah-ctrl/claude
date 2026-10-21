@@ -148,6 +148,7 @@ struct PuzzleView: View {
                         .foregroundStyle(Brand.cream)
                     }
                     .frame(width: size, height: size)
+                    .zIndex(10_000)
             }
         }
         .frame(width: size, height: size)

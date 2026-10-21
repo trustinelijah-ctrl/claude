@@ -305,10 +305,11 @@ def olive_board():
         return colorize(big[oy:oy + SQ, ox:ox + SQ], (220 + tone, 214 + tone, 196 + tone), (238 + tone, 234 + tone, 220 + tone), 0.3)
 
     def dark(r, f):
-        big = wood(SQ * 3, SQ * 3, RNG, ring_freq=26, warp=1.3, figure=0.8)
-        oy, ox = RNG.integers(0, SQ * 2, 2)
+        # Broad, swirling figure from slow noise; tight rings alias into moire on screen.
+        fld = normalize(value_noise(SQ, SQ, 3, 3, RNG) + 0.6 * value_noise(SQ, SQ, 7, 5, RNG)
+                        + 0.25 * value_noise(SQ, SQ, 40, 6, RNG))
         tone = RNG.normal(0, 3)
-        return colorize(big[oy:oy + SQ, ox:ox + SQ], (92 + tone, 76 + tone, 44 + tone), (150 + tone, 126 + tone, 80 + tone), 0.6)
+        return colorize(fld, (96 + tone, 78 + tone, 46 + tone), (146 + tone, 122 + tone, 78 + tone), 0.55)
 
     return board(light, dark, (50, 40, 22))
 
@@ -390,8 +391,9 @@ if __name__ == '__main__':
             'Ebony': ((12, 10, 9), (30, 25, 22)),
             'Olive': ((34, 30, 18), (58, 50, 32)),
         }
-        for name, surface in (('House', house_board), ('Tournament', tournament_board),
-                              ('Ebony', ebony_board), ('Olive', olive_board)):
+        only = sys.argv[3:] or ['House', 'Tournament', 'Ebony', 'Olive']
+        boards = (('House', house_board), ('Tournament', tournament_board), ('Ebony', ebony_board), ('Olive', olive_board))
+        for name, surface in ((n, f) for n, f in boards if n in only):
             write_imageset(catalog, f"{name}Surface", surface())
             lo, hi = fields[name]
             write_imageset(catalog, f"{name}Field", leather_field(2048, 1536, lo, hi), quality=88)

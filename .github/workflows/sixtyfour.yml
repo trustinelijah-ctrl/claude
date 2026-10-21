@@ -67,18 +67,6 @@ jobs:
           echo "AIR11=$(pick 'iPad Air 11')" >> $GITHUB_ENV
           xcrun simctl list devices available | grep -i ipad
 
-      - name: UI tests (interaction)
-        run: |
-          set -o pipefail
-          status=0
-          xcodebuild test-without-building -project SixtyFour.xcodeproj -scheme SixtyFour -derivedDataPath build \
-            -destination "id=$AIR11" -only-testing:SixtyFourUITests/GameplayUITests \
-            -resultBundlePath results/ui.xcresult > ui.log 2>&1 || status=$?
-          grep -E "Test Case .*(passed|failed)|error:|XCTAssert" ui.log | head -80 || true
-          grep -A3 "DIAG" ui.log | grep -v "^--$" | head -400 || true
-          tail -5 ui.log
-          exit $status
-
       - name: Screenshots
         if: always() && !contains(github.event.head_commit.message, '[ui-only]')
         run: |
@@ -127,3 +115,15 @@ jobs:
           echo "Screenshots from ${GITHUB_SHA}" > README.md
           git add -A && git commit -q -m "Screenshots for ${GITHUB_SHA}"
           git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-shots
+
+      - name: UI tests (interaction)
+        run: |
+          set -o pipefail
+          status=0
+          xcodebuild test-without-building -project SixtyFour.xcodeproj -scheme SixtyFour -derivedDataPath build \
+            -destination "id=$AIR11" -only-testing:SixtyFourUITests/GameplayUITests \
+            -resultBundlePath results/ui.xcresult > ui.log 2>&1 || status=$?
+          grep -E "Test Case .*(passed|failed)|error:|XCTAssert" ui.log | head -80 || true
+          grep -A3 "DIAG" ui.log | grep -v "^--$" | head -400 || true
+          tail -5 ui.log
+          exit $status

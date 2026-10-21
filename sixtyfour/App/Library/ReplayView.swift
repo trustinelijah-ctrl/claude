@@ -163,7 +163,7 @@ struct ReplayView: View {
 
     private func boardSide(size s: CGSize, safe: EdgeInsets, wide: Bool) -> CGFloat {
         let tall = s.height - safe.top - safe.bottom
-        let side: CGFloat = wide ? min(tall - 40, s.width * 0.6) : min(s.width - 32, tall - 330)
+        let side: CGFloat = wide ? min(tall - 40, s.width * 0.6) : min(s.width - 32, tall - 440)
         return floor(max(side, 200))
     }
 

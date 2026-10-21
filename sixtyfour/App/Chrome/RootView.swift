@@ -22,7 +22,7 @@ struct RootView: View {
     /// Opens on the home screen, except for test runs that set up a game on the board.
     private static var initialScreen: Screen {
         let d = UserDefaults.standard
-        if let home = d.object(forKey: "home") as? Bool { return home ? .home : .board }
+        if let home = d.string(forKey: "home") { return ["YES", "1", "true"].contains(home) ? .home : .board }
         if d.string(forKey: "learn") != nil { return .learn }
         return d.bool(forKey: "fresh") || d.string(forKey: "moves") != nil ? .board : .home
     }
