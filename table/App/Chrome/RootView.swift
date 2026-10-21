@@ -23,7 +23,8 @@ struct RootView: View {
                 PlayerZone(color: bottom, session: session, settings: settings, layout: layout) {
                     settingsFor = bottom
                 }
-                PlayerZone(color: bottom.opposite, session: session, settings: settings, layout: layout) {
+                PlayerZone(color: bottom.opposite, session: session, settings: settings, layout: layout,
+                           facesNearPlayer: settings.isAgainstComputer) {
                     settingsFor = bottom.opposite
                 }
                 .rotationEffect(.degrees(180))

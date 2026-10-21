@@ -9,6 +9,9 @@ struct PlayerZone: View {
     let session: GameSession
     let settings: SettingsStore
     let layout: TableLayout
+    /// For the far zone when nobody sits there (against the computer): its words turn to
+    /// face the player at the near end.
+    var facesNearPlayer = false
     let openSettings: () -> Void
 
     private var theme: BoardTheme { settings.theme }
@@ -46,11 +49,13 @@ struct PlayerZone: View {
         let trayRight = layout.tray.maxX - z.minX
         return ZStack(alignment: .topLeading) {
             identity
-                .frame(width: max(0, trayLeft - 12), alignment: .leading)
+                .frame(width: max(0, trayLeft - 12), alignment: facesNearPlayer ? .trailing : .leading)
+                .rotationEffect(facesNearPlayer ? .degrees(180) : .zero)
                 .position(x: (trayLeft - 12) / 2, y: z.height / 2)
             Group {
                 if isComputer { thinking } else { pins }
             }
+            .rotationEffect(facesNearPlayer ? .degrees(180) : .zero)
             .position(x: trayRight + (z.width - trayRight) / 2, y: z.height / 2)
             leadLabel
                 .position(x: trayRight - 22, y: layout.tray.minY - z.minY - 10)
@@ -65,6 +70,7 @@ struct PlayerZone: View {
         return VStack(alignment: .leading, spacing: 14) {
             Spacer(minLength: 0)
             identity
+                .rotationEffect(facesNearPlayer ? .degrees(180) : .zero)
             if isComputer { thinking } else { pins }
         }
         .frame(width: z.width, height: max(0, z.height - top), alignment: .bottomLeading)

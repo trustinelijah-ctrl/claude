@@ -149,7 +149,8 @@ struct BoardView: View {
             if owner == g.bottomColor {
                 return (local, size, false)
             }
-            return (layout.rotated(local), size, true)
+            // The far tray; its pieces face the far player only when someone sits there.
+            return (layout.rotated(local), size, settings.turnsTopPieces)
         }
         return (g.center(token.square), g.square, settings.turnsTopPieces && token.piece.color != g.bottomColor)
     }

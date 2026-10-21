@@ -81,9 +81,9 @@ struct TableLayout: Equatable {
         case .sides:
             let perRow = max(4, Int((tray.width - s * 0.6) / (s * 0.5)) + 1)
             let row = index / perRow, col = index % perRow
-            let step = (tray.width - s * 0.7) / CGFloat(max(perRow - 1, 1))
-            return CGPoint(x: tray.minX + s * 0.35 + step * CGFloat(col),
-                           y: tray.minY + s * 0.55 + CGFloat(row) * s * 0.62)
+            let step = (tray.width - s) / CGFloat(max(perRow - 1, 1))
+            return CGPoint(x: tray.minX + s * 0.5 + step * CGFloat(col),
+                           y: tray.minY + s * 1.0 + CGFloat(row) * s * 0.7)
         }
     }
 }
