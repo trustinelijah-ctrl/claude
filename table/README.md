@@ -21,7 +21,7 @@ adding or removing files, run `xcodegen generate` in `table/`.
 
 | What | How |
 | --- | --- |
-| Chess rules (35 tests, perft to depth 3–4 on six reference positions) | `cd table/ChessCore && swift test`, or open `ChessCore/Package.swift` in Xcode and press ⌘U |
+| Chess rules and engine (42 tests, perft to depth 3–4 on six reference positions) | `cd table/ChessCore && swift test`, or open `ChessCore/Package.swift` in Xcode and press ⌘U |
 | Interaction UI tests (tap, drag, illegal drops, capture, undo, castling, promotion, checkmate, settings, rotation, rapid moves) | ⌘U on the **Table** scheme, on an iPad simulator |
 | Screenshots across iPad sizes | `ScreenshotTests` in the UI test target; CI runs it on iPad mini, iPad Air 11" and iPad Pro 13" |
 
@@ -95,34 +95,44 @@ assembled: 64 separately cut squares with their own pattern offset, direction an
 plus hairline seams. Shagreen is generated bead by bead; walnut and maple from warped
 growth rings; ivory stone and slate from layered noise.
 
+**The whole screen is the board.** The grid spans the full width in portrait (full height in
+landscape); the board's own surface, tooled with a gilt line around the edge of the device,
+fills the rest. Each player's end holds their name engraved in gold, a felt-lined tray where
+the pieces they take fly to and stand, and two brass pins: undo and the menu.
+
+**Computer opponent.** Choose *TABLE* as the opponent in the menu, at Casual, Club or Master
+strength, playing either colour (the board turns so your pieces are nearest you). The engine
+(`ChessCore/Engine.swift`) is an alpha-beta search with quiescence, check extensions, move
+ordering and piece-square evaluation over its own compact board, perft-verified like the
+rules engine, and time-limited per move so it stays responsive. Its moves are made by an unseen
+hand: the piece lifts, glides and is set down. Undo takes back its reply and your move.
+
 **Touch.** One `DragGesture(minimumDistance: 0)` on the board handles both styles:
 tap a piece then a square, or press and drag. Pressing a piece selects and lifts it at
 once (legal destinations appear immediately). After 5 pt of travel it becomes a drag:
-the piece follows the finger at exactly the grip point (no snap), floats a third of a
-square away from the finger toward the far side of the board so the finger does not hide
+the piece pops up with a springy lift while its shadow separates and spreads, follows the
+finger at exactly the grip point (no snap), swings with the speed of the hand like an object
+held near its top, floats a third of a square away from the finger toward the far side of the board so the finger does not hide
 it, grows slightly and casts a softer, wider shadow. The square under the piece (not under
-the finger) is outlined as the drop target. A legal drop settles with a short spring; an
-illegal one floats back home. Each piece keeps its identity across moves, so captures,
+the finger) is outlined as the drop target. A legal drop lands with a small squash and
+settles, with a ring of light on the square; an illegal one floats back home. Each piece keeps its identity across moves, so captures,
 castling, undo and new game all animate physically: the rook follows the king a beat
 later, a taken piece fades and shrinks as the attacker lands, and on a new game every
 piece glides home in a wave from White's side.
 
-**Sound.** `tools/sounds.py` synthesizes the palette offline with modal synthesis: a
-short excitation ringing a bank of damped resonances for a felted boxwood piece on a
-walnut board, and struck wooden bars with marimba-tuned partials for the tonal accents.
-Energy is concentrated in the band iPad speakers reproduce well, so it holds up at low
-volume. 17 files, several variations per frequent event. At runtime `AudioManager` decodes
-everything into memory once and plays through a fixed pool of 12 `AVAudioPlayerNode`s on one
-`AVAudioEngine`, with five pitch variations per sample, a peak limiter, and stereo pan
-by board file. Sounds are scheduled on the audio clock, so the placement knock lands
-on the frame the piece lands (a tap move travels ~150–270 ms; the sound is timed to its
-landing, not its start). The session is `.ambient`, which respects the silent setting
-and mixes with music playing at the table. Interruptions, route changes and media
-server resets are handled.
-
-To use recorded sounds, drop files with the same names (`place_1.wav`, `place_2.wav`,
-`capture_1.wav`, …; `.wav`, `.caf`, `.aif` or `.m4a`) into `App/Resources/Sounds`.
-Any number of numbered variations per event is picked up.
+**Sound.** Built from real recordings, not synthesis. A real chess move is two things at
+once: the crisp click of the felted base meeting the board, and the short woody knock of the
+board itself; no single recording has both, so `tools/sounds.py` layers them the way foley is
+made: the body of a recorded light wood impact (low thump filtered off, pitched to the size of
+a piece), the mid-range "tock" of a chip laid hard on a table, and the contact click of a chip
+set down. Captures add the clack of two hard pieces meeting; the end of the game is a real
+bell. Several variations per frequent event. Source recordings are in `tools/sources/kenney`
+(Kenney's Impact, Casino and UI audio packs, CC0 public domain). At runtime `AudioManager`
+decodes everything into memory once and plays through a fixed pool of 12 `AVAudioPlayerNode`s
+on one `AVAudioEngine`, with five pitch variations per sample, a peak limiter and stereo pan
+by board file. Sounds are scheduled on the audio clock so the knock lands on the frame the
+piece lands. The session is `.ambient`, which respects the silent setting and mixes with music
+at the table. Interruptions, route changes and media-server resets are handled.
 
 **Haptics.** `HapticManager` checks `CHHapticEngine.capabilitiesForHardware()` at
 runtime. iPads without a haptic actuator get no haptic calls at all; the tactile feel
@@ -162,8 +172,8 @@ See the bottom of this file for the hardware checklist.
 
 ### Not yet / known limitations
 
-- Sounds are synthesized, not recorded. They are designed to be replaced by recordings
-  without code changes.
+- The sounds are layered from real recordings, but not recorded from an actual chess set;
+  drop in your own recordings with the same file names to replace them.
 - Feel can only be judged on real hardware: touch latency, speaker balance and the
   exact timing of sound against motion were tuned by reasoning and on the simulator.
 - No move list display or PGN export (the full history is kept internally, with SAN).
