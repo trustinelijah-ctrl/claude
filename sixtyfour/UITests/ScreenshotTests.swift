@@ -59,7 +59,7 @@ final class ScreenshotTests: XCTestCase {
         shoot("06-promotion", args: ["-moves", moves, "-theme", "house"]) { app in
             let board = app.descendants(matching: .any)["board"].firstMatch
             let size = board.frame.width
-            let rim = max(4, (size * 0.008).rounded())
+            let rim: CGFloat = 0
             let sq = (size - 2 * rim) / 8
             func at(_ f: CGFloat, _ r: CGFloat) -> XCUICoordinate {
                 board.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: rim + (f + 0.5) * sq, dy: rim + (7 - r + 0.5) * sq))
@@ -97,6 +97,16 @@ final class ScreenshotTests: XCTestCase {
         }
         shoot("10-welcome-0", args: ["-onboarded", "NO", "-onboardingPage", "0"], landscape: true, settle: 2.4)
         shoot("10-welcome-2", args: ["-onboarded", "NO", "-onboardingPage", "2"], landscape: true, settle: 2.4)
+    }
+
+    func testA5HomeAndLearn() {
+        shoot("14-home", args: ["-home", "YES", "-moves", midgame], settle: 1.5)
+        shoot("14-home", args: ["-home", "YES"], landscape: true, settle: 1.5)
+        shoot("15-learn", args: ["-learn", "YES", "-pro", "YES"], settle: 1.5)
+        shoot("15-learn-locked", args: ["-learn", "YES"], settle: 1.5) { app in
+            app.buttons["Mate in 2"].tap()
+            RunLoop.current.run(until: Date().addingTimeInterval(0.8))
+        }
     }
 
     func testA0Clocks() {

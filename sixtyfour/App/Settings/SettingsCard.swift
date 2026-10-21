@@ -11,6 +11,8 @@ struct SettingsCard: View {
     var showPaywall: () -> Void = {}
     var showLibrary: () -> Void = {}
     var showWelcome: () -> Void = {}
+    /// Back to the home screen; nil when settings were opened from there.
+    var goHome: (() -> Void)? = nil
     let close: () -> Void
 
     private enum Confirm { case newGame, resign, draw }
@@ -233,6 +235,10 @@ struct SettingsCard: View {
                 }
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(theme.accent)
+            } else if pro.hasTestUnlock {
+                Button("End test") { pro.endTestUnlock() }
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(theme.accent)
             } else {
                 Image(systemName: "checkmark.seal.fill").foregroundStyle(theme.accent)
             }
@@ -283,7 +289,13 @@ struct SettingsCard: View {
         switch confirm {
         case nil:
             VStack(spacing: 10) {
-                wideButton("New Game", prominent: true) { confirm = .newGame }
+                HStack(spacing: 10) {
+                    if let goHome {
+                        wideButton("Home", prominent: false, perform: goHome)
+                            .accessibilityIdentifier("settings-home")
+                    }
+                    wideButton("New Game", prominent: true) { confirm = .newGame }
+                }
                 HStack(spacing: 10) {
                     if !settings.isAgainstComputer {
                         wideButton("Agree to Draw", prominent: false) { confirm = .draw }

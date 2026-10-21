@@ -19,8 +19,8 @@ struct BoardGeometry: Equatable {
         self.origin = origin
         self.size = size
         self.flipped = flipped
-        // A thin gilt edge: the squares take nearly all of the board.
-        rim = max(4, (size * 0.008).rounded())
+        // No frame: the squares run to the edges of the board, which runs to the edges of the screen.
+        rim = 0
         inner = size - 2 * rim
         square = inner / 8
     }

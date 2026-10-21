@@ -134,6 +134,7 @@ struct BoardView: View {
                           shadowStrength: settings.theme.pieceShadow,
                           fallen: !token.isCaptured && token.piece == Piece(session.fallenKing ?? .white, .king)
                               && session.fallenKing != nil)
+                    .equatable()
                     .zIndex(depth(of: token, dragging: dragging))
             }
         }

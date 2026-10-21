@@ -11,7 +11,7 @@ struct BoardSurface: View {
 
     var body: some View {
         let g = geometry
-        let corner = max(4, g.size * 0.011)
+        let corner: CGFloat = g.rim > 0 ? max(4, g.size * 0.011) : 2
         ZStack(alignment: .topLeading) {
             // Frame
             Image(theme.rimImage)

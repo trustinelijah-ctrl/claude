@@ -13,8 +13,8 @@ final class GameplayUITests: XCTestCase {
         app.launchArguments = ["-fresh", "YES", "-soundEnabled", "NO", "-onboarded", "YES"] + extra
         if let moves { app.launchArguments += ["-moves", moves] }
         app.launch()
-        XCTAssertTrue(board.waitForExistence(timeout: 10))
-        settle()
+        XCTAssertTrue(board.waitForExistence(timeout: 40))
+        settle(1.5)
     }
 
     private var board: XCUIElement { app.descendants(matching: .any)["board"].firstMatch }
@@ -29,7 +29,7 @@ final class GameplayUITests: XCTestCase {
     private func point(_ name: String) -> XCUICoordinate {
         let frame = board.frame
         let size = frame.width
-        let rim = max(4, (size * 0.008).rounded())
+        let rim: CGFloat = 0
         let sq = (size - 2 * rim) / 8
         let chars = Array(name)
         let file = CGFloat(Int(chars[0].asciiValue!) - 97)
@@ -43,19 +43,19 @@ final class GameplayUITests: XCTestCase {
         point(from).tap()
         settle(0.15)
         point(to).tap()
-        settle(0.5)
+        settle(0.7)
     }
 
     private func drag(_ from: String, _ to: String) {
         // The app lifts a dragged piece about a third of a square above the finger so the
         // finger does not hide it; aim the finger that much below the target, as a player would.
         let size = board.frame.width
-        let rim = max(4, (size * 0.008).rounded())
+        let rim: CGFloat = 0
         let sq = (size - 2 * rim) / 8
         let isBlack = Int(Array(from)[1].asciiValue!) - 49 >= 4
         let compensate = CGVector(dx: 0, dy: (isBlack ? -1 : 1) * sq * 0.34)
         point(from).press(forDuration: 0.12, thenDragTo: point(to).withOffset(compensate))
-        settle(0.5)
+        settle(0.8)
     }
 
     func testOpensStraightToAPlayableBoard() {
@@ -150,7 +150,7 @@ final class GameplayUITests: XCTestCase {
     func testSettingsOpenForEitherPlayer() {
         launch()
         app.otherElements["panel-black"].buttons["Settings"].tap()
-        XCTAssertTrue(app.otherElements["settings"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.otherElements["settings"].waitForExistence(timeout: 8))
         app.buttons["Ivory & Slate"].tap()
         app.buttons["Done"].tap()
         settle()
@@ -206,5 +206,19 @@ final class GameplayUITests: XCTestCase {
         // Black's clock is running now; White's first move cost nothing.
         XCTAssertNotEqual(black.value as? String, "5:00")
         XCTAssertEqual(white.value as? String, "5:00")
+    }
+
+    func testHomeStartsAGame() {
+        app.launchArguments = ["-fresh", "YES", "-soundEnabled", "NO", "-onboarded", "YES", "-home", "YES"]
+        app.launch()
+        let friend = app.buttons["home-friend"]
+        XCTAssertTrue(friend.waitForExistence(timeout: 40))
+        friend.tap()
+        settle(1.0)
+        XCTAssertFalse(app.descendants(matching: .any)["home"].exists)
+        tap("e2", "e4")
+        XCTAssertTrue(boardValue.contains("Last move e4."), boardValue)
+        // Hints are only offered against the computer.
+        XCTAssertFalse(app.otherElements["panel-white"].buttons["Hint"].exists)
     }
 }

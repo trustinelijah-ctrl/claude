@@ -66,8 +66,24 @@ final class ProStore {
         await refresh()
     }
 
+    /// A development build installed without Xcode has no store to talk to; Pro can still be
+    /// tried with a test unlock, which never exists in a release build.
+    static var isTestBuild: Bool {
+        #if DEBUG
+        return true
+        #else
+        return false
+        #endif
+    }
+    var hasTestUnlock: Bool { Self.isTestBuild && UserDefaults.standard.bool(forKey: "pro.test") }
+
+    func endTestUnlock() {
+        UserDefaults.standard.set(false, forKey: "pro.test")
+        Task { await refresh() }
+    }
+
     func refresh() async {
-        if UserDefaults.standard.bool(forKey: "pro") { isPro = true; return }
+        if UserDefaults.standard.bool(forKey: "pro") || hasTestUnlock { isPro = true; return }
         var active = false
         for await result in Transaction.currentEntitlements {
             if case .verified(let t) = result, Plan(rawValue: t.productID) != nil, t.revocationDate == nil {
@@ -81,7 +97,13 @@ final class ProStore {
         message = nil
         if products[plan] == nil { await load() }
         guard let product = products[plan] else {
-            message = "The App Store isn't reachable right now. Try again in a moment."
+            if Self.isTestBuild {
+                UserDefaults.standard.set(true, forKey: "pro.test")
+                isPro = true
+                message = "Test purchase: Pro is on in this development build. Nothing was charged."
+            } else {
+                message = "The App Store isn't reachable right now. Try again in a moment."
+            }
             return
         }
         isPurchasing = true

@@ -15,7 +15,8 @@ enum HoldState: Equatable {
 }
 
 /// One piece on the table, with its shadow, lift, swing and landing.
-struct TokenView: View {
+/// Equatable, so while one piece is dragged the other thirty-one are not redrawn.
+struct TokenView: View, Equatable {
     let token: PieceToken
     let position: CGPoint
     let size: CGFloat

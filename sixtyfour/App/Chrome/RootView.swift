@@ -15,6 +15,17 @@ struct RootView: View {
     @State private var libraryOpen = false
     @State private var replaying: SavedGame?
     @State private var revealed = false
+    @State private var screen: Screen = RootView.initialScreen
+
+    enum Screen { case home, board, learn }
+
+    /// Opens on the home screen, except for test runs that set up a game on the board.
+    private static var initialScreen: Screen {
+        let d = UserDefaults.standard
+        if let home = d.object(forKey: "home") as? Bool { return home ? .home : .board }
+        if d.string(forKey: "learn") != nil { return .learn }
+        return d.bool(forKey: "fresh") || d.string(forKey: "moves") != nil ? .board : .home
+    }
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -60,6 +71,27 @@ struct RootView: View {
                     .zIndex(5)
                 }
 
+                if screen == .home {
+                    HomeView(session: session, settings: settings, pro: pro, feedback: session.feedback,
+                             resume: { screen = .board },
+                             playFriend: { start(against: nil) },
+                             playComputer: { start(against: settings.botLevel) },
+                             learn: { screen = .learn },
+                             games: { libraryOpen = true },
+                             options: { settingsFor = bottom },
+                             upgrade: { paywallOpen = true })
+                        .transition(.opacity)
+                        .zIndex(3)
+                }
+
+                if screen == .learn {
+                    PuzzleView(pro: pro, feedback: session.feedback, unlock: { paywallOpen = true }) {
+                        screen = .home
+                    }
+                    .transition(.opacity)
+                    .zIndex(3)
+                }
+
                 if let owner = capturesFor {
                     Rectangle()
                         .fill(.ultraThinMaterial)
@@ -89,7 +121,8 @@ struct RootView: View {
                     SettingsCard(settings: settings, session: session, player: player, pro: pro, account: account,
                                  showPaywall: { paywallOpen = true },
                                  showLibrary: { settingsFor = nil; libraryOpen = true },
-                                 showWelcome: { settingsFor = nil; account.replayWelcome() }) {
+                                 showWelcome: { settingsFor = nil; account.replayWelcome() },
+                                 goHome: screen == .board ? leaveToHome : nil) {
                         settingsFor = nil
                     }
                     .frame(maxHeight: min(proxy.size.height - 40, 820))
@@ -142,6 +175,7 @@ struct RootView: View {
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
             .animation(.easeInOut(duration: 0.24), value: settingsFor)
+            .animation(.easeInOut(duration: 0.35), value: screen)
             .animation(.easeInOut(duration: 0.28), value: libraryOpen)
             .animation(.easeInOut(duration: 0.28), value: paywallOpen)
             .animation(.easeInOut(duration: 0.35), value: replaying)
@@ -173,6 +207,9 @@ struct RootView: View {
         .onChange(of: overlayOpen) { _, open in
             if open { session.pauseClock() } else { session.resumeClock() }
         }
+        .onChange(of: keepAwake, initial: true) { _, awake in
+            UIApplication.shared.isIdleTimerDisabled = awake
+        }
         .onChange(of: pro.isPro) { _, isPro in
             if isPro { paywallOpen = false } else { settings.dropProChoices() }
         }
@@ -192,7 +229,27 @@ struct RootView: View {
 
     /// Anything covering the board stops the clock.
     private var overlayOpen: Bool {
-        settingsFor != nil || capturesFor != nil || paywallOpen || libraryOpen || replaying != nil || !account.hasOnboarded
+        settingsFor != nil || capturesFor != nil || paywallOpen || libraryOpen || replaying != nil
+            || !account.hasOnboarded || screen != .board
+    }
+
+    /// The screen stays on while a game or a puzzle is under way, so nobody has to change Auto-Lock.
+    private var keepAwake: Bool {
+        scenePhase == .active && ((screen == .board && !session.isOver) || screen == .learn)
+    }
+
+    private func leaveToHome() {
+        settingsFor = nil
+        screen = .home
+    }
+
+    /// A new game from the home screen: against the computer at `level`, or two people.
+    private func start(against level: BotLevel?) {
+        settings.opponent = level == nil ? .friend : .computer
+        if let level { settings.botLevel = level }
+        syncOpponent()
+        session.newGame()
+        screen = .board
     }
 
     /// Hints come with 64 Pro.
@@ -281,16 +338,37 @@ struct TableField: View {
                 .blur(radius: 2.5)
                 .frame(width: b.width, height: b.height)
                 .offset(x: b.minX, y: b.minY)
-            // Gilt tooling around the edge of the whole board-that-is-the-screen.
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .strokeBorder(theme.inlay.opacity(0.55), lineWidth: 1)
-                .padding(9)
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(theme.inlay.opacity(0.28), lineWidth: 0.6)
-                .padding(14)
+            // Gilt tooling around each player's end. It frames the strips and stops at the board,
+            // never crossing it.
+            ForEach(Array(endPanels(size: size, board: b).enumerated()), id: \.offset) { _, panel in
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(theme.inlay.opacity(0.55), lineWidth: 1)
+                    .frame(width: panel.width, height: panel.height)
+                    .offset(x: panel.minX, y: panel.minY)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(theme.inlay.opacity(0.28), lineWidth: 0.6)
+                    .frame(width: panel.width - 10, height: panel.height - 10)
+                    .offset(x: panel.minX + 5, y: panel.minY + 5)
+            }
         }
         .frame(width: size.width, height: size.height)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+
+    /// The space at each end of the board, inset from the screen edge and from the board.
+    private func endPanels(size: CGSize, board b: CGRect) -> [CGRect] {
+        let edge: CGFloat = 9, gap: CGFloat = 7
+        var panels: [CGRect] = []
+        if layout.arrangement == .ends {
+            let top = CGRect(x: edge, y: edge, width: size.width - 2 * edge, height: b.minY - gap - edge)
+            let bottom = CGRect(x: edge, y: b.maxY + gap, width: size.width - 2 * edge, height: size.height - b.maxY - gap - edge)
+            panels = [top, bottom]
+        } else {
+            let left = CGRect(x: edge, y: edge, width: b.minX - gap - edge, height: size.height - 2 * edge)
+            let right = CGRect(x: b.maxX + gap, y: edge, width: size.width - b.maxX - gap - edge, height: size.height - 2 * edge)
+            panels = [left, right]
+        }
+        return panels.filter { $0.width > 30 && $0.height > 30 }
     }
 }

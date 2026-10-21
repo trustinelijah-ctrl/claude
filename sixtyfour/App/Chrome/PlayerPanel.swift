@@ -209,9 +209,12 @@ struct PlayerZone: View {
                     }
                     .buttonStyle(PressScaleStyle())
                 }
-                BrassPin(symbol: "lightbulb", label: "Hint", enabled: isTurn && !session.isHinting) {
-                    session.feedback.ui()
-                    requestHint()
+                // Hints are for practising against the computer, never in a game between two people.
+                if settings.isAgainstComputer {
+                    BrassPin(symbol: "lightbulb", label: "Hint", enabled: isTurn && !session.isHinting) {
+                        session.feedback.ui()
+                        requestHint()
+                    }
                 }
                 BrassPin(symbol: "arrow.uturn.backward", label: "Undo", enabled: session.canUndo) {
                     session.feedback.ui()
