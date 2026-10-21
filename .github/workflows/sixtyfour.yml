@@ -17,7 +17,8 @@ permissions:
 jobs:
   ios:
     name: Build, test, screenshots
-    runs-on: macos-15
+    # arm64 macOS runners are often out of capacity; the Intel image has the same Xcode.
+    runs-on: macos-15-intel
     timeout-minutes: 60
     defaults: { run: { working-directory: sixtyfour } }
     steps:
