@@ -5,11 +5,15 @@ import ChessCore
 struct BoardMarks: View {
     let theme: BoardTheme
     let geometry: BoardGeometry
+    /// The whole table, which this layer covers.
+    let size: CGSize
     let lastMove: Move?
     let selection: Square?
     let targets: [Square]
     let occupiedTargets: Set<Square>
     let hover: Square?
+    /// The square of a piece being held under a finger: it glows softly from beneath.
+    let held: Square?
     let checkedKing: Square?
     let isMate: Bool
     let showHints: Bool
@@ -34,6 +38,13 @@ struct BoardMarks: View {
             if let s = selection {
                 ctx.fill(Path(g.rect(s)), with: .color(theme.selection))
             }
+            if let h = held {
+                let c = g.center(h)
+                let r = g.square * 0.62
+                ctx.fill(Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: 2 * r, height: 2 * r)),
+                         with: .radialGradient(Gradient(colors: [theme.turnGlow.opacity(0.45), theme.turnGlow.opacity(0)]),
+                                               center: c, startRadius: 0, endRadius: r))
+            }
             if showHints {
                 for t in targets {
                     let c = g.center(t)
@@ -55,7 +66,7 @@ struct BoardMarks: View {
                 ctx.stroke(Path(rect), with: .color(theme.hover), lineWidth: max(1.5, g.square * 0.035))
             }
         }
-        .frame(width: geometry.size, height: geometry.size)
+        .frame(width: size.width, height: size.height)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }

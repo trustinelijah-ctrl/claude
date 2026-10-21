@@ -186,8 +186,30 @@ def write_imageset(catalog, name, arr, quality=90):
                    "info": {"author": "xcode", "version": 1}}, fh, indent=2)
 
 
+def field(kind):
+    """The board's own surface around the playing grid, filling the whole screen (portrait)."""
+    h, w = 2048, 1536
+    if kind == 'salon':
+        # fine pebbled leather: tiny cells over a slow tonal drift
+        cells = value_noise(h, w, 340, 260, RNG)
+        drift = normalize(value_noise(h, w, 3, 3, RNG))
+        f = normalize(np.abs(cells)) * 0.35 + drift * 0.5
+        return np.clip(colorize(f, (9, 20, 17), (24, 41, 35), 0.7), 0, 255).astype(np.uint8)
+    if kind == 'walnut':
+        f = wood(w, h, RNG, ring_freq=30, warp=0.5, figure=0.5).T     # grain runs along the long side
+        return np.clip(colorize(f, (34, 20, 12), (78, 50, 31), 0.55), 0, 255).astype(np.uint8)
+    f = stone(h, w, RNG, veins=False)
+    return np.clip(colorize(f, (196, 189, 177), (224, 218, 207), 0.45), 0, 255).astype(np.uint8)
+
+
 if __name__ == '__main__':
     catalog = sys.argv[1]
+    if len(sys.argv) > 2 and sys.argv[2] == 'field':
+        write_imageset(catalog, "SalonField", field('salon'), quality=88)
+        write_imageset(catalog, "WalnutField", field('walnut'), quality=88)
+        write_imageset(catalog, "SlateField", field('slate'), quality=88)
+        print("ok")
+        sys.exit(0)
     if len(sys.argv) > 2 and sys.argv[2] == 'salon':
         write_imageset(catalog, "SalonSurface", salon_board())
         write_imageset(catalog, "SalonRim", rim('salon'))

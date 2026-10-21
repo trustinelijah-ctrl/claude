@@ -59,7 +59,7 @@ final class ScreenshotTests: XCTestCase {
         shoot("06-promotion", args: ["-moves", moves, "-theme", "salon"]) { app in
             let board = app.descendants(matching: .any)["board"].firstMatch
             let size = board.frame.width
-            let rim = max(10, (size * 0.036).rounded())
+            let rim = max(10, (size * 0.03).rounded())
             let sq = (size - 2 * rim) / 8
             func at(_ f: CGFloat, _ r: CGFloat) -> XCUICoordinate {
                 board.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: rim + (f + 0.5) * sq, dy: rim + (7 - r + 0.5) * sq))
@@ -76,6 +76,13 @@ final class ScreenshotTests: XCTestCase {
         shoot("07-split-half", args: ["-moves", midgame, "-simulateWindow", "half"])
         shoot("07-split-third", args: ["-moves", midgame, "-simulateWindow", "third"], landscape: true)
         shoot("07-stage-square", args: ["-moves", midgame, "-simulateWindow", "square", "-theme", "slate"], landscape: true)
+    }
+
+    func test9AgainstTable() {
+        shoot("09-vs-table", args: ["-opponent", "computer", "-botLevel", "club", "-humanColor", "white",
+                                    "-moves", "e2e4 e7e5 g1f3 b8c6 f1b5 a7a6 b5c6 d7c6 e1g1 f7f6 d2d4 e5d4 f3d4 c6c5"])
+        shoot("09-vs-table", args: ["-opponent", "computer", "-humanColor", "black", "-theme", "walnut",
+                                    "-moves", "d2d4 g8f6 c2c4 e7e6 b1c3 f8b4 d1c2 e8g8 a2a3 b4c3 c2c3"], landscape: true)
     }
 
     func test8NoCoordinatesFacingWhite() {

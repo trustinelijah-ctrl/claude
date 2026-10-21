@@ -72,13 +72,16 @@ struct BoardSurface: View {
         let font = Typeface.display(max(8, g.rim * 0.5), bold: true)
         let files = Array("abcdefgh")
         ForEach(0..<8, id: \.self) { i in
+            // Column i on screen, and the rank whose row sits at the same position.
             let x = g.rim + (CGFloat(i) + 0.5) * g.square
             let y = g.rim + (CGFloat(7 - i) + 0.5) * g.square
+            let file = String(files[g.flipped ? 7 - i : i])
+            let rank = "\(g.flipped ? 8 - i : i + 1)"
             Group {
-                Text(String(files[i])).position(x: x, y: g.size - g.rim * 0.5)
-                Text(String(files[i])).rotationEffect(.degrees(180)).position(x: x, y: g.rim * 0.5)
-                Text("\(i + 1)").position(x: g.rim * 0.5, y: y)
-                Text("\(i + 1)").rotationEffect(.degrees(180)).position(x: g.size - g.rim * 0.5, y: y)
+                Text(file).position(x: x, y: g.size - g.rim * 0.5)
+                Text(file).rotationEffect(.degrees(180)).position(x: x, y: g.rim * 0.5)
+                Text(rank).position(x: g.rim * 0.5, y: y)
+                Text(rank).rotationEffect(.degrees(180)).position(x: g.size - g.rim * 0.5, y: y)
             }
             .font(font)
             .foregroundStyle(theme.coordinate)

@@ -2,86 +2,107 @@ import SwiftUI
 import ChessCore
 
 enum HoldState: Equatable {
-    case resting, selected, held, dragging
+    /// Standing on the board.
+    case resting
+    /// Chosen with a tap; raised a little.
+    case selected
+    /// Under a finger, not yet moving.
+    case held
+    /// Being carried by a finger.
+    case dragging
+    /// Being carried by the computer's unseen hand.
+    case carried
 }
 
-/// One piece on the board, with its shadow, lift and movement.
+/// One piece on the table, with its shadow, lift, swing and landing.
 struct TokenView: View {
     let token: PieceToken
-    let geometry: BoardGeometry
-    let facesOpponent: Bool
+    let position: CGPoint
+    let size: CGFloat
+    let rotated: Bool
     let hold: HoldState
     let translation: CGSize
     let lift: CGSize
+    /// Swing while carried, in degrees.
+    let tilt: Double
+    /// Direction from the lamp, roughly -0.5...0.5 on each axis.
+    let light: CGSize
     let revealed: Bool
     let shadowStrength: Double
 
     var body: some View {
-        let sq = geometry.square
-        let base = geometry.center(token.square)
-        PieceBody(piece: token.piece, size: sq, hold: hold, rotated: facesOpponent,
-                  light: lightDirection(base), shadowStrength: shadowStrength)
-            .scaleEffect(scale, anchor: anchor)
-            .animation(Motion.lift, value: hold)
-            .opacity(token.isCaptured ? 0 : (revealed ? 1 : 0))
-            .scaleEffect(token.isCaptured ? 0.84 : 1, anchor: anchor)
-            .blur(radius: token.isCaptured ? sq * 0.03 : 0)
+        PieceBody(piece: token.piece, size: size, hold: hold, rotated: rotated,
+                  light: light, shadowStrength: shadowStrength)
+            // The landing: a weighted piece meeting felt gives a touch, then settles.
+            .keyframeAnimator(initialValue: CGFloat(1), trigger: token.landing) { content, squash in
+                content.scaleEffect(x: 2 - squash, y: squash, anchor: baseAnchor)
+            } keyframes: { _ in
+                KeyframeTrack {
+                    CubicKeyframe(0.93, duration: 0.05)
+                    SpringKeyframe(1.0, duration: 0.32, spring: Spring(response: 0.26, dampingRatio: 0.5))
+                }
+            }
+            .scaleEffect(scale, anchor: baseAnchor)
+            .rotationEffect(.degrees(tilt), anchor: UnitPoint(x: 0.5, y: rotated ? 0.92 : 0.08))
+            .animation(Motion.pickup, value: hold)
+            .animation(.spring(response: 0.32, dampingFraction: 0.5), value: tilt)
+            .opacity(revealed ? 1 : 0)
             .offset(lift)
-            .position(x: base.x + translation.width, y: base.y + translation.height)
+            .position(x: position.x + translation.width, y: position.y + translation.height)
             .animation(token.motion, value: token.revision)
             .animation(.easeOut(duration: 0.4).delay(Double(token.square.rank) * 0.024), value: revealed)
     }
 
     /// Pieces grow from their base, not from the middle of the square.
-    private var anchor: UnitPoint {
-        UnitPoint(x: 0.5, y: facesOpponent ? 1 - PieceSprite.squareBase : PieceSprite.squareBase)
-    }
-
-    /// The lamp hangs over the centre of the table, so each shadow falls outward from it.
-    private func lightDirection(_ p: CGPoint) -> CGSize {
-        let c = geometry.size / 2
-        return CGSize(width: (p.x - c) / geometry.inner, height: (p.y - c) / geometry.inner)
+    private var baseAnchor: UnitPoint {
+        UnitPoint(x: 0.5, y: rotated ? 1 - PieceSprite.squareBase : PieceSprite.squareBase)
     }
 
     private var scale: CGFloat {
         switch hold {
         case .resting: return 1
-        case .selected: return 1.03
-        case .held: return 1.06
-        case .dragging: return 1.12
+        case .selected: return 1.05
+        case .held: return 1.12
+        case .dragging: return 1.16
+        case .carried: return 1.12
         }
     }
 }
 
-/// The piece and its shadow on the board. Lifting it raises the piece and lets the shadow
-/// drift further from the base, wider and softer, as an object rising toward a lamp would.
+/// The piece and its shadow. Lifting raises the piece off its shadow, which drifts further
+/// from the base and grows wider and softer, as an object rising toward a lamp would.
 struct PieceBody: View {
     let piece: Piece
     let size: CGFloat
     let hold: HoldState
     let rotated: Bool
-    /// Direction from the lamp, in screen space, roughly -0.5...0.5 on each axis.
     let light: CGSize
     let shadowStrength: Double
 
     var body: some View {
-        let rise: CGFloat = hold == .dragging ? 1 : (hold == .held ? 0.45 : (hold == .selected ? 0.2 : 0))
+        let rise: CGFloat
+        switch hold {
+        case .resting: rise = 0
+        case .selected: rise = 0.3
+        case .held: rise = 0.65
+        case .dragging, .carried: rise = 1
+        }
         // Shadow drift in screen space, converted into the piece's own frame when it is turned.
-        let drift = CGSize(width: light.width * size * (0.22 + 0.25 * rise),
-                           height: light.height * size * (0.22 + 0.25 * rise) + size * 0.05 * rise)
+        let drift = CGSize(width: light.width * size * (0.22 + 0.3 * rise),
+                           height: light.height * size * (0.22 + 0.3 * rise) + size * 0.07 * rise)
         let local = rotated ? CGSize(width: -drift.width, height: -drift.height) : drift
         ZStack {
             Ellipse()
-                .fill(RadialGradient(colors: [.black.opacity(shadowStrength * Double(1 - 0.35 * rise)), .black.opacity(0)],
-                                     center: .center, startRadius: 0, endRadius: size * 0.36 * (1 + rise * 0.3)))
-                .frame(width: size * (0.74 + rise * 0.2), height: size * (0.34 + rise * 0.12))
+                .fill(RadialGradient(colors: [.black.opacity(shadowStrength * Double(1 - 0.45 * rise)), .black.opacity(0)],
+                                     center: .center, startRadius: 0, endRadius: size * 0.36 * (1 + rise * 0.4)))
+                .frame(width: size * (0.74 + rise * 0.24), height: size * (0.34 + rise * 0.14))
                 .offset(x: local.width, y: size * PieceSprite.baseOffset + local.height)
             Image(PieceSprite.imageName(piece))
                 .resizable()
                 .interpolation(.high)
                 .antialiased(true)
                 .frame(width: size * PieceSprite.scale, height: size * PieceSprite.scale)
-                .offset(y: size * PieceSprite.spriteOffset - size * 0.035 * rise)
+                .offset(y: size * PieceSprite.spriteOffset - size * 0.09 * rise)
                 .id(piece)
                 .transition(.opacity.animation(.easeInOut(duration: 0.24)))
         }

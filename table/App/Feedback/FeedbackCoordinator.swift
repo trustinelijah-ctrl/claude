@@ -30,6 +30,11 @@ final class FeedbackCoordinator {
         audio.play(.place, delay: 0.06, gain: 0.32, pan: pan(square))
     }
 
+    /// A taken piece set down in a tray: lighter than a move.
+    func trayLanding() {
+        audio.play(.place, gain: 0.32)
+    }
+
     func ui() {
         audio.play(.ui)
     }

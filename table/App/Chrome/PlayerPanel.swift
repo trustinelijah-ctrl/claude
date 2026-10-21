@@ -1,80 +1,120 @@
 import SwiftUI
 import ChessCore
 
-/// One player's side of the table: their name, whose move it is, the pieces they have
-/// taken standing beside the board, and two quiet controls.
-struct PlayerPanel: View {
+/// One player's end of the board: their name engraved in gold, a felt-lined tray where the
+/// pieces they take come to stand, and two brass pins for controls. Laid out for the player
+/// at the bottom; the top player's zone is the same view turned with its whole layer.
+struct PlayerZone: View {
     let color: PieceColor
     let session: GameSession
-    let theme: BoardTheme
+    let settings: SettingsStore
     let layout: TableLayout
     let openSettings: () -> Void
 
+    private var theme: BoardTheme { settings.theme }
+    private var isComputer: Bool { settings.computerColor == color }
     private var isTurn: Bool { !session.isOver && session.sideToMove == color }
-    private var name: String { color == .white ? "White" : "Black" }
+    private var name: String { isComputer ? "TABLE" : (color == .white ? "White" : "Black") }
 
     var body: some View {
-        Group {
+        ZStack(alignment: .topLeading) {
+            Color.clear
+            tray
             switch layout.arrangement {
-            case .strips: strip
-            case .columns: column
+            case .ends: ends
+            case .sides: sides
             }
         }
-        .frame(width: layout.panel.width, height: layout.panel.height)
+        .frame(width: layout.size.width, height: layout.size.height, alignment: .topLeading)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("panel-\(color.rawValue)")
     }
 
-    /// Captured pieces are drawn at a size that suits the room the panel has.
-    private var trophySize: CGFloat {
-        switch layout.arrangement {
-        case .strips: return min(78, max(34, layout.panel.height * 0.5))
-        case .columns: return min(60, max(32, layout.panel.width * 0.24))
-        }
-    }
-
     // MARK: Arrangements
 
-    private var strip: some View {
-        HStack(alignment: .center, spacing: 18) {
-            identity(large: !layout.compact)
-            trophies(size: trophySize, rows: 1)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            if session.canClaimDraw && isTurn { claimDraw }
-            controls
+    /// Portrait: name on the left, tray in the middle, pins on the right.
+    private var ends: some View {
+        let z = layout.zone
+        return ZStack(alignment: .topLeading) {
+            identity
+                .frame(width: max(0, layout.tray.minX - z.minX - 12), alignment: .leading)
+                .position(x: z.minX + (layout.tray.minX - z.minX - 12) / 2, y: z.midY)
+            if !isComputer {
+                pins
+                    .position(x: layout.tray.maxX + (z.maxX - layout.tray.maxX) / 2, y: z.midY)
+            } else {
+                thinking
+                    .position(x: layout.tray.maxX + (z.maxX - layout.tray.maxX) / 2, y: z.midY)
+            }
+            leadLabel
+                .position(x: layout.tray.maxX - 22, y: layout.tray.minY - 10)
         }
-        .padding(.horizontal, 6)
-        .frame(maxHeight: .infinity, alignment: .center)
     }
 
-    private var column: some View {
-        VStack(alignment: .leading, spacing: 16) {
+    /// Landscape: tray at the top of the column, then name and pins beneath.
+    private var sides: some View {
+        let z = layout.zone
+        return VStack(alignment: .leading, spacing: 14) {
             Spacer(minLength: 0)
-            trophies(size: trophySize, rows: 2)
-            identity(large: !layout.compact)
-            if session.canClaimDraw && isTurn { claimDraw }
-            controls
+            identity
+            if isComputer { thinking } else { pins }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(width: z.width, height: max(0, z.maxY - layout.tray.maxY - 12), alignment: .bottomLeading)
+        .position(x: z.midX, y: layout.tray.maxY + 12 + (z.maxY - layout.tray.maxY - 12) / 2)
     }
 
-    // MARK: Pieces of the panel
+    // MARK: Parts
 
-    private func identity(large: Bool) -> some View {
-        VStack(alignment: .leading, spacing: large ? 0 : -2) {
+    /// A recess in the board, lined with felt, edged with a fine gilt line.
+    private var tray: some View {
+        let r = layout.tray
+        let corner = min(r.height, r.width) * 0.22
+        return RoundedRectangle(cornerRadius: corner, style: .continuous)
+            .fill(theme.isDark ? Color.black.opacity(0.32) : Color(hex: 0x3A3024, opacity: 0.10))
+            .overlay(
+                // inner shadow: the upper lip casts into the recess
+                RoundedRectangle(cornerRadius: corner, style: .continuous)
+                    .stroke(LinearGradient(colors: [.black.opacity(theme.isDark ? 0.6 : 0.25), .clear],
+                                           startPoint: .top, endPoint: .center), lineWidth: 6)
+                    .blur(radius: 3)
+                    .clipShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: corner, style: .continuous)
+                    .strokeBorder(theme.inlay.opacity(0.42), lineWidth: 0.75)
+            )
+            .frame(width: r.width, height: r.height)
+            .position(x: r.midX, y: r.midY)
+            .accessibilityHidden(true)
+    }
+
+    private var identity: some View {
+        let large = !layout.compact
+        return VStack(alignment: .leading, spacing: large ? 1 : -1) {
             Text(name)
-                .font(Typeface.display(large ? 34 : 26))
-                .foregroundStyle(theme.ink.opacity(isTurn || session.isOver ? 1 : 0.62))
+                .font(Typeface.display(large ? 32 : 24))
+                .tracking(isComputer ? 5 : 0.5)
+                .foregroundStyle(engraved)
+                .shadow(color: .black.opacity(theme.isDark ? 0.6 : 0.15), radius: 0, y: 1)
             Text(status)
-                .font(Typeface.italic(large ? 20 : 17))
+                .font(Typeface.italic(large ? 19 : 16))
                 .foregroundStyle(statusColor)
                 .contentTransition(.opacity)
                 .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
-        .fixedSize()
         .animation(.easeInOut(duration: 0.3), value: status)
         .animation(.easeInOut(duration: 0.3), value: isTurn)
         .accessibilityElement(children: .combine)
+    }
+
+    /// Gold leaf in a light-catching gradient, as if pressed into the surface.
+    private var engraved: LinearGradient {
+        let lit = isTurn || session.isOver
+        return LinearGradient(colors: [Color(hex: 0xF1DCA6).opacity(lit ? 1 : 0.55),
+                                       theme.accent.opacity(lit ? 1 : 0.5),
+                                       Color(hex: 0x9C7A3E).opacity(lit ? 1 : 0.5)],
+                              startPoint: .top, endPoint: .bottom)
     }
 
     private var status: String {
@@ -85,6 +125,9 @@ struct PlayerPanel: View {
             case .draw: return "Draw"
             }
         }
+        if isComputer {
+            return isTurn ? "Thinking" : settings.botLevel.title
+        }
         if isTurn { return session.checkedKing != nil ? "In check" : "Your move" }
         return "Waiting"
     }
@@ -92,74 +135,60 @@ struct PlayerPanel: View {
     private var statusColor: Color {
         if session.result?.winner == color { return theme.accent }
         if isTurn && session.checkedKing != nil { return theme.check }
-        return isTurn ? theme.accent : theme.inkSecondary
+        return isTurn ? theme.ink.opacity(0.85) : theme.inkSecondary
     }
 
-    private var captures: [Piece] { session.captures(by: color) }
-    private var lead: Int { session.materialLead(for: color) }
-
-    /// Taken pieces stand on the table beside the board, the way they do in a real game.
-    @ViewBuilder
-    private func trophies(size: CGFloat, rows: Int) -> some View {
-        let pieces = captures.filter { $0.kind != .pawn }
-        let pawns = captures.filter { $0.kind == .pawn }
-        if rows == 1 {
-            HStack(alignment: .bottom, spacing: 6) {
-                standing(pieces + pawns, size: size)
-                if lead > 0 { leadLabel }
-            }
-        } else {
-            VStack(alignment: .leading, spacing: -size * 0.28) {
-                standing(pieces, size: size)
-                HStack(alignment: .bottom, spacing: 6) {
-                    standing(pawns, size: size * 0.92)
-                    if lead > 0 { leadLabel }
+    /// While the computer chooses, three small dots breathe in turn.
+    private var thinking: some View {
+        HStack(spacing: 7) {
+            if session.isThinking {
+                ForEach(0..<3, id: \.self) { i in
+                    Circle()
+                        .fill(theme.accent)
+                        .frame(width: 6, height: 6)
+                        .phaseAnimator([0.25, 1.0]) { dot, phase in
+                            dot.opacity(phase)
+                        } animation: { _ in .easeInOut(duration: 0.45).delay(Double(i) * 0.15) }
                 }
+                .transition(.opacity)
             }
         }
+        .frame(width: 60, height: 44)
+        .animation(.easeInOut(duration: 0.25), value: session.isThinking)
     }
 
-    private func standing(_ pieces: [Piece], size: CGFloat) -> some View {
-        HStack(spacing: -size * 0.5) {
-            ForEach(Array(pieces.enumerated()), id: \.offset) { item in
-                StandingPiece(piece: item.element, size: size, shadow: theme.pieceShadow * 0.9)
-                    .transition(.scale(scale: 0.7, anchor: .bottom).combined(with: .opacity))
-            }
-        }
-        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: pieces.count)
-    }
-
+    @ViewBuilder
     private var leadLabel: some View {
-        Text("+\(lead)")
-            .font(Typeface.display(18, bold: true))
-            .monospacedDigit()
-            .foregroundStyle(theme.inkSecondary)
-            .padding(.bottom, 4)
-    }
-
-    private var claimDraw: some View {
-        Button {
-            session.feedback.ui()
-            session.claimDraw()
-        } label: {
-            Text("Claim draw")
-                .font(Typeface.italic(19))
-                .foregroundStyle(theme.ink)
-                .padding(.horizontal, 16)
-                .frame(height: 38)
-                .overlay(Capsule().strokeBorder(theme.panelStroke, lineWidth: 1))
+        let lead = session.materialLead(for: color)
+        if lead > 0 {
+            Text("+\(lead)")
+                .font(Typeface.display(17, bold: true))
+                .monospacedDigit()
+                .foregroundStyle(theme.accent.opacity(0.85))
         }
-        .buttonStyle(PressScaleStyle())
-        .accessibilityHint(session.game.canClaimThreefold ? "Threefold repetition" : "Fifty-move rule")
     }
 
-    private var controls: some View {
-        HStack(spacing: 12) {
-            IconButton(symbol: "arrow.uturn.backward", label: "Undo", theme: theme, enabled: session.canUndo) {
+    private var pins: some View {
+        HStack(spacing: 14) {
+            if session.canClaimDraw && isTurn {
+                Button {
+                    session.feedback.ui()
+                    session.claimDraw()
+                } label: {
+                    Text("Claim draw")
+                        .font(Typeface.italic(18))
+                        .foregroundStyle(theme.accent)
+                        .padding(.horizontal, 12)
+                        .frame(height: 40)
+                        .overlay(Capsule().strokeBorder(theme.inlay.opacity(0.5), lineWidth: 0.75))
+                }
+                .buttonStyle(PressScaleStyle())
+            }
+            BrassPin(symbol: "arrow.uturn.backward", label: "Undo", enabled: session.canUndo) {
                 session.feedback.ui()
                 session.undo()
             }
-            IconButton(symbol: "ellipsis", label: "Settings", theme: theme, enabled: true) {
+            BrassPin(symbol: "ellipsis", label: "Settings", enabled: true) {
                 session.feedback.ui()
                 openSettings()
             }
@@ -167,24 +196,33 @@ struct PlayerPanel: View {
     }
 }
 
-/// A small round control ringed in a fine gilt line: 44 pt to the finger, 40 pt to the eye.
-struct IconButton: View {
+/// A control set into the board like a small polished brass stud.
+struct BrassPin: View {
     let symbol: String
     let label: String
-    let theme: BoardTheme
     let enabled: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: 15, weight: .regular))
-                .foregroundStyle(theme.ink.opacity(enabled ? 0.82 : 0.28))
-                .frame(width: 40, height: 40)
-                .background(Circle().fill(theme.panel.opacity(0.6)))
-                .overlay(Circle().strokeBorder(theme.panelStroke.opacity(enabled ? 1 : 0.4), lineWidth: 0.75))
-                .frame(width: 44, height: 44)
-                .contentShape(Circle())
+            ZStack {
+                Circle()
+                    .fill(RadialGradient(colors: [Color(hex: 0xF7E8C0), Color(hex: 0xD4AF66), Color(hex: 0x8A672E)],
+                                         center: UnitPoint(x: 0.35, y: 0.3), startRadius: 1, endRadius: 26))
+                Circle()
+                    .strokeBorder(LinearGradient(colors: [Color(hex: 0xFFF3D0).opacity(0.9), Color(hex: 0x5E4419)],
+                                                 startPoint: .top, endPoint: .bottom), lineWidth: 1)
+                Image(systemName: symbol)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color(hex: 0x3D2B10).opacity(0.85))
+                    .shadow(color: Color(hex: 0xFFF1C8).opacity(0.6), radius: 0, y: 0.75)
+            }
+            .frame(width: 38, height: 38)
+            .shadow(color: .black.opacity(0.45), radius: 2.5, y: 1.5)
+            .saturation(enabled ? 1 : 0.2)
+            .opacity(enabled ? 1 : 0.5)
+            .frame(width: 46, height: 46)
+            .contentShape(Circle())
         }
         .buttonStyle(PressScaleStyle())
         .disabled(!enabled)

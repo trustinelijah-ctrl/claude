@@ -29,7 +29,7 @@ final class TableUITests: XCTestCase {
     private func point(_ name: String) -> XCUICoordinate {
         let frame = board.frame
         let size = frame.width
-        let rim = max(10, (size * 0.036).rounded())
+        let rim = max(10, (size * 0.03).rounded())
         let sq = (size - 2 * rim) / 8
         let chars = Array(name)
         let file = CGFloat(Int(chars[0].asciiValue!) - 97)
@@ -50,7 +50,7 @@ final class TableUITests: XCTestCase {
         // The app lifts a dragged piece about a third of a square above the finger so the
         // finger does not hide it; aim the finger that much below the target, as a player would.
         let size = board.frame.width
-        let rim = max(10, (size * 0.036).rounded())
+        let rim = max(10, (size * 0.03).rounded())
         let sq = (size - 2 * rim) / 8
         let isBlack = Int(Array(from)[1].asciiValue!) - 49 >= 4
         let compensate = CGVector(dx: 0, dy: (isBlack ? -1 : 1) * sq * 0.34)
@@ -148,6 +148,19 @@ final class TableUITests: XCTestCase {
         app.buttons["Done"].tap()
         settle()
         XCTAssertFalse(app.otherElements["settings"].exists)
+    }
+
+    func testPlayingAgainstTable() {
+        launch(extra: ["-opponent", "computer", "-botLevel", "casual", "-humanColor", "white"])
+        tap("e2", "e4")
+        // TABLE answers on its own, with an unseen hand.
+        let deadline = Date().addingTimeInterval(8)
+        while Date() < deadline && !boardValue.contains("2 moves played") { settle(0.3) }
+        XCTAssertTrue(boardValue.hasPrefix("White to move. 2 moves played"), boardValue)
+        // Undo takes back TABLE's reply and your move.
+        app.otherElements["panel-white"].buttons["Undo"].tap()
+        settle(1.0)
+        XCTAssertTrue(boardValue.hasPrefix("White to move. 0 moves played"), boardValue)
     }
 
     func testRotationKeepsTheGame() {

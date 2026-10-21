@@ -39,20 +39,26 @@ struct ResultOverlay: View {
     let result: GameResult
     let theme: BoardTheme
     let boardSize: CGFloat
+    /// Two people: write it once for each seat. Against the computer: once, for the person.
+    var mirrored: Bool = true
+    /// The player at the bottom of the screen.
+    var viewer: PieceColor = .white
     let playAgain: () -> Void
     let dismiss: () -> Void
 
     var body: some View {
         let width = min(boardSize * 0.72, 460)
         VStack(spacing: 0) {
-            half(for: .black)
-                .rotationEffect(.degrees(180))
-            Rectangle()
-                .fill(LinearGradient(colors: [.clear, theme.accent.opacity(0.55), .clear],
-                                     startPoint: .leading, endPoint: .trailing))
-                .frame(height: 1)
-                .padding(.horizontal, 28)
-            half(for: .white)
+            if mirrored {
+                half(for: viewer.opposite)
+                    .rotationEffect(.degrees(180))
+                Rectangle()
+                    .fill(LinearGradient(colors: [.clear, theme.accent.opacity(0.55), .clear],
+                                         startPoint: .leading, endPoint: .trailing))
+                    .frame(height: 1)
+                    .padding(.horizontal, 28)
+            }
+            half(for: viewer)
         }
         .frame(width: width)
         .background(

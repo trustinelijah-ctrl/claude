@@ -14,6 +14,8 @@ struct BoardTheme: Equatable {
     // Materials
     let surfaceImage: String
     let rimImage: String
+    /// The board's own surface around the grid, filling the rest of the screen.
+    let fieldImage: String
     let rimTint: Color
     let inlay: Color
     let rimHighlight: Color
@@ -54,6 +56,7 @@ struct BoardTheme: Equatable {
         subtitle: "Emerald shagreen, bone, gilt tooling",
         surfaceImage: "SalonSurface",
         rimImage: "SalonRim",
+        fieldImage: "SalonField",
         rimTint: Color(hex: 0x020605, opacity: 0.10),
         inlay: Color(hex: 0xC9A35A),
         rimHighlight: Color(hex: 0xE9CF95, opacity: 0.30),
@@ -85,6 +88,7 @@ struct BoardTheme: Equatable {
         subtitle: "Black walnut, maple, gilt inlay",
         surfaceImage: "WalnutSurface",
         rimImage: "WalnutRim",
+        fieldImage: "WalnutField",
         rimTint: Color(hex: 0x1A0F09, opacity: 0.18),
         inlay: Color(hex: 0xC9A66B),
         rimHighlight: Color(hex: 0xF3D9AE, opacity: 0.22),
@@ -116,6 +120,7 @@ struct BoardTheme: Equatable {
         subtitle: "Honed ivory stone, cleft slate",
         surfaceImage: "SlateSurface",
         rimImage: "SlateRim",
+        fieldImage: "SlateField",
         rimTint: Color(hex: 0x101114, opacity: 0.12),
         inlay: Color(hex: 0xE9E3D7),
         rimHighlight: Color.white.opacity(0.16),
@@ -177,6 +182,12 @@ enum Motion {
     static let returnHome = Animation.spring(response: 0.22, dampingFraction: 0.84)
     static let undo = Animation.spring(response: 0.26, dampingFraction: 0.9)
     static let capture = 0.2
+    /// A taken piece is lifted off and carried to its captor's tray.
+    static let toTray = Animation.spring(response: 0.62, dampingFraction: 0.82)
+    static let toTrayLanding = 0.5
+    static let fromTray = Animation.spring(response: 0.5, dampingFraction: 0.84)
+    /// Picking a piece up: a quick, springy rise.
+    static let pickup = Animation.spring(response: 0.24, dampingFraction: 0.58)
     static let castleRookDelay = 0.085
     static let fade = Animation.easeOut(duration: 0.16)
 }

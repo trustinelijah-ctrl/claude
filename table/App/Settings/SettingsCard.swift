@@ -38,6 +38,34 @@ struct SettingsCard: View {
 
     private var sections: some View {
         VStack(alignment: .leading, spacing: 22) {
+            section("Opponent") {
+                Picker("Opponent", selection: $settings.opponent) {
+                    Text("A friend").tag(Opponent.friend)
+                    Text("TABLE").tag(Opponent.computer)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                if settings.isAgainstComputer {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Strength").font(.system(size: 15)).foregroundStyle(theme.ink)
+                        Picker("Strength", selection: $settings.botLevel) {
+                            ForEach(BotLevel.allCases) { Text($0.title).tag($0) }
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                    }
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("You play").font(.system(size: 15)).foregroundStyle(theme.ink)
+                        Picker("You play", selection: $settings.humanColor) {
+                            Text("White").tag(PieceColor.white)
+                            Text("Black").tag(PieceColor.black)
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                    }
+                }
+            }
+            .animation(.easeInOut(duration: 0.25), value: settings.isAgainstComputer)
             section("Board") {
                 HStack(alignment: .top, spacing: 12) {
                     ForEach(ThemeID.allCases) { id in
@@ -71,6 +99,7 @@ struct SettingsCard: View {
                 row("Legal move hints") {
                     Toggle("", isOn: $settings.showMoveHints).labelsHidden().tint(theme.accent)
                 }
+                if !settings.isAgainstComputer {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Black's pieces")
                         .font(.system(size: 15))
@@ -81,6 +110,7 @@ struct SettingsCard: View {
                     }
                     .pickerStyle(.segmented)
                     .labelsHidden()
+                }
                 }
             }
             section("Game") { gameControls }
@@ -127,8 +157,10 @@ struct SettingsCard: View {
             VStack(spacing: 10) {
                 wideButton("New Game", prominent: true) { confirm = .newGame }
                 HStack(spacing: 10) {
-                    wideButton("Agree to Draw", prominent: false) { confirm = .draw }
-                        .disabled(session.isOver)
+                    if !settings.isAgainstComputer {
+                        wideButton("Agree to Draw", prominent: false) { confirm = .draw }
+                            .disabled(session.isOver)
+                    }
                     wideButton("Resign", prominent: false) { confirm = .resign }
                         .disabled(session.isOver)
                 }
