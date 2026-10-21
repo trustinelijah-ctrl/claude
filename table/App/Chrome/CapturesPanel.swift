@@ -34,7 +34,7 @@ struct CapturesPanel: View {
         VStack(spacing: 18) {
             VStack(spacing: 4) {
                 Text(title)
-                    .font(Typeface.display(30))
+                    .font(Typeface.display(36))
                     .foregroundStyle(theme.ink)
                 Text("\(total) \(total == 1 ? "piece" : "pieces") · \(points) \(points == 1 ? "point" : "points")")
                     .font(Typeface.italic(18))
@@ -46,14 +46,14 @@ struct CapturesPanel: View {
                         ZStack {
                             // Several of a kind stand in a little row, one behind the other.
                             ForEach(0..<min(g.count, 4), id: \.self) { j in
-                                StandingPiece(piece: Piece(owner.opposite, g.kind), size: 74, shadow: 0.35)
-                                    .offset(x: CGFloat(j) * 11 - CGFloat(min(g.count, 4) - 1) * 5.5, y: CGFloat(-j) * 2)
+                                StandingPiece(piece: Piece(owner.opposite, g.kind), size: 100, shadow: 0.35)
+                                    .offset(x: CGFloat(j) * 15 - CGFloat(min(g.count, 4) - 1) * 7.5, y: CGFloat(-j) * 2)
                                     .zIndex(Double(-j))
                             }
                         }
-                        .frame(width: 74 + CGFloat(min(g.count, 4) - 1) * 11, height: 74)
+                        .frame(width: 100 + CGFloat(min(g.count, 4) - 1) * 15, height: 100)
                         Text("×\(g.count)")
-                            .font(Typeface.display(19, bold: true))
+                            .font(Typeface.display(24, bold: true))
                             .monospacedDigit()
                             .foregroundStyle(theme.accent)
                     }

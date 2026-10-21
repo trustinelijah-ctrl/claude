@@ -36,34 +36,10 @@ struct LibraryView: View {
             .padding(.top, 18)
             .padding(.bottom, 12)
             Rectangle().fill(theme.panelStroke).frame(height: 1)
-            ScrollView {
-                LazyVStack(spacing: 10) {
-                    ForEach(Array(library.games.enumerated()), id: \.element.id) { i, saved in
-                        let locked = !pro.isPro && i > 0
-                        Button {
-                            feedback.ui()
-                            if locked { unlock() } else { open(saved) }
-                        } label: {
-                            row(saved, locked: locked)
-                        }
-                        .buttonStyle(PressScaleStyle())
-                    }
-                    if !pro.isPro && library.games.count > 1 {
-                        Button {
-                            feedback.ui()
-                            unlock()
-                        } label: {
-                            Label("Keep every game with TABLE Pro", systemImage: "lock.open.fill")
-                                .font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(Color(hex: 0x2A1D0A))
-                                .frame(maxWidth: .infinity, minHeight: 48)
-                                .background(GoldCapsule())
-                        }
-                        .buttonStyle(PressScaleStyle())
-                        .padding(.top, 6)
-                    }
-                }
-                .padding(20)
+            // Only as tall as its games, scrolling once they no longer fit.
+            ViewThatFits(in: .vertical) {
+                list
+                ScrollView { list }
             }
         }
         .frame(maxWidth: 520, maxHeight: 680)
@@ -77,6 +53,36 @@ struct LibraryView: View {
         .environment(\.colorScheme, theme.isDark ? .dark : .light)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("library")
+    }
+
+    private var list: some View {
+        VStack(spacing: 10) {
+            ForEach(Array(library.games.enumerated()), id: \.element.id) { i, saved in
+                let locked = !pro.isPro && i > 0
+                Button {
+                    feedback.ui()
+                    if locked { unlock() } else { open(saved) }
+                } label: {
+                    row(saved, locked: locked)
+                }
+                .buttonStyle(PressScaleStyle())
+            }
+            if !pro.isPro && library.games.count > 1 {
+                Button {
+                    feedback.ui()
+                    unlock()
+                } label: {
+                    Label("Keep every game with TABLE Pro", systemImage: "lock.open.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Color(hex: 0x2A1D0A))
+                        .frame(maxWidth: .infinity, minHeight: 48)
+                        .background(GoldCapsule())
+                }
+                .buttonStyle(PressScaleStyle())
+                .padding(.top, 6)
+            }
+        }
+        .padding(20)
     }
 
     private func row(_ saved: SavedGame, locked: Bool) -> some View {
