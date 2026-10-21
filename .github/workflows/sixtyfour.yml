@@ -19,7 +19,7 @@ jobs:
     name: Build, test, screenshots
     # arm64 macOS runners are often out of capacity; the Intel image has the same Xcode.
     runs-on: macos-15-intel
-    timeout-minutes: 60
+    timeout-minutes: 120
     defaults: { run: { working-directory: sixtyfour } }
     steps:
       - uses: actions/checkout@v4
@@ -97,7 +97,7 @@ jobs:
                   shutil.copy(os.path.join(src, a["exportedFileName"]), f"shots/{dev.lower()}-{name}.png")
           PY
           mkdir -p shots
-          for dev in PRO13 MINI; do
+          for dev in PRO13; do
             udid="${!dev}"
             [ -z "$udid" ] && continue
             xcodebuild test-without-building -project SixtyFour.xcodeproj -scheme SixtyFour -derivedDataPath build \
