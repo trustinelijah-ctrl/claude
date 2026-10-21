@@ -17,50 +17,59 @@ struct PlayerZone: View {
     private var name: String { isComputer ? "TABLE" : (color == .white ? "White" : "Black") }
 
     var body: some View {
+        let z = layout.zone
         ZStack(alignment: .topLeading) {
             Color.clear
             tray
-            switch layout.arrangement {
-            case .ends: ends
-            case .sides: sides
+            // The zone's own controls, in a container no larger than the zone, so the far
+            // player's (rotated) layer never covers this player's pins.
+            Group {
+                switch layout.arrangement {
+                case .ends: ends
+                case .sides: sides
+                }
             }
+            .frame(width: z.width, height: z.height, alignment: .topLeading)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("panel-\(color.rawValue)")
+            .position(x: z.midX, y: z.midY)
         }
         .frame(width: layout.size.width, height: layout.size.height, alignment: .topLeading)
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("panel-\(color.rawValue)")
     }
 
-    // MARK: Arrangements
+    // MARK: Arrangements (in zone coordinates)
 
     /// Portrait: name on the left, tray in the middle, pins on the right.
     private var ends: some View {
         let z = layout.zone
+        let trayLeft = layout.tray.minX - z.minX
+        let trayRight = layout.tray.maxX - z.minX
         return ZStack(alignment: .topLeading) {
             identity
-                .frame(width: max(0, layout.tray.minX - z.minX - 12), alignment: .leading)
-                .position(x: z.minX + (layout.tray.minX - z.minX - 12) / 2, y: z.midY)
-            if !isComputer {
-                pins
-                    .position(x: layout.tray.maxX + (z.maxX - layout.tray.maxX) / 2, y: z.midY)
-            } else {
-                thinking
-                    .position(x: layout.tray.maxX + (z.maxX - layout.tray.maxX) / 2, y: z.midY)
+                .frame(width: max(0, trayLeft - 12), alignment: .leading)
+                .position(x: (trayLeft - 12) / 2, y: z.height / 2)
+            Group {
+                if isComputer { thinking } else { pins }
             }
+            .position(x: trayRight + (z.width - trayRight) / 2, y: z.height / 2)
             leadLabel
-                .position(x: layout.tray.maxX - 22, y: layout.tray.minY - 10)
+                .position(x: trayRight - 22, y: layout.tray.minY - z.minY - 10)
         }
+        .frame(width: z.width, height: z.height, alignment: .topLeading)
     }
 
     /// Landscape: tray at the top of the column, then name and pins beneath.
     private var sides: some View {
         let z = layout.zone
+        let top = layout.tray.maxY - z.minY + 12
         return VStack(alignment: .leading, spacing: 14) {
             Spacer(minLength: 0)
             identity
             if isComputer { thinking } else { pins }
         }
-        .frame(width: z.width, height: max(0, z.maxY - layout.tray.maxY - 12), alignment: .bottomLeading)
-        .position(x: z.midX, y: layout.tray.maxY + 12 + (z.maxY - layout.tray.maxY - 12) / 2)
+        .frame(width: z.width, height: max(0, z.height - top), alignment: .bottomLeading)
+        .position(x: z.width / 2, y: top + (z.height - top) / 2)
+        .frame(width: z.width, height: z.height, alignment: .topLeading)
     }
 
     // MARK: Parts
