@@ -1,0 +1,86 @@
+{
+  "identifier" : "6F0C9C52",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21500001",
+      "localizations" : [
+
+      ],
+      "name" : "64 Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "19.99",
+          "familyShareable" : true,
+          "groupNumber" : 1,
+          "internalID" : "6740000011",
+          "introductoryOffer" : {
+            "internalID" : "6740000013",
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1W"
+          },
+          "localizations" : [
+            {
+              "description" : "Every board and piece set, hints, game review, stronger opponents.",
+              "displayName" : "64 Pro Yearly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "app.sixtyfour.pro.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "64 Pro Yearly",
+          "subscriptionGroupID" : "21500001",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "2.99",
+          "familyShareable" : true,
+          "groupNumber" : 2,
+          "internalID" : "6740000012",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Every board and piece set, hints, game review, stronger opponents.",
+              "displayName" : "64 Pro Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "app.sixtyfour.pro.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "64 Pro Monthly",
+          "subscriptionGroupID" : "21500001",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}
