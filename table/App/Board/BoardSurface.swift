@@ -6,6 +6,8 @@ struct BoardSurface: View {
     let theme: BoardTheme
     let geometry: BoardGeometry
     let showCoordinates: Bool
+    /// Also set the coordinates along the far edges, turned for the player opposite.
+    var mirrorCoordinates = true
 
     var body: some View {
         let g = geometry
@@ -27,17 +29,11 @@ struct BoardSurface: View {
                                    startPoint: .top, endPoint: .bottom),
                     lineWidth: max(1, g.rim * 0.08))
 
-            // Gilt tooling: a line just outside the playing surface, and a finer one near the edge
+            // Gilt tooling just outside the playing surface
             Rectangle()
-                .strokeBorder(theme.inlay.opacity(0.9), lineWidth: max(0.75, g.rim * 0.055))
-                .frame(width: g.inner + g.rim * 0.42, height: g.inner + g.rim * 0.42)
-                .offset(x: g.rim * 0.79, y: g.rim * 0.79)
-            if theme.doubleTooling {
-                Rectangle()
-                    .strokeBorder(theme.inlay.opacity(0.55), lineWidth: max(0.5, g.rim * 0.025))
-                    .frame(width: g.size - g.rim * 0.36, height: g.size - g.rim * 0.36)
-                    .offset(x: g.rim * 0.18, y: g.rim * 0.18)
-            }
+                .strokeBorder(theme.inlay.opacity(0.95), lineWidth: max(1, g.rim * 0.14))
+                .frame(width: g.inner + g.rim * 0.7, height: g.inner + g.rim * 0.7)
+                .offset(x: g.rim * 0.65, y: g.rim * 0.65)
 
             // Playing surface, recessed a hair below the frame
             Image(theme.surfaceImage)
@@ -66,26 +62,52 @@ struct BoardSurface: View {
         .drawingGroup()
     }
 
-    /// Engraved file letters and rank numbers, set once for each player along their own edges.
+    /// Fine coordinates set into the corners of the edge squares: files along the near rank,
+    /// ranks up the near-left file, and (face to face) the same again turned for the far player.
     @ViewBuilder
     private func coordinates(_ g: BoardGeometry) -> some View {
-        let font = Typeface.display(max(8, g.rim * 0.5), bold: true)
+        let font = Typeface.display(max(9, g.square * 0.17), bold: true)
         let files = Array("abcdefgh")
+        let pad = g.square * 0.07
         ForEach(0..<8, id: \.self) { i in
-            // Column i on screen, and the rank whose row sits at the same position.
-            let x = g.rim + (CGFloat(i) + 0.5) * g.square
-            let y = g.rim + (CGFloat(7 - i) + 0.5) * g.square
             let file = String(files[g.flipped ? 7 - i : i])
-            let rank = "\(g.flipped ? 8 - i : i + 1)"
+            let rank = "\(g.flipped ? i + 1 : 8 - i)"       // rank of screen row i
+            let left = g.rim + CGFloat(i) * g.square
+            let top = g.rim + CGFloat(i) * g.square
             Group {
-                Text(file).position(x: x, y: g.size - g.rim * 0.5)
-                Text(file).rotationEffect(.degrees(180)).position(x: x, y: g.rim * 0.5)
-                Text(rank).position(x: g.rim * 0.5, y: y)
-                Text(rank).rotationEffect(.degrees(180)).position(x: g.size - g.rim * 0.5, y: y)
+                // near edge: file at the bottom-right of each bottom square, rank at the top-left of each left square
+                Text(file)
+                    .foregroundStyle(ink(col: i, row: 7))
+                    .frame(width: g.square - 2 * pad, height: g.square - 2 * pad, alignment: .bottomTrailing)
+                    .position(x: left + g.square / 2, y: g.rim + 7.5 * g.square)
+                Text(rank)
+                    .foregroundStyle(ink(col: 0, row: i))
+                    .frame(width: g.square - 2 * pad, height: g.square - 2 * pad, alignment: .topLeading)
+                    .position(x: g.rim + 0.5 * g.square, y: top + g.square / 2)
+                if mirrorCoordinates {
+                    Text(file)
+                        .foregroundStyle(ink(col: i, row: 0))
+                        .frame(width: g.square - 2 * pad, height: g.square - 2 * pad, alignment: .bottomTrailing)
+                        .rotationEffect(.degrees(180))
+                        .position(x: left + g.square / 2, y: g.rim + 0.5 * g.square)
+                    Text(rank)
+                        .foregroundStyle(ink(col: 7, row: i))
+                        .frame(width: g.square - 2 * pad, height: g.square - 2 * pad, alignment: .topLeading)
+                        .rotationEffect(.degrees(180))
+                        .position(x: g.rim + 7.5 * g.square, y: top + g.square / 2)
+                }
             }
             .font(font)
-            .foregroundStyle(theme.coordinate)
         }
+    }
+
+    /// Coordinates take the opposite tone of the square they sit on.
+    private func ink(col: Int, row: Int) -> Color {
+        let light = (col + row) % 2 == 0
+        if light {
+            return theme.isDark ? Color(hex: 0x1E2B26, opacity: 0.62) : Color(hex: 0x2A2C30, opacity: 0.5)
+        }
+        return theme.coordinate
     }
 }
 

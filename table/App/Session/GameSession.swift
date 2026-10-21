@@ -45,6 +45,15 @@ final class GameSession {
     /// True while the computer is choosing its move.
     private(set) var isThinking = false
     var isResultPresented = false
+    /// The king that has been tipped over at the end of a decisive game.
+    private(set) var fallenKing: PieceColor?
+    /// When the current game began, if it began in this run of the app.
+    private(set) var startedAt: Date?
+    /// When the current game ended, for the result card.
+    private(set) var endedAt: Date?
+    /// The record this game was just added to, for the result card.
+    private(set) var ending: (record: Record?, together: Int?)?
+    @ObservationIgnored private var recorded = false
 
     /// The computer's side and strength, or nil when two people are playing.
     private(set) var computer: (color: PieceColor, level: BotLevel)?
@@ -59,7 +68,9 @@ final class GameSession {
         self.feedback = feedback
         self.store = store
         game = initialGame ?? store.load() ?? ChessGame()
+        if game.history.isEmpty { startedAt = Date() }
         rebuildTokens()
+        restoreEnding()
     }
 
     // MARK: Queries
@@ -281,6 +292,11 @@ final class GameSession {
             next[ci].motion = Motion.toTray.delay(max(0, landing - 0.02))
             next[ci].revision += 1
             flight = (next[ci].id, landing + Motion.toTrayLanding)
+            // The pieces already in that tray shuffle along to make room.
+            for j in next.indices where next[j].isCaptured && next[j].capturedBy == mover && j != ci {
+                next[j].motion = .spring(response: 0.45, dampingFraction: 0.86).delay(landing + 0.1)
+                next[j].revision += 1
+            }
         }
         var moverID: Int?
         if let i = next.firstIndex(where: { $0.square == move.from && $0.piece == fx.piece && !$0.isCaptured }) {
@@ -326,10 +342,18 @@ final class GameSession {
         }
 
         if let result = game.result {
-            let wait: Double
-            if case .checkmate = result { wait = 1.05 } else { wait = 0.9 }
-            after(max(landing, rookLanding ?? 0) + wait) { s in
-                if s.game.result != nil { s.isResultPresented = true }
+            finish()
+            let settled = max(landing, rookLanding ?? 0)
+            if let winner = result.winner {
+                // The beaten king tips over, then the table dims for the result.
+                after(settled + 0.45) { s in s.topple(winner.opposite) }
+                after(settled + 1.7) { s in
+                    if s.game.result != nil { s.isResultPresented = true }
+                }
+            } else {
+                after(settled + 0.9) { s in
+                    if s.game.result != nil { s.isResultPresented = true }
+                }
             }
         } else {
             scheduleComputerMove(after: max(0.55, landing + 0.25))
@@ -362,6 +386,8 @@ final class GameSession {
         if game.hasManualResult {
             game.undo()
             isResultPresented = false
+            fallenKing = nil
+            endedAt = nil
             save()
             return
         }
@@ -380,6 +406,8 @@ final class GameSession {
     private func undoOne() -> PlayedMove? {
         guard let undone = game.undo(), let previous = snapshots.popLast() else { return nil }
         isResultPresented = false
+        fallenKing = nil
+        endedAt = nil
         let current = Dictionary(uniqueKeysWithValues: tokens.map { ($0.id, $0) })
         var restored = previous
         for i in restored.indices {
@@ -408,6 +436,11 @@ final class GameSession {
         pendingPromotion = nil
         clearSelection()
         isResultPresented = false
+        fallenKing = nil
+        startedAt = Date()
+        recorded = false
+        ending = nil
+        endedAt = nil
         game = ChessGame()
         snapshots = []
         var regathered = TokenLayout.regather(tokens, into: game.position, nextID: &nextID)
@@ -426,6 +459,7 @@ final class GameSession {
 
     func claimDraw() {
         guard game.claimDraw() else { return }
+        finish()
         feedback.gameEndedByChoice()
         presentResultSoon()
     }
@@ -434,14 +468,18 @@ final class GameSession {
         thinkTask?.cancel()
         isThinking = false
         game.resign(color)
+        finish()
         feedback.gameEndedByChoice()
-        presentResultSoon()
+        // Resigning is tipping over your own king.
+        after(0.3) { s in s.topple(color) }
+        presentResultSoon(after: 1.3)
     }
 
     func agreeDraw() {
         thinkTask?.cancel()
         isThinking = false
         game.agreeDraw()
+        finish()
         feedback.gameEndedByChoice()
         presentResultSoon()
     }
@@ -450,10 +488,35 @@ final class GameSession {
         isResultPresented = false
     }
 
-    private func presentResultSoon() {
+    private func presentResultSoon(after delay: TimeInterval = 0.35) {
         clearSelection()
         save()
-        after(0.35) { s in s.isResultPresented = s.game.result != nil }
+        after(delay) { s in s.isResultPresented = s.game.result != nil }
+    }
+
+    /// The game has just ended: note the time and add it to the record, once per game.
+    private func finish() {
+        endedAt = Date()
+        guard !recorded, let result = game.result else { return }
+        recorded = true
+        if let computer {
+            let outcome: RecordBook.Outcome = result.winner == nil ? .draw
+                : result.winner == computer.color ? .loss : .win
+            ending = (RecordBook.add(outcome, against: computer.level), nil)
+        } else {
+            ending = (nil, RecordBook.addGameTogether())
+        }
+    }
+
+    private func topple(_ color: PieceColor) {
+        guard game.result?.winner == color.opposite else { return }
+        fallenKing = color
+        feedback.kingFalls()
+    }
+
+    /// Restores a finished game's end state after launch, without the drama.
+    private func restoreEnding() {
+        if let w = game.result?.winner { fallenKing = w.opposite }
     }
 
     // MARK: Lifecycle

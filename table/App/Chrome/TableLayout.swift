@@ -28,7 +28,7 @@ struct TableLayout: Equatable {
     init(size: CGSize, safeArea: EdgeInsets) {
         self.size = size
         safe = safeArea
-        let edge: CGFloat = 4
+        let edge: CGFloat = 2
         let portraitish = size.height >= size.width
         arrangement = portraitish ? .ends : .sides
         let side = portraitish ? size.width : size.height
@@ -68,18 +68,34 @@ struct TableLayout: Equatable {
     /// A point in the bottom player's layer, as it appears for the top player.
     func rotated(_ p: CGPoint) -> CGPoint { CGPoint(x: size.width - p.x, y: size.height - p.y) }
 
+    /// How many captured pieces stand in a tray at once; earlier ones are counted, not shown.
+    var trayCapacity: Int {
+        switch arrangement {
+        case .ends: return max(3, min(7, Int((tray.width - trayPiece * 0.4) / (trayPiece * 0.62))))
+        case .sides: return max(3, min(8, 2 * Int((tray.width - trayPiece * 0.3) / (trayPiece * 0.62))))
+        }
+    }
+
+    /// How a tray holding `count` pieces is laid out across `slots` places. The most recent
+    /// pieces stand from slot `first`; when some are `hidden`, slot 0 holds a "+N" counter.
+    func trayWindow(count: Int) -> (slots: Int, first: Int, hidden: Int) {
+        let cap = trayCapacity
+        if count <= cap { return (count, 0, 0) }
+        return (cap, 1, count - (cap - 1))
+    }
+
     /// Where the `index`-th captured piece stands in a tray (bottom player's frame).
     func traySlot(_ index: Int, count: Int) -> CGPoint {
         let s = trayPiece
         switch arrangement {
         case .ends:
-            let usable = tray.width - s * 0.6
-            let step = min(s * 0.56, count > 1 ? usable / CGFloat(max(count - 1, 1)) : s)
+            // Evenly spaced, centred, never overlapping: the tray shows at most `trayCapacity`.
+            let step = s * 0.62
             let span = step * CGFloat(max(count - 1, 0))
-            let x0 = tray.midX - span / 2
+            let x0 = tray.midX + s * 0.18 - span / 2
             return CGPoint(x: x0 + step * CGFloat(index), y: tray.maxY - tray.height * 0.16)
         case .sides:
-            let perRow = max(4, Int((tray.width - s * 0.6) / (s * 0.5)) + 1)
+            let perRow = max(2, Int((tray.width - s * 0.3) / (s * 0.62)))
             let row = index / perRow, col = index % perRow
             let step = (tray.width - s) / CGFloat(max(perRow - 1, 1))
             return CGPoint(x: tray.minX + s * 0.5 + step * CGFloat(col),

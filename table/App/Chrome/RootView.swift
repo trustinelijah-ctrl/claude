@@ -8,6 +8,7 @@ struct RootView: View {
     @Bindable var settings: SettingsStore
 
     @State private var settingsFor: PieceColor?
+    @State private var capturesFor: PieceColor?
     @State private var revealed = false
     @Environment(\.scenePhase) private var scenePhase
 
@@ -20,11 +21,13 @@ struct RootView: View {
                 TableField(theme: theme, layout: layout)
                 turnLight(theme, size: proxy.size, bottom: bottom)
 
-                PlayerZone(color: bottom, session: session, settings: settings, layout: layout) {
+                PlayerZone(color: bottom, session: session, settings: settings, layout: layout,
+                           showCaptures: { capturesFor = bottom }) {
                     settingsFor = bottom
                 }
                 PlayerZone(color: bottom.opposite, session: session, settings: settings, layout: layout,
-                           facesNearPlayer: settings.isAgainstComputer) {
+                           facesNearPlayer: settings.isAgainstComputer,
+                           showCaptures: { capturesFor = bottom.opposite }) {
                     settingsFor = bottom.opposite
                 }
                 .rotationEffect(.degrees(180))
@@ -32,8 +35,11 @@ struct RootView: View {
                 BoardView(session: session, settings: settings, layout: layout, revealed: revealed)
 
                 if session.isResultPresented, let result = session.result {
-                    ResultOverlay(result: result, theme: theme, boardSize: layout.board,
-                                  mirrored: !settings.isAgainstComputer, viewer: bottom) {
+                    ResultStage(theme: theme, decisive: result.winner != nil)
+                        .transition(.opacity)
+                        .zIndex(4.8)
+                    ResultOverlay(result: result, session: session, settings: settings,
+                                  boardSize: layout.board, viewer: bottom) {
                         session.feedback.ui()
                         session.newGame()
                     } dismiss: {
@@ -43,6 +49,26 @@ struct RootView: View {
                     .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
                     .transition(.opacity.combined(with: .scale(scale: 0.96)))
                     .zIndex(5)
+                }
+
+                if let owner = capturesFor {
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+                        .overlay(Color.black.opacity(theme.isDark ? 0.25 : 0.08))
+                        .ignoresSafeArea()
+                        .onTapGesture { capturesFor = nil }
+                        .transition(.opacity)
+                        .accessibilityHidden(true)
+                        .zIndex(4)
+                    CapturesPanel(owner: owner, session: session, settings: settings) {
+                        session.feedback.ui()
+                        capturesFor = nil
+                    }
+                    .frame(maxWidth: min(proxy.size.width - 32, 640))
+                    .rotationEffect(owner != bottom && !settings.isAgainstComputer ? .degrees(180) : .zero)
+                    .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                    .zIndex(4.5)
                 }
 
                 if let player = settingsFor {
@@ -64,6 +90,7 @@ struct RootView: View {
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
             .animation(.easeInOut(duration: 0.24), value: settingsFor)
+            .animation(.easeInOut(duration: 0.28), value: capturesFor)
             .animation(.easeOut(duration: 0.4), value: session.isResultPresented)
             .animation(.easeInOut(duration: 0.4), value: settings.themeID)
             .animation(.spring(response: 0.6, dampingFraction: 0.86), value: settings.boardFlipped)
@@ -126,6 +153,7 @@ struct RootView: View {
         let d = UserDefaults.standard
         if let sq = d.string(forKey: "select").flatMap({ Square($0) }) { session.select(sq) }
         if let who = d.string(forKey: "openSettings") { settingsFor = who == "black" ? .black : .white }
+        if let who = d.string(forKey: "showCaptures") { capturesFor = who == "black" ? .black : .white }
         if d.bool(forKey: "showResult"), session.result != nil { session.isResultPresented = true }
     }
 }

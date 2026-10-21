@@ -12,6 +12,8 @@ struct PlayerZone: View {
     /// For the far zone when nobody sits there (against the computer): its words turn to
     /// face the player at the near end.
     var facesNearPlayer = false
+    /// Opens the full view of everything this player has taken.
+    var showCaptures: () -> Void = {}
     let openSettings: () -> Void
 
     private var theme: BoardTheme { settings.theme }
@@ -24,6 +26,7 @@ struct PlayerZone: View {
         ZStack(alignment: .topLeading) {
             Color.clear
             tray
+            trayCounter
             // The zone's own controls, in a container no larger than the zone, so the far
             // player's (rotated) layer never covers this player's pins.
             Group {
@@ -99,8 +102,49 @@ struct PlayerZone: View {
                     .strokeBorder(theme.inlay.opacity(0.42), lineWidth: 0.75)
             )
             .frame(width: r.width, height: r.height)
+            .contentShape(RoundedRectangle(cornerRadius: corner, style: .continuous))
+            .onTapGesture {
+                guard captured > 0 else { return }
+                session.feedback.ui()
+                showCaptures()
+            }
             .position(x: r.midX, y: r.midY)
-            .accessibilityHidden(true)
+            .accessibilityElement()
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel("Captured pieces")
+            .accessibilityValue("\(captured)")
+            .accessibilityIdentifier("tray-\(color.rawValue)")
+            .accessibilityAction { if captured > 0 { showCaptures() } }
+    }
+
+    private var captured: Int { session.trayCount(color) }
+
+    /// When the tray is full, the oldest pieces fold into a small gilt counter at its start.
+    @ViewBuilder
+    private var trayCounter: some View {
+        let w = layout.trayWindow(count: captured)
+        if w.hidden > 0 {
+            let slot = layout.traySlot(0, count: w.slots)
+            let d = layout.trayPiece * 0.5
+            Text("+\(w.hidden)")
+                .font(Typeface.display(d * 0.46, bold: true))
+                .monospacedDigit()
+                .foregroundStyle(Color(hex: 0x3D2B10))
+                .frame(width: d, height: d)
+                .background(
+                    Circle().fill(RadialGradient(colors: [Color(hex: 0xF7E8C0), Color(hex: 0xD4AF66), Color(hex: 0x8A672E)],
+                                                 center: UnitPoint(x: 0.35, y: 0.3), startRadius: 1, endRadius: d * 0.7))
+                )
+                .overlay(Circle().strokeBorder(Color(hex: 0xFFF3D0).opacity(0.7), lineWidth: 0.75))
+                .shadow(color: .black.opacity(0.4), radius: 2, y: 1)
+                .rotationEffect(facesNearPlayer ? .degrees(180) : .zero)
+                .contentTransition(.numericText())
+                .animation(.spring(response: 0.35, dampingFraction: 0.7), value: w.hidden)
+                .position(x: slot.x, y: slot.y - layout.trayPiece * 0.3)
+                .transition(.scale.combined(with: .opacity))
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
     }
 
     private var identity: some View {

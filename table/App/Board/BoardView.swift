@@ -42,7 +42,8 @@ struct BoardView: View {
             // The board itself, in its own coordinates, set into the table.
             ZStack(alignment: .topLeading) {
                 BoardSurface(theme: theme, geometry: BoardGeometry(size: g.size, flipped: g.flipped),
-                             showCoordinates: settings.showCoordinates)
+                             showCoordinates: settings.showCoordinates,
+                             mirrorCoordinates: !settings.isAgainstComputer)
                 TurnEdge(theme: theme, geometry: BoardGeometry(size: g.size), side: .bottom,
                          active: !session.isOver && session.sideToMove == g.bottomColor, nudge: session.turnNudge)
                 TurnEdge(theme: theme, geometry: BoardGeometry(size: g.size), side: .top,
@@ -127,8 +128,10 @@ struct BoardView: View {
                           tilt: dragging ? grip.tilt : 0,
                           light: CGSize(width: (place.point.x - g.center.x) / g.inner,
                                         height: (place.point.y - g.center.y) / g.inner),
-                          revealed: revealed,
-                          shadowStrength: settings.theme.pieceShadow)
+                          revealed: revealed && !isTucked(token),
+                          shadowStrength: settings.theme.pieceShadow,
+                          fallen: !token.isCaptured && token.piece == Piece(session.fallenKing ?? .white, .king)
+                              && session.fallenKing != nil)
                     .zIndex(depth(of: token, dragging: dragging))
             }
         }
@@ -140,8 +143,11 @@ struct BoardView: View {
     /// Where a token stands: on its square, or in the tray of the player who took it.
     private func placement(of token: PieceToken, _ g: BoardGeometry) -> (point: CGPoint, size: CGFloat, rotated: Bool) {
         if token.isCaptured, let owner = token.capturedBy {
-            let count = session.trayCount(owner)
-            let slot = layout.traySlot(token.trayIndex, count: max(count, token.trayIndex + 1))
+            // Only the most recent captures stand in the tray; earlier ones fold into the counter.
+            let count = max(session.trayCount(owner), token.trayIndex + 1)
+            let w = layout.trayWindow(count: count)
+            let index = max(0, token.trayIndex - w.hidden + w.first)
+            let slot = layout.traySlot(index, count: w.slots)
             // The sprite's base sits low in its frame; centre the frame so the base meets the slot.
             let size = layout.trayPiece
             let baseShift = size * (PieceSprite.squareBase - 0.5)
@@ -153,6 +159,13 @@ struct BoardView: View {
             return (layout.rotated(local), size, settings.turnsTopPieces)
         }
         return (g.center(token.square), g.square, settings.turnsTopPieces && token.piece.color != g.bottomColor)
+    }
+
+    /// A captured piece older than what the tray shows.
+    private func isTucked(_ token: PieceToken) -> Bool {
+        guard token.isCaptured, let owner = token.capturedBy else { return false }
+        let count = max(session.trayCount(owner), token.trayIndex + 1)
+        return token.trayIndex < layout.trayWindow(count: count).hidden
     }
 
     private func hold(for token: PieceToken, gripped: Bool, dragging: Bool) -> HoldState {

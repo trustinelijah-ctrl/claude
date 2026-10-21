@@ -29,7 +29,7 @@ final class TableUITests: XCTestCase {
     private func point(_ name: String) -> XCUICoordinate {
         let frame = board.frame
         let size = frame.width
-        let rim = max(10, (size * 0.03).rounded())
+        let rim = max(5, (size * 0.012).rounded())
         let sq = (size - 2 * rim) / 8
         let chars = Array(name)
         let file = CGFloat(Int(chars[0].asciiValue!) - 97)
@@ -50,7 +50,7 @@ final class TableUITests: XCTestCase {
         // The app lifts a dragged piece about a third of a square above the finger so the
         // finger does not hide it; aim the finger that much below the target, as a player would.
         let size = board.frame.width
-        let rim = max(10, (size * 0.03).rounded())
+        let rim = max(5, (size * 0.012).rounded())
         let sq = (size - 2 * rim) / 8
         let isBlack = Int(Array(from)[1].asciiValue!) - 49 >= 4
         let compensate = CGVector(dx: 0, dy: (isBlack ? -1 : 1) * sq * 0.34)
@@ -103,6 +103,13 @@ final class TableUITests: XCTestCase {
         tap("d7", "d5")
         tap("e4", "d5")
         XCTAssertTrue(boardValue.contains("Last move exd5."), boardValue)
+        // The tray opens to show everything taken, and closes with a touch.
+        settle(0.8)
+        app.descendants(matching: .any)["tray-white"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["captures"].waitForExistence(timeout: 2))
+        app.descendants(matching: .any)["captures"].tap()
+        settle(0.5)
+        XCTAssertFalse(app.descendants(matching: .any)["captures"].exists)
         app.otherElements["panel-white"].buttons["Undo"].tap()
         settle()
         XCTAssertTrue(boardValue.contains("White to move. 2 moves played. Last move d5."), boardValue)
@@ -132,8 +139,8 @@ final class TableUITests: XCTestCase {
         drag("d8", "h4")
         XCTAssertTrue(boardValue.hasPrefix("Checkmate."), boardValue)
         let result = app.otherElements["result"]
-        XCTAssertTrue(result.waitForExistence(timeout: 4))
-        let again = result.buttons.matching(NSPredicate(format: "label == 'Play Again'"))
+        XCTAssertTrue(result.waitForExistence(timeout: 6))
+        let again = result.buttons.matching(NSPredicate(format: "label == 'Rematch'"))
         XCTAssertEqual(again.count, 2, "one for each player")
         again.element(boundBy: 1).tap()
         settle(1.0)

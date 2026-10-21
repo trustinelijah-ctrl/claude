@@ -29,10 +29,12 @@ struct TokenView: View {
     let light: CGSize
     let revealed: Bool
     let shadowStrength: Double
+    /// A beaten king, tipped over on its square.
+    var fallen = false
 
     var body: some View {
         PieceBody(piece: token.piece, size: size, hold: hold, rotated: rotated,
-                  light: light, shadowStrength: shadowStrength)
+                  light: light, shadowStrength: shadowStrength, fallen: fallen)
             // The landing: a weighted piece meeting felt gives a touch, then settles.
             .keyframeAnimator(initialValue: CGFloat(1), trigger: token.landing) { content, squash in
                 content.scaleEffect(x: 2 - squash, y: squash, anchor: baseAnchor)
@@ -78,6 +80,7 @@ struct PieceBody: View {
     let rotated: Bool
     let light: CGSize
     let shadowStrength: Double
+    var fallen = false
 
     /// How far the piece is off the board, 0 (standing) to 1 (carried).
     private var rise: CGFloat {
@@ -98,14 +101,19 @@ struct PieceBody: View {
             Ellipse()
                 .fill(RadialGradient(colors: [.black.opacity(shadowStrength * Double(1 - 0.45 * rise)), .black.opacity(0)],
                                      center: .center, startRadius: 0, endRadius: size * 0.36 * (1 + rise * 0.4)))
-                .frame(width: size * (0.74 + rise * 0.24), height: size * (0.34 + rise * 0.14))
-                .offset(x: local.width, y: size * PieceSprite.baseOffset + local.height)
+                .frame(width: size * (0.74 + rise * 0.24) * (fallen ? 1.45 : 1), height: size * (0.34 + rise * 0.14))
+                .offset(x: local.width + (fallen ? size * 0.24 : 0), y: size * PieceSprite.baseOffset + local.height)
             Image(PieceSprite.imageName(piece))
                 .resizable()
                 .interpolation(.high)
                 .antialiased(true)
                 .frame(width: size * PieceSprite.scale, height: size * PieceSprite.scale)
-                .offset(y: size * PieceSprite.spriteOffset - size * 0.09 * rise)
+                // Tipped about the edge of its base, coming to rest on its side.
+                .rotationEffect(.degrees(fallen ? 84 : 0), anchor: UnitPoint(x: 0.62, y: PieceSprite.spriteBase))
+                .offset(x: fallen ? -size * 0.12 : 0,
+                        y: size * PieceSprite.spriteOffset - size * 0.09 * rise - (fallen ? size * 0.1 : 0))
+                .animation(fallen ? .spring(response: 0.42, dampingFraction: 0.52) : .spring(response: 0.45, dampingFraction: 0.8),
+                           value: fallen)
                 .id(piece)
                 .transition(.opacity.animation(.easeInOut(duration: 0.24)))
         }

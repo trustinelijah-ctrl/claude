@@ -59,7 +59,7 @@ final class ScreenshotTests: XCTestCase {
         shoot("06-promotion", args: ["-moves", moves, "-theme", "salon"]) { app in
             let board = app.descendants(matching: .any)["board"].firstMatch
             let size = board.frame.width
-            let rim = max(10, (size * 0.03).rounded())
+            let rim = max(5, (size * 0.012).rounded())
             let sq = (size - 2 * rim) / 8
             func at(_ f: CGFloat, _ r: CGFloat) -> XCUICoordinate {
                 board.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: rim + (f + 0.5) * sq, dy: rim + (7 - r + 0.5) * sq))

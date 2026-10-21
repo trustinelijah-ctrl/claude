@@ -35,6 +35,13 @@ final class FeedbackCoordinator {
         audio.play(.place, gain: 0.32)
     }
 
+    /// A king tipped onto the board: a soft wooden knock and a single tap.
+    func kingFalls() {
+        audio.play(.capture, gain: 0.45)
+        audio.play(.place, delay: 0.12, gain: 0.25)
+        haptics.place(after: 0)
+    }
+
     func ui() {
         audio.play(.ui)
     }
