@@ -79,14 +79,17 @@ struct PieceBody: View {
     let light: CGSize
     let shadowStrength: Double
 
-    var body: some View {
-        let rise: CGFloat
+    /// How far the piece is off the board, 0 (standing) to 1 (carried).
+    private var rise: CGFloat {
         switch hold {
-        case .resting: rise = 0
-        case .selected: rise = 0.3
-        case .held: rise = 0.65
-        case .dragging, .carried: rise = 1
+        case .resting: return 0
+        case .selected: return 0.3
+        case .held: return 0.65
+        case .dragging, .carried: return 1
         }
+    }
+
+    var body: some View {
         // Shadow drift in screen space, converted into the piece's own frame when it is turned.
         let drift = CGSize(width: light.width * size * (0.22 + 0.3 * rise),
                            height: light.height * size * (0.22 + 0.3 * rise) + size * 0.07 * rise)
