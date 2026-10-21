@@ -54,7 +54,10 @@ final class EngineTests: XCTestCase {
 
     func testPromotesWhenItWins() {
         let g = ChessGame(position: Position(fen: "8/P6k/8/8/8/8/8/K7 w - - 0 1")!)
-        XCTAssertEqual(Engine.bestMove(for: g, level: .club, seed: 4), Move(uci: "a7a8q"))
+        // Whatever the seed and however deep the search gets, the pawn promotes at once.
+        for seed in UInt64(1)...30 {
+            XCTAssertEqual(Engine.bestMove(for: g, level: .club, seed: seed), Move(uci: "a7a8q"), "seed \(seed)")
+        }
     }
 
     func testNoMoveWhenGameOver() {

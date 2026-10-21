@@ -599,6 +599,9 @@ private struct Search {
         let tolerance = abs(best) > Search.mate - 1000 ? 0 : level.tolerance
         let candidates = scored.filter { $0.score >= best - tolerance }
         guard candidates.count > 1 else { return scored[0].move }
+        // Variety never stretches to putting off a queen promotion that is among the best moves:
+        // a deep search can score "promote now" and "promote next move" alike, but nobody plays that way.
+        if let promotion = candidates.first(where: { $0.move.promo == 5 }) { return promotion.move }
         // prefer better moves, but let close ones through
         let weights = candidates.map { Double(tolerance + 1 - (best - $0.score)) }
         var pick = rng.nextDouble() * weights.reduce(0, +)
