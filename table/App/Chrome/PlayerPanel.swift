@@ -49,7 +49,7 @@ struct PlayerZone: View {
         let trayRight = layout.tray.maxX - z.minX
         return ZStack(alignment: .topLeading) {
             identity
-                .frame(width: max(0, trayLeft - 12), alignment: facesNearPlayer ? .trailing : .leading)
+                .frame(width: max(0, trayLeft - 12), alignment: .leading)
                 .rotationEffect(facesNearPlayer ? .degrees(180) : .zero)
                 .position(x: (trayLeft - 12) / 2, y: z.height / 2)
             Group {
