@@ -12,6 +12,8 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
     DEVELOPMENT_TEAM: ""
     CODE_SIGN_STYLE: Automatic
+fileGroups:
+  - Table.storekit
 packages:
   ChessCore:
     path: ChessCore
@@ -77,6 +79,7 @@ schemes:
         Table: all
     run:
       config: Debug
+      storeKitConfiguration: Table.storekit
     test:
       config: Debug
       targets:

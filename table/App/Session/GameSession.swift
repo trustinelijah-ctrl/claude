@@ -60,13 +60,17 @@ final class GameSession {
 
     @ObservationIgnored let feedback: FeedbackCoordinator
     @ObservationIgnored private let store: GameStore
+    /// Finished games, kept to replay.
+    @ObservationIgnored let library: GameLibrary
     @ObservationIgnored private var pendingWork: [Task<Void, Never>] = []
     @ObservationIgnored private var thinkTask: Task<Void, Never>?
     @ObservationIgnored private var rippleID = 0
 
-    init(feedback: FeedbackCoordinator, store: GameStore = GameStore(), initialGame: ChessGame? = nil) {
+    init(feedback: FeedbackCoordinator, store: GameStore = GameStore(), library: GameLibrary = GameLibrary(),
+         initialGame: ChessGame? = nil) {
         self.feedback = feedback
         self.store = store
+        self.library = library
         game = initialGame ?? store.load() ?? ChessGame()
         if game.history.isEmpty { startedAt = Date() }
         rebuildTokens()
@@ -499,6 +503,8 @@ final class GameSession {
         endedAt = Date()
         guard !recorded, let result = game.result else { return }
         recorded = true
+        library.add(game, level: computer?.level, humanColor: computer?.color.opposite,
+                    duration: startedAt.map { Date().timeIntervalSince($0) })
         if let computer {
             let outcome: RecordBook.Outcome = result.winner == nil ? .draw
                 : result.winner == computer.color ? .loss : .win

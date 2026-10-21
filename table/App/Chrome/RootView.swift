@@ -6,9 +6,14 @@ import ChessCore
 struct RootView: View {
     let session: GameSession
     @Bindable var settings: SettingsStore
+    let pro: ProStore
+    let account: AccountStore
 
     @State private var settingsFor: PieceColor?
     @State private var capturesFor: PieceColor?
+    @State private var paywallOpen = false
+    @State private var libraryOpen = false
+    @State private var replaying: SavedGame?
     @State private var revealed = false
     @Environment(\.scenePhase) private var scenePhase
 
@@ -45,6 +50,10 @@ struct RootView: View {
                     } dismiss: {
                         session.feedback.ui()
                         session.dismissResult()
+                    } replay: {
+                        session.feedback.ui()
+                        session.dismissResult()
+                        replaying = session.library.games.first
                     }
                     .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
                     .transition(.opacity.combined(with: .scale(scale: 0.96)))
@@ -77,7 +86,10 @@ struct RootView: View {
                         .onTapGesture { settingsFor = nil }
                         .transition(.opacity)
                         .zIndex(6)
-                    SettingsCard(settings: settings, session: session, player: player) {
+                    SettingsCard(settings: settings, session: session, player: player, pro: pro, account: account,
+                                 showPaywall: { paywallOpen = true },
+                                 showLibrary: { settingsFor = nil; libraryOpen = true },
+                                 showWelcome: { settingsFor = nil; account.replayWelcome() }) {
                         settingsFor = nil
                     }
                     .frame(maxHeight: min(proxy.size.height - 40, 820))
@@ -87,9 +99,51 @@ struct RootView: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.97)))
                     .zIndex(7)
                 }
+
+                if libraryOpen {
+                    dimmer(theme) { libraryOpen = false }.zIndex(8)
+                    LibraryView(library: session.library, pro: pro, theme: theme, feedback: session.feedback,
+                                open: { saved in libraryOpen = false; replaying = saved },
+                                unlock: { paywallOpen = true },
+                                close: { libraryOpen = false })
+                        .padding(20)
+                        .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+                        .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                        .zIndex(8.5)
+                }
+
+                if paywallOpen {
+                    Rectangle().fill(.ultraThinMaterial)
+                        .overlay(Color.black.opacity(0.35))
+                        .ignoresSafeArea()
+                        .onTapGesture { paywallOpen = false }
+                        .transition(.opacity)
+                        .zIndex(9)
+                    PaywallSheet(pro: pro, theme: theme, feedback: session.feedback) { paywallOpen = false }
+                        .padding(24)
+                        .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+                        .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                        .zIndex(9.5)
+                }
+
+                if let saved = replaying {
+                    ReplayView(saved: saved, theme: theme, feedback: session.feedback) { replaying = nil }
+                        .transition(.opacity)
+                        .zIndex(10)
+                }
+
+                if !account.hasOnboarded {
+                    OnboardingView(pro: pro, account: account, feedback: session.feedback) {}
+                        .transition(.opacity)
+                        .zIndex(11)
+                }
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
             .animation(.easeInOut(duration: 0.24), value: settingsFor)
+            .animation(.easeInOut(duration: 0.28), value: libraryOpen)
+            .animation(.easeInOut(duration: 0.28), value: paywallOpen)
+            .animation(.easeInOut(duration: 0.35), value: replaying)
+            .animation(.easeInOut(duration: 0.6), value: account.hasOnboarded)
             .animation(.easeInOut(duration: 0.28), value: capturesFor)
             .animation(.easeOut(duration: 0.4), value: session.isResultPresented)
             .animation(.easeInOut(duration: 0.4), value: settings.themeID)
@@ -98,7 +152,8 @@ struct RootView: View {
         .ignoresSafeArea()
         .statusBarHidden(true)
         .persistentSystemOverlays(.hidden)
-        .preferredColorScheme(settings.theme.isDark ? .dark : .light)
+        .environment(\.pieceSet, settings.pieceSet)
+        .preferredColorScheme(settings.theme.isDark || !account.hasOnboarded ? .dark : .light)
         .onAppear {
             session.feedback.apply(settings)
             session.feedback.haptics.prepare()
@@ -111,6 +166,10 @@ struct RootView: View {
         .onChange(of: settings.opponent) { syncOpponent() }
         .onChange(of: settings.botLevel) { syncOpponent() }
         .onChange(of: settings.humanColor) { syncOpponent() }
+        .onChange(of: pro.isPro) { _, isPro in
+            if isPro { paywallOpen = false } else { settings.dropProChoices() }
+        }
+        .task { await account.checkAppleCredential() }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active: session.feedback.audio.resume()
@@ -118,6 +177,13 @@ struct RootView: View {
             @unknown default: break
             }
         }
+    }
+
+    private func dimmer(_ theme: BoardTheme, close: @escaping () -> Void) -> some View {
+        Color.black.opacity(theme.isDark ? 0.45 : 0.22)
+            .ignoresSafeArea()
+            .onTapGesture(perform: close)
+            .transition(.opacity)
     }
 
     private func syncOpponent() {
@@ -154,6 +220,13 @@ struct RootView: View {
         if let sq = d.string(forKey: "select").flatMap({ Square($0) }) { session.select(sq) }
         if let who = d.string(forKey: "openSettings") { settingsFor = who == "black" ? .black : .white }
         if let who = d.string(forKey: "showCaptures") { capturesFor = who == "black" ? .black : .white }
+        if d.bool(forKey: "seedLibrary"), session.library.games.isEmpty {
+            session.library.add(session.game, level: settings.isAgainstComputer ? settings.botLevel : nil,
+                                humanColor: settings.isAgainstComputer ? settings.humanColor : nil, duration: 754)
+        }
+        if d.bool(forKey: "showPaywall") { paywallOpen = true }
+        if d.bool(forKey: "showLibrary") { libraryOpen = true }
+        if d.bool(forKey: "showReplay") { replaying = session.library.games.first }
         if d.bool(forKey: "showResult"), session.result != nil { session.isResultPresented = true }
     }
 }

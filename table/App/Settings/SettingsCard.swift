@@ -6,6 +6,11 @@ struct SettingsCard: View {
     @Bindable var settings: SettingsStore
     let session: GameSession
     let player: PieceColor
+    let pro: ProStore
+    let account: AccountStore
+    var showPaywall: () -> Void = {}
+    var showLibrary: () -> Void = {}
+    var showWelcome: () -> Void = {}
     let close: () -> Void
 
     private enum Confirm { case newGame, resign, draw }
@@ -48,11 +53,18 @@ struct SettingsCard: View {
                 if settings.isAgainstComputer {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Strength").font(.system(size: 15)).foregroundStyle(theme.ink)
-                        Picker("Strength", selection: $settings.botLevel) {
-                            ForEach(BotLevel.allCases) { Text($0.title).tag($0) }
+                        Picker("Strength", selection: strength) {
+                            ForEach(BotLevel.allCases) { level in
+                                Text(level.isPro && !pro.isPro ? "\(level.title) 🔒" : level.title).tag(level)
+                            }
                         }
                         .pickerStyle(.segmented)
                         .labelsHidden()
+                        if !pro.isPro {
+                            Text("Master and Grandmaster come with TABLE Pro.")
+                                .font(.system(size: 12))
+                                .foregroundStyle(theme.inkSecondary)
+                        }
                     }
                     VStack(alignment: .leading, spacing: 8) {
                         Text("You play").font(.system(size: 15)).foregroundStyle(theme.ink)
@@ -67,14 +79,47 @@ struct SettingsCard: View {
             }
             .animation(.easeInOut(duration: 0.25), value: settings.isAgainstComputer)
             section("Board") {
-                HStack(alignment: .top, spacing: 12) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10, alignment: .top), count: 3),
+                          alignment: .leading, spacing: 16) {
                     ForEach(ThemeID.allCases) { id in
-                        ThemeSwatch(theme: .with(id), selected: settings.themeID == id, ink: theme) {
+                        ThemeSwatch(theme: .with(id), selected: settings.themeID == id, ink: theme,
+                                    locked: id.isPro && !pro.isPro) {
                             session.feedback.ui()
+                            if id.isPro && !pro.isPro { showPaywall(); return }
                             withAnimation(.easeInOut(duration: 0.35)) { settings.themeID = id }
                         }
                     }
                 }
+            }
+            section("Pieces") {
+                HStack(spacing: 10) {
+                    ForEach(PieceSet.allCases) { set in
+                        pieceSetButton(set)
+                    }
+                }
+            }
+            section("Your games") {
+                Button {
+                    session.feedback.ui()
+                    showLibrary()
+                } label: {
+                    HStack {
+                        Image(systemName: "film.stack").foregroundStyle(theme.accent)
+                        Text(session.library.games.isEmpty ? "No finished games yet" : "Replay your games")
+                            .font(.system(size: 15))
+                            .foregroundStyle(theme.ink)
+                        Spacer()
+                        Text("\(session.library.games.count)")
+                            .font(.system(size: 15))
+                            .foregroundStyle(theme.inkSecondary)
+                        Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(theme.inkSecondary)
+                    }
+                    .frame(minHeight: 40)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("open-library")
             }
             section("Sound") {
                 row("Sound effects") {
@@ -114,9 +159,81 @@ struct SettingsCard: View {
                 }
             }
             section("Game") { gameControls }
+            section("Account") { accountRows }
         }
         .padding(.horizontal, 26)
         .padding(.vertical, 22)
+    }
+
+    /// Choosing a Pro opponent without Pro opens the offer instead.
+    private var strength: Binding<BotLevel> {
+        Binding(get: { settings.botLevel }, set: { level in
+            if level.isPro && !pro.isPro { showPaywall() } else { settings.botLevel = level }
+        })
+    }
+
+    private func pieceSetButton(_ set: PieceSet) -> some View {
+        let selected = settings.pieceSet == set
+        let locked = set.isPro && !pro.isPro
+        return Button {
+            session.feedback.ui()
+            if locked { showPaywall(); return }
+            withAnimation(.easeInOut(duration: 0.3)) { settings.pieceSet = set }
+        } label: {
+            VStack(spacing: 6) {
+                HStack(spacing: -10) {
+                    StandingPiece(piece: Piece(.white, .queen), size: 46, shadow: 0.3)
+                    StandingPiece(piece: Piece(.black, .knight), size: 46, shadow: 0.3)
+                }
+                .environment(\.pieceSet, set)
+                HStack(spacing: 4) {
+                    Text(set.title).font(.system(size: 13, weight: .semibold)).foregroundStyle(theme.ink)
+                    if locked { Image(systemName: "lock.fill").font(.system(size: 10)).foregroundStyle(theme.accent) }
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(theme.ink.opacity(0.05)))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(selected ? theme.accent : .clear, lineWidth: 2))
+            .opacity(locked ? 0.75 : 1)
+        }
+        .buttonStyle(PressScaleStyle())
+        .accessibilityLabel(set.title)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    @ViewBuilder
+    private var accountRows: some View {
+        row(account.kind == .apple ? "Signed in\(account.name.map { " as \($0)" } ?? " with Apple")" : "Playing as a guest") {
+            if account.kind == .apple {
+                Button("Sign out") { account.signOut() }
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(theme.accent)
+            }
+        }
+        row(pro.isPro ? "TABLE Pro — thank you" : "TABLE Pro") {
+            if !pro.isPro {
+                Button("Unlock") {
+                    session.feedback.ui()
+                    showPaywall()
+                }
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(theme.accent)
+            } else {
+                Image(systemName: "checkmark.seal.fill").foregroundStyle(theme.accent)
+            }
+        }
+        Button {
+            session.feedback.ui()
+            showWelcome()
+        } label: {
+            Text(account.kind == .apple ? "Show the welcome again" : "Sign in or show the welcome again")
+                .font(.system(size: 14))
+                .foregroundStyle(theme.inkSecondary)
+                .frame(minHeight: 36)
+        }
+        .buttonStyle(.plain)
     }
 
     private var header: some View {
@@ -239,6 +356,7 @@ struct ThemeSwatch: View {
     let theme: BoardTheme
     let selected: Bool
     let ink: BoardTheme
+    var locked = false
     let action: () -> Void
 
     var body: some View {
@@ -260,6 +378,16 @@ struct ThemeSwatch: View {
                 }
                 .frame(width: 84, height: 84)
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(alignment: .topTrailing) {
+                    if locked {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(Color(hex: 0x2A1D0A))
+                            .frame(width: 22, height: 22)
+                            .background(Circle().fill(Color(hex: 0xD4AF66)))
+                            .offset(x: 6, y: -6)
+                    }
+                }
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .strokeBorder(selected ? ink.accent : .clear, lineWidth: 2)

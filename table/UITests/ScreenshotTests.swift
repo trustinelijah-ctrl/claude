@@ -13,14 +13,14 @@ final class ScreenshotTests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
     }
 
-    private func shoot(_ name: String, args: [String], landscape: Bool = false,
+    private func shoot(_ name: String, args: [String], landscape: Bool = false, settle: TimeInterval = 1.2,
                        prepare: ((XCUIApplication) -> Void)? = nil) {
         let app = XCUIApplication()
-        app.launchArguments = ["-soundEnabled", "NO"] + args
+        app.launchArguments = ["-soundEnabled", "NO"] + (args.contains("-onboarded") ? [] : ["-onboarded", "YES"]) + args
         XCUIDevice.shared.orientation = landscape ? .landscapeLeft : .portrait
         app.launch()
         _ = app.descendants(matching: .any)["board"].firstMatch.waitForExistence(timeout: 10)
-        RunLoop.current.run(until: Date().addingTimeInterval(1.2))
+        RunLoop.current.run(until: Date().addingTimeInterval(settle))
         prepare?(app)
         let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         shot.name = name + (landscape ? "-landscape" : "-portrait")
@@ -87,5 +87,35 @@ final class ScreenshotTests: XCTestCase {
 
     func test8NoCoordinatesFacingWhite() {
         shoot("08-plain", args: ["-moves", midgame, "-theme", "walnut", "-showCoordinates", "NO", "-pieceFacing", "white", "-showMoveHints", "NO"])
+    }
+
+    private let captures = "g1f3 e7e5 f3e5 d8g5 e5d7 c8d7 f2f4 g5g6 h1g1 g6g2 f1g2 g7g6 g2b7 a7a5 g1g6 f7f6 g6g8 h8g8 b7a8 f8d6 e1f1 d6f4 f1f2 f4h2 b2b4 a5b4 a8b7 d7c8 b7c8 h2f4 c8h3 f4d2 c1d2 h7h6 d2b4 e8f7 e2e3 c7c6 d1d3 g8c8 h3c8 b8d7 d3d7 f7g8 d7c6 h6h5 c6f6 g8h7 b4c3 h7g8 f2f1 g8h7 f6g5 h5h4 b1a3 h4h3"
+
+    func testA1Onboarding() {
+        for page in 0..<5 {
+            shoot("10-welcome-\(page)", args: ["-onboarded", "NO", "-onboardingPage", "\(page)"], settle: 2.4)
+        }
+        shoot("10-welcome-0", args: ["-onboarded", "NO", "-onboardingPage", "0"], landscape: true, settle: 2.4)
+        shoot("10-welcome-4", args: ["-onboarded", "NO", "-onboardingPage", "4"], landscape: true, settle: 2.4)
+    }
+
+    func testA2Captures() {
+        shoot("11-tray-overflow", args: ["-moves", captures, "-theme", "salon"])
+        shoot("11-captures-panel", args: ["-moves", captures, "-theme", "salon", "-showCaptures", "white"])
+        shoot("11-tray-overflow", args: ["-moves", captures, "-theme", "walnut"], landscape: true)
+    }
+
+    func testA3ProBoards() {
+        shoot("12-paywall", args: ["-moves", midgame, "-showPaywall", "YES"])
+        shoot("12-marble-gilded", args: ["-pro", "YES", "-moves", midgame, "-theme", "marble", "-pieceSet", "gilded"])
+        shoot("12-rosewood", args: ["-pro", "YES", "-moves", midgame, "-theme", "rosewood"])
+        shoot("12-midnight", args: ["-pro", "YES", "-moves", midgame, "-theme", "midnight", "-pieceSet", "gilded"], landscape: true)
+    }
+
+    func testA4EndingAndReplay() {
+        let mate = "e2e4 e7e5 f1c4 b8c6 d1h5 g8f6 h5f7"
+        shoot("13-win-vs-table", args: ["-opponent", "computer", "-humanColor", "white", "-moves", mate, "-showResult", "YES"], settle: 2.5)
+        shoot("13-replay", args: ["-moves", captures, "-seedLibrary", "YES", "-showReplay", "YES"], settle: 1.5)
+        shoot("13-library", args: ["-moves", mate, "-seedLibrary", "YES", "-showLibrary", "YES"])
     }
 }

@@ -251,6 +251,11 @@ def build(name):
 MATERIALS = {
     'ivory': dict(albedo=(0.97, 0.93, 0.84), spec=0.30, gloss=90, env=0.16, sss=(0.16, 0.11, 0.05), exposure=1.28),
     'ebony': dict(albedo=(0.030, 0.026, 0.024), spec=0.9, gloss=260, env=0.55, sss=(0, 0, 0), exposure=1.0),
+    # The Gilded set: polished gold with darkened bands, and gunmetal with gold bands.
+    'gold': dict(albedo=(0.0, 0.0, 0.0), spec=0, gloss=120, env=0, sss=(0, 0, 0), exposure=1.0,
+                 metal=(1.0, 0.78, 0.42), trim=(0.42, 0.30, 0.16)),
+    'gunmetal': dict(albedo=(0.0, 0.0, 0.0), spec=0, gloss=200, env=0, sss=(0, 0, 0), exposure=1.0,
+                     metal=(0.30, 0.32, 0.36), trim=(1.0, 0.76, 0.40)),
 }
 GOLD = np.array([1.0, 0.76, 0.40], F32)
 
@@ -356,7 +361,19 @@ def render(name, material, size=512, ss=2):
     diffuse = col * alb[None] * ao[:, None] + 0.10 * alb[None] * ao[:, None]
     subsurface = (1 - ndv)[:, None] ** 2 * np.array(m['sss'], F32)[None]
     dielectric = diffuse + subsurface + spec * m['spec'] + refl * (m['env'] * fres + 0.02)[:, None] * ao[:, None]
-    metal = (col * 0.35 + refl * 0.9 + spec * 1.2) * GOLD[None] * ao[:, None] + 0.04
+    metal = (col * 0.35 + refl * 0.9 + spec * 1.2) * np.array(m.get('trim', GOLD), F32)[None] * ao[:, None] + 0.04
+    if 'metal' in m:
+        # a solid metal body: mostly reflection, with a little broad diffuse so it never goes black
+        spec_m = np.zeros_like(spec)
+        for (lx, ly, lz), lc, li in lights:
+            l = np.array([lx, ly, lz], F32)
+            l /= np.linalg.norm(l)
+            hx, hy_, hz = l[0] + vx, l[1] + vy, l[2] + vz
+            hl = np.sqrt(hx * hx + hy_ * hy_ + hz * hz)
+            ndh = np.clip((nx * hx + ny * hy_ + nz * hz) / hl, 0, 1)
+            spec_m += ((ndh ** m['gloss']) * li)[:, None] * np.array(lc, F32)[None]
+        body = (col * 0.45 + refl * 0.85 + spec_m * 1.5) * np.array(m['metal'], F32)[None] * ao[:, None] + 0.03
+        dielectric = body / m['exposure']
     if 'engraving' in solid:
         face = (np.abs(z) > 1.2) & (y > hy(75))
         g = solid['engraving'](x, y, z) * face
@@ -383,11 +400,11 @@ def render(name, material, size=512, ss=2):
     return Image.fromarray((np.clip(rgba, 0, 1) * 255).astype(np.uint8), 'RGBA')
 
 
-def write_catalog(catalog, size=384):
+def write_catalog(catalog, size=384, prefix='piece', mats=(('white', 'ivory'), ('black', 'ebony'))):
     import json
     for name in ['pawn', 'knight', 'bishop', 'rook', 'queen', 'king']:
-        for color, mat in [('white', 'ivory'), ('black', 'ebony')]:
-            set_name = f'piece-{color}-{name}'
+        for color, mat in mats:
+            set_name = f'{prefix}-{color}-{name}'
             d = os.path.join(catalog, 'Pieces', f'{set_name}.imageset')
             os.makedirs(d, exist_ok=True)
             render(name, mat, size).save(os.path.join(d, f'{set_name}.png'), optimize=True)
@@ -402,6 +419,9 @@ def write_catalog(catalog, size=384):
 if __name__ == '__main__':
     if sys.argv[1] == '--catalog':
         write_catalog(sys.argv[2])
+        sys.exit(0)
+    if sys.argv[1] == '--gilded':
+        write_catalog(sys.argv[2], prefix='gilded', mats=(('white', 'gold'), ('black', 'gunmetal')))
         sys.exit(0)
     out = sys.argv[1]
     size = int(sys.argv[2]) if len(sys.argv) > 2 else 512

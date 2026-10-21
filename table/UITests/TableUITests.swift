@@ -10,7 +10,7 @@ final class TableUITests: XCTestCase {
     }
 
     private func launch(moves: String? = nil, extra: [String] = []) {
-        app.launchArguments = ["-fresh", "YES", "-soundEnabled", "NO"] + extra
+        app.launchArguments = ["-fresh", "YES", "-soundEnabled", "NO", "-onboarded", "YES"] + extra
         if let moves { app.launchArguments += ["-moves", moves] }
         app.launch()
         XCTAssertTrue(board.waitForExistence(timeout: 10))

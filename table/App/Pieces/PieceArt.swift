@@ -1,6 +1,30 @@
 import SwiftUI
 import ChessCore
 
+/// Which carved set stands on the board.
+enum PieceSet: String, CaseIterable, Identifiable {
+    /// Ivory and ebony with gilt bands.
+    case classic
+    /// Polished gold against gunmetal. TABLE Pro.
+    case gilded
+
+    var id: String { rawValue }
+    var isPro: Bool { self == .gilded }
+    var title: String { self == .classic ? "Ivory & Ebony" : "Gilded" }
+    fileprivate var prefix: String { self == .classic ? "piece" : "gilded" }
+}
+
+private struct PieceSetKey: EnvironmentKey {
+    static let defaultValue = PieceSet.classic
+}
+
+extension EnvironmentValues {
+    var pieceSet: PieceSet {
+        get { self[PieceSetKey.self] }
+        set { self[PieceSetKey.self] = newValue }
+    }
+}
+
 /// The piece set: ivory and ebony, turned and gilded, rendered offline in 3D by
 /// `tools/render3d.py` from the lathe profiles in `tools/pieces.py`.
 ///
@@ -15,8 +39,8 @@ enum PieceSprite {
     /// Where the base stands within its square, from the top, for a piece facing the bottom edge.
     static let squareBase: CGFloat = 0.71
 
-    static func imageName(_ piece: Piece) -> String {
-        "piece-\(piece.color.rawValue)-\(piece.kind.rawValue)"
+    static func imageName(_ piece: Piece, set: PieceSet = .classic) -> String {
+        "\(set.prefix)-\(piece.color.rawValue)-\(piece.kind.rawValue)"
     }
 
     /// Offset of the sprite's centre from the square's centre, as a fraction of the square.
@@ -28,9 +52,10 @@ enum PieceSprite {
 /// A piece standing upright, filling a square frame: used in trays, pickers and swatches.
 struct PieceGlyph: View {
     let piece: Piece
+    @Environment(\.pieceSet) private var set
 
     var body: some View {
-        Image(PieceSprite.imageName(piece))
+        Image(PieceSprite.imageName(piece, set: set))
             .resizable()
             .interpolation(.high)
             .antialiased(true)

@@ -107,6 +107,7 @@ struct ResultOverlay: View {
     var viewer: PieceColor = .white
     let playAgain: () -> Void
     let dismiss: () -> Void
+    var replay: (() -> Void)?
 
     @State private var shown = false
 
@@ -183,6 +184,15 @@ struct ResultOverlay: View {
                     .multilineTextAlignment(.center)
             }
             buttons
+            if let replay, seat == viewer {
+                Button(action: replay) {
+                    Label("Watch the replay", systemImage: "play.rectangle.on.rectangle")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(theme.accent)
+                        .frame(minHeight: 36)
+                }
+                .buttonStyle(PressScaleStyle())
+            }
         }
         .padding(.horizontal, compact ? 20 : 30)
         .padding(.vertical, compact ? 16 : 26)

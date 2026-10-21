@@ -25,6 +25,7 @@ final class SettingsStore {
     private let defaults: UserDefaults
 
     var themeID: ThemeID { didSet { defaults.set(themeID.rawValue, forKey: Keys.theme) } }
+    var pieceSet: PieceSet { didSet { defaults.set(pieceSet.rawValue, forKey: Keys.pieceSet) } }
     var soundEnabled: Bool { didSet { defaults.set(soundEnabled, forKey: Keys.sound) } }
     var volume: Double { didSet { defaults.set(volume, forKey: Keys.volume) } }
     var showCoordinates: Bool { didSet { defaults.set(showCoordinates, forKey: Keys.coordinates) } }
@@ -45,10 +46,18 @@ final class SettingsStore {
 
     var theme: BoardTheme { .with(themeID) }
 
+    /// Without Pro, any Pro choice made earlier falls back to the house defaults.
+    func dropProChoices() {
+        if themeID.isPro { themeID = .salon }
+        if pieceSet.isPro { pieceSet = .classic }
+        if botLevel.isPro { botLevel = .club }
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         defaults.register(defaults: [
             Keys.theme: ThemeID.salon.rawValue,
+            Keys.pieceSet: PieceSet.classic.rawValue,
             Keys.sound: true,
             Keys.volume: 0.8,
             Keys.coordinates: true,
@@ -59,6 +68,7 @@ final class SettingsStore {
             Keys.humanColor: PieceColor.white.rawValue,
         ])
         themeID = ThemeID(rawValue: defaults.string(forKey: Keys.theme) ?? "") ?? .salon
+        pieceSet = PieceSet(rawValue: defaults.string(forKey: Keys.pieceSet) ?? "") ?? .classic
         soundEnabled = defaults.bool(forKey: Keys.sound)
         volume = defaults.double(forKey: Keys.volume)
         showCoordinates = defaults.bool(forKey: Keys.coordinates)
@@ -71,6 +81,7 @@ final class SettingsStore {
 
     private enum Keys {
         static let theme = "theme"
+        static let pieceSet = "pieceSet"
         static let sound = "soundEnabled"
         static let volume = "volume"
         static let coordinates = "showCoordinates"

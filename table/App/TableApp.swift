@@ -5,6 +5,8 @@ import ChessCore
 struct TableApp: App {
     @State private var settings: SettingsStore
     @State private var session: GameSession
+    @State private var pro = ProStore()
+    @State private var account = AccountStore()
 
     init() {
         let feedback = FeedbackCoordinator()
@@ -15,7 +17,7 @@ struct TableApp: App {
     var body: some Scene {
         WindowGroup {
             SimulatedWindow {
-                RootView(session: session, settings: settings)
+                RootView(session: session, settings: settings, pro: pro, account: account)
             }
         }
     }

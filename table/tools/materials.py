@@ -165,6 +165,81 @@ def salon_board():
     return board(light, dark, (8, 20, 17))
 
 
+def marble(h, w, rng, scale=1.0):
+    """Marble: soft clouds crossed by a few long, wandering veins with soft halos.
+    Returns (cloud, vein)."""
+    cloud = normalize(value_noise(h, w, 4, 4, rng) + 0.5 * value_noise(h, w, 11, 11, rng))
+    turb = (value_noise(h, w, 2, 2, rng) + 0.5 * value_noise(h, w, 5, 5, rng)
+            + 0.25 * value_noise(h, w, 12, 12, rng) + 0.1 * value_noise(h, w, 30, 30, rng))
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float64)
+    t = (xx * 0.5 + yy) / (max(h, w) / (1.4 * scale)) + turb * 0.22
+    d = np.abs(np.sin(t * np.pi))
+    vein = np.exp(-d * 22.0) * 0.9 + np.exp(-d * 5.0) * 0.25          # crisp core, soft halo
+    branch_t = (xx - yy * 0.4) / (max(h, w) / (2.3 * scale)) + turb * 0.3 + 0.37
+    vein += np.exp(-np.abs(np.sin(branch_t * np.pi)) * 40.0) * 0.35 * (value_noise(h, w, 3, 3, rng) > 0.2)
+    return cloud, np.clip(vein, 0, 1)
+
+
+def marble_square(rng, base_dark, base_light, vein_rgb, vein_strength, contrast=0.4, scale=1.0, big=3):
+    cloud, vein = marble(SQ * big, SQ * big, rng, scale)
+    oy, ox = rng.integers(0, SQ * (big - 1), 2)
+    c = cloud[oy:oy + SQ, ox:ox + SQ]
+    v = vein[oy:oy + SQ, ox:ox + SQ][..., None] * vein_strength
+    tone = rng.normal(0, 2.5)
+    img = colorize(c, tuple(x + tone for x in base_dark), tuple(x + tone for x in base_light), contrast)
+    return img * (1 - v) + np.array(vein_rgb, dtype=np.float64)[None, None, :] * v
+
+
+def marble_board():
+    def light(r, f):   # Calacatta: warm white, grey and faint gold veins
+        return marble_square(RNG, (222, 218, 210), (246, 243, 236), (150, 140, 124), 0.55)
+
+    def dark(r, f):    # Nero Marquina: deep black with white veins
+        return marble_square(RNG, (14, 14, 16), (40, 39, 42), (205, 200, 192), 0.5, contrast=0.5, scale=1.3)
+
+    return board(light, dark, (10, 10, 12))
+
+
+def rosewood_board():
+    def light(r, f):   # quartered sycamore: pale, fine ripple figure
+        big = wood(SQ * 3, SQ * 3, RNG, ring_freq=90, warp=0.25, figure=0.25)
+        oy, ox = RNG.integers(0, SQ * 2, 2)
+        fld = big[oy:oy + SQ, ox:ox + SQ]
+        ripple = np.sin(np.mgrid[0:SQ, 0:SQ][1] / SQ * 2 * np.pi * 22 + value_noise(SQ, SQ, 4, 4, RNG) * 3) * 0.12
+        if (r + f) % 4 == 1:
+            fld = fld.T
+        tone = RNG.normal(0, 3)
+        return colorize(fld + ripple, (214 + tone, 196 + tone, 166 + tone), (240 + tone, 226 + tone, 200 + tone), 0.35)
+
+    def dark(r, f):    # Santos rosewood: red-brown with strong black streaks
+        big = wood(SQ * 3, SQ * 3, RNG, ring_freq=40, warp=0.7, figure=0.6)
+        oy, ox = RNG.integers(0, SQ * 2, 2)
+        fld = big[oy:oy + SQ, ox:ox + SQ]
+        if (r * 3 + f) % 2 == 1:
+            fld = fld.T
+        tone = RNG.normal(0, 3)
+        return colorize(fld, (58 + tone, 22 + tone, 16 + tone), (132 + tone, 62 + tone, 42 + tone), 0.62)
+
+    return board(light, dark, (36, 14, 10))
+
+
+def midnight_board():
+    def light(r, f):   # pearl: pale silver with soft iridescent cloud
+        c = normalize(value_noise(SQ, SQ, 5, 5, RNG) + 0.4 * value_noise(SQ, SQ, 14, 14, RNG))
+        tint = normalize(value_noise(SQ, SQ, 3, 3, RNG))[..., None]
+        img = colorize(c, (196, 202, 212), (232, 236, 242), 0.35)
+        return img + tint * np.array([6, -2, 8])[None, None, :]
+
+    def dark(r, f):    # navy lacquer with a fine fleck, like a night sky
+        c = normalize(value_noise(SQ, SQ, 4, 4, RNG))
+        img = colorize(c, (14, 22, 44), (30, 42, 76), 0.4)
+        fleck = np.clip(RNG.standard_normal((SQ, SQ)) - 3.1, 0, None)
+        fleck = ndimage.gaussian_filter(fleck, 0.5) * 140
+        return img + fleck[..., None] * np.array([0.9, 0.8, 0.55])[None, None, :]
+
+    return board(light, dark, (8, 12, 26))
+
+
 def rim(kind):
     h, w = 512, 2048
     if kind == 'walnut':
@@ -173,6 +248,17 @@ def rim(kind):
     if kind == 'salon':
         field = normalize(value_noise(h, w, 3, 10, RNG)) * 0.7 + normalize(RNG.standard_normal((h, w))) * 0.05
         return np.clip(colorize(field, (9, 18, 15), (24, 38, 33), 0.6), 0, 255).astype(np.uint8)
+    if kind == 'marble':
+        cloud, vein = marble(h, w, RNG, 2.0)
+        img = colorize(cloud, (12, 12, 14), (34, 33, 36), 0.5)
+        v = vein[..., None] * 0.35
+        return np.clip(img * (1 - v) + 190 * v, 0, 255).astype(np.uint8)
+    if kind == 'rosewood':
+        field = wood(h, w, RNG, ring_freq=26, warp=0.6, figure=0.5)
+        return np.clip(colorize(field, (44, 16, 11), (104, 46, 30), 0.6), 0, 255).astype(np.uint8)
+    if kind == 'midnight':
+        field = normalize(value_noise(h, w, 3, 10, RNG)) * 0.7 + normalize(RNG.standard_normal((h, w))) * 0.05
+        return np.clip(colorize(field, (8, 12, 26), (22, 30, 56), 0.6), 0, 255).astype(np.uint8)
     field = stone(h, w, RNG, veins=False)
     return np.clip(colorize(field, (38, 40, 44), (70, 74, 80), 0.6), 0, 255).astype(np.uint8)
 
@@ -198,12 +284,32 @@ def field(kind):
     if kind == 'walnut':
         f = wood(w, h, RNG, ring_freq=30, warp=0.5, figure=0.5).T     # grain runs along the long side
         return np.clip(colorize(f, (34, 20, 12), (78, 50, 31), 0.55), 0, 255).astype(np.uint8)
+    if kind == 'marble':
+        cloud, vein = marble(h, w, RNG, 1.2)
+        img = colorize(cloud, (10, 10, 12), (30, 29, 32), 0.5)
+        v = vein[..., None] * 0.3
+        return np.clip(img * (1 - v) + np.array([180, 172, 160])[None, None, :] * v, 0, 255).astype(np.uint8)
+    if kind == 'rosewood':
+        f = wood(w, h, RNG, ring_freq=28, warp=0.6, figure=0.55).T
+        return np.clip(colorize(f, (38, 14, 10), (92, 40, 27), 0.55), 0, 255).astype(np.uint8)
+    if kind == 'midnight':
+        cells = value_noise(h, w, 340, 260, RNG)
+        drift = normalize(value_noise(h, w, 3, 3, RNG))
+        f = normalize(np.abs(cells)) * 0.35 + drift * 0.5
+        return np.clip(colorize(f, (7, 11, 24), (20, 28, 52), 0.7), 0, 255).astype(np.uint8)
     f = stone(h, w, RNG, veins=False)
     return np.clip(colorize(f, (196, 189, 177), (224, 218, 207), 0.45), 0, 255).astype(np.uint8)
 
 
 if __name__ == '__main__':
     catalog = sys.argv[1]
+    if len(sys.argv) > 2 and sys.argv[2] == 'pro':
+        for name, surface in (('Marble', marble_board), ('Rosewood', rosewood_board), ('Midnight', midnight_board)):
+            write_imageset(catalog, f"{name}Surface", surface())
+            write_imageset(catalog, f"{name}Rim", rim(name.lower()))
+            write_imageset(catalog, f"{name}Field", field(name.lower()), quality=88)
+        print("ok")
+        sys.exit(0)
     if len(sys.argv) > 2 and sys.argv[2] == 'field':
         write_imageset(catalog, "SalonField", field('salon'), quality=88)
         write_imageset(catalog, "WalnutField", field('walnut'), quality=88)

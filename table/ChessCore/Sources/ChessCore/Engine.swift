@@ -2,7 +2,7 @@ import Foundation
 
 /// How strongly the computer opponent plays.
 public enum BotLevel: String, CaseIterable, Codable, Sendable, Identifiable {
-    case casual, club, master
+    case casual, club, master, grandmaster
 
     public var id: String { rawValue }
 
@@ -11,8 +11,12 @@ public enum BotLevel: String, CaseIterable, Codable, Sendable, Identifiable {
         case .casual: return "Casual"
         case .club: return "Club"
         case .master: return "Master"
+        case .grandmaster: return "Grandmaster"
         }
     }
+
+    /// The stronger opponents come with TABLE Pro.
+    public var isPro: Bool { self == .master || self == .grandmaster }
 
     /// Thinking time per move, in seconds.
     var timeLimit: Double {
@@ -20,6 +24,7 @@ public enum BotLevel: String, CaseIterable, Codable, Sendable, Identifiable {
         case .casual: return 0.25
         case .club: return 0.8
         case .master: return 2.0
+        case .grandmaster: return 4.5
         }
     }
 
@@ -27,7 +32,7 @@ public enum BotLevel: String, CaseIterable, Codable, Sendable, Identifiable {
         switch self {
         case .casual: return 2
         case .club: return 6
-        case .master: return 64
+        case .master, .grandmaster: return 64
         }
     }
 
@@ -36,7 +41,7 @@ public enum BotLevel: String, CaseIterable, Codable, Sendable, Identifiable {
         switch self {
         case .casual: return 110
         case .club: return 18
-        case .master: return 0
+        case .master, .grandmaster: return 0
         }
     }
 }

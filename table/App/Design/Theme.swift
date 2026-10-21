@@ -1,8 +1,10 @@
 import SwiftUI
 
 enum ThemeID: String, CaseIterable, Identifiable, Codable {
-    case salon, walnut, slate
+    case salon, walnut, slate, marble, rosewood, midnight
     var id: String { rawValue }
+    /// The boards that come with TABLE Pro.
+    var isPro: Bool { self == .marble || self == .rosewood || self == .midnight }
 }
 
 /// A complete material and colour system for one board and the table it sits on.
@@ -146,11 +148,110 @@ struct BoardTheme: Equatable {
         isDark: false
     )
 
+    static let marble = BoardTheme(
+        id: .marble,
+        name: "Marble Noir",
+        subtitle: "Calacatta and Nero Marquina, silver line",
+        surfaceImage: "MarbleSurface",
+        rimImage: "MarbleRim",
+        fieldImage: "MarbleField",
+        rimTint: Color(hex: 0x000000, opacity: 0.10),
+        inlay: Color(hex: 0xCFCAC2),
+        rimHighlight: Color.white.opacity(0.18),
+        doubleTooling: false,
+        tableCenter: Color(hex: 0x1C1B1D),
+        tableEdge: Color(hex: 0x050506),
+        boardShadow: Color.black.opacity(0.7),
+        vignette: 0.28,
+        pieceShadow: 0.55,
+        grain: 0.06,
+        coordinate: Color(hex: 0xBDB6AA, opacity: 0.8),
+        selection: Color(hex: 0xD9C08A, opacity: 0.32),
+        lastMove: Color(hex: 0xCDB27A, opacity: 0.22),
+        hint: Color(hex: 0xC8AD72, opacity: 0.8),
+        hover: Color(hex: 0xE8D6AA, opacity: 0.7),
+        check: Color(hex: 0xC4442F),
+        turnGlow: Color(hex: 0xDCCBA8),
+        ink: Color(hex: 0xECE8E1),
+        inkSecondary: Color(hex: 0xECE8E1, opacity: 0.5),
+        panel: Color(hex: 0x1A1A1C, opacity: 0.8),
+        panelStroke: Color(hex: 0xCFCAC2, opacity: 0.3),
+        accent: Color(hex: 0xD4BC8A),
+        isDark: true
+    )
+
+    static let rosewood = BoardTheme(
+        id: .rosewood,
+        name: "Rosewood",
+        subtitle: "Santos rosewood, rippled sycamore",
+        surfaceImage: "RosewoodSurface",
+        rimImage: "RosewoodRim",
+        fieldImage: "RosewoodField",
+        rimTint: Color(hex: 0x1A0805, opacity: 0.16),
+        inlay: Color(hex: 0xD2A867),
+        rimHighlight: Color(hex: 0xF5D3A0, opacity: 0.22),
+        doubleTooling: false,
+        tableCenter: Color(hex: 0x2A120C),
+        tableEdge: Color(hex: 0x0A0403),
+        boardShadow: Color.black.opacity(0.65),
+        vignette: 0.26,
+        pieceShadow: 0.5,
+        grain: 0.06,
+        coordinate: Color(hex: 0xE1BC80, opacity: 0.7),
+        selection: Color(hex: 0xF0C47C, opacity: 0.34),
+        lastMove: Color(hex: 0xE8B867, opacity: 0.22),
+        hint: Color(hex: 0x2A0E08, opacity: 0.34),
+        hover: Color(hex: 0xF8DCA8, opacity: 0.55),
+        check: Color(hex: 0xD04A2E),
+        turnGlow: Color(hex: 0xE9B876),
+        ink: Color(hex: 0xF0DFC8),
+        inkSecondary: Color(hex: 0xF0DFC8, opacity: 0.52),
+        panel: Color(hex: 0x2E1610, opacity: 0.75),
+        panelStroke: Color(hex: 0xE9B876, opacity: 0.3),
+        accent: Color(hex: 0xDDB074),
+        isDark: true
+    )
+
+    static let midnight = BoardTheme(
+        id: .midnight,
+        name: "Midnight",
+        subtitle: "Navy lacquer, pearl, starlight fleck",
+        surfaceImage: "MidnightSurface",
+        rimImage: "MidnightRim",
+        fieldImage: "MidnightField",
+        rimTint: Color(hex: 0x02040C, opacity: 0.12),
+        inlay: Color(hex: 0xC7B27E),
+        rimHighlight: Color(hex: 0xDCE4F5, opacity: 0.2),
+        doubleTooling: true,
+        tableCenter: Color(hex: 0x121A33),
+        tableEdge: Color(hex: 0x03050C),
+        boardShadow: Color.black.opacity(0.7),
+        vignette: 0.3,
+        pieceShadow: 0.55,
+        grain: 0.07,
+        coordinate: Color(hex: 0xC7B27E, opacity: 0.8),
+        selection: Color(hex: 0xE2C67E, opacity: 0.3),
+        lastMove: Color(hex: 0xD8BC72, opacity: 0.22),
+        hint: Color(hex: 0xD9BE76, opacity: 0.8),
+        hover: Color(hex: 0xEED9A4, opacity: 0.7),
+        check: Color(hex: 0xD24B36),
+        turnGlow: Color(hex: 0xC9D4F0),
+        ink: Color(hex: 0xE6EAF3),
+        inkSecondary: Color(hex: 0xE6EAF3, opacity: 0.5),
+        panel: Color(hex: 0x0E1428, opacity: 0.8),
+        panelStroke: Color(hex: 0xC7B27E, opacity: 0.32),
+        accent: Color(hex: 0xD6BE84),
+        isDark: true
+    )
+
     static func with(_ id: ThemeID) -> BoardTheme {
         switch id {
         case .salon: return .salon
         case .walnut: return .walnut
         case .slate: return .slate
+        case .marble: return .marble
+        case .rosewood: return .rosewood
+        case .midnight: return .midnight
         }
     }
 }

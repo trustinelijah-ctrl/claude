@@ -81,6 +81,7 @@ struct PieceBody: View {
     let light: CGSize
     let shadowStrength: Double
     var fallen = false
+    @Environment(\.pieceSet) private var set
 
     /// How far the piece is off the board, 0 (standing) to 1 (carried).
     private var rise: CGFloat {
@@ -103,7 +104,7 @@ struct PieceBody: View {
                                      center: .center, startRadius: 0, endRadius: size * 0.36 * (1 + rise * 0.4)))
                 .frame(width: size * (0.74 + rise * 0.24) * (fallen ? 1.45 : 1), height: size * (0.34 + rise * 0.14))
                 .offset(x: local.width + (fallen ? size * 0.24 : 0), y: size * PieceSprite.baseOffset + local.height)
-            Image(PieceSprite.imageName(piece))
+            Image(PieceSprite.imageName(piece, set: set))
                 .resizable()
                 .interpolation(.high)
                 .antialiased(true)
@@ -114,7 +115,7 @@ struct PieceBody: View {
                         y: size * PieceSprite.spriteOffset - size * 0.09 * rise - (fallen ? size * 0.1 : 0))
                 .animation(fallen ? .spring(response: 0.42, dampingFraction: 0.52) : .spring(response: 0.45, dampingFraction: 0.8),
                            value: fallen)
-                .id(piece)
+                .id("\(set.rawValue)-\(piece.color.rawValue)-\(piece.kind.rawValue)")
                 .transition(.opacity.animation(.easeInOut(duration: 0.24)))
         }
         .frame(width: size, height: size)
