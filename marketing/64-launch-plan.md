@@ -25,6 +25,12 @@ an audience and say "coming soon, link in bio for launch" (a free waitlist form)
 
 ## 3. The first 10 posts
 
+**Update:** the Kling clips were not good enough to post. Lead with the 12 candid image
+posts (`64-image-posts.zip`) and real screen recordings of the app; use Seedance only for
+short faceless product shots like `64-reel-seedance-hero.mp4`. Faces and hands are what
+make AI video look fake. The plan below still works with an image post or a screen
+recording in place of each AI clip.
+
 Each Reel is 8–15 seconds, vertical 9:16, built the same way:
 
 1. **0–3 s, hook:** the AI clip (people playing) with one line of text on screen.
@@ -91,25 +97,29 @@ Scene ideas that fit the brand: rooftop at sunset; camping table with a lantern;
 grandmother and granddaughter on a porch; chess club in a library; beach café;
 airport gate; two old friends reunited; a classroom chess club; snowy cabin by the fire.
 
-Video (Kling 3.0, std, 5 s, 9:16, no sound, about 7.5 credits), using the image as the
-start frame:
+Images look most real when prompted as phones see the world: "Candid iPhone photo …,
+natural light, slight grain, unposed, no faces". Top-down table shots work best.
+
+Video: Seedance 2.0 (Fast, 720p, 5 s, 9:16, no sound, 12.5 credits; standard quality is
+22.5), using a faceless image as the start frame:
 
 ```
-[ONE SIMPLE ACTION: who moves, what reaction]. Slow cinematic push-in, natural motion.
-The iPad screen stays steady and sharp.
+Real product film. Slow, steady dolly-in toward [THE SCENE]. A soft band of warm light
+drifts across the table. Physically accurate reflections, no morphing, the screen image
+stays perfectly still and sharp. Shot on a cinema camera, 24fps, shallow depth of field.
 ```
 
-Keep the action to one hand movement and one reaction; busy motion warps the screen.
+Avoid faces and hand gestures in AI video; keep it to camera moves and light.
 
 ## 5. Budget for the first 10 posts
 
 | Item | Cost |
 | --- | --- |
-| 10 AI clips and 10 still images (made on the Higgsfield trial) | **$0** |
+| 12 image posts, 1 Seedance clip (made on the Higgsfield trial) | **$0** |
 | Apple Developer Program (needed to launch at all) | **$99 / year** |
 | Editing (CapCut free), music (in-app trending sounds), screen recordings | $0 |
 | **Minimum to launch with these 10 posts** | **$99** |
-| Optional: Higgsfield Plus for the next 100+ clips (1,000 credits ≈ 130 clips) | $49 / month, or $29 / month billed yearly |
+| Optional: Higgsfield Plus (1,000 credits ≈ 80 Seedance Fast clips or 2,000 images) | $49 / month, or $29 / month billed yearly |
 | Optional: boost the best-performing Reel (TikTok Promote / Instagram Boost) | $50–100 test |
 | **Comfortable first month** | **about $200–250** |
 
