@@ -338,6 +338,19 @@ struct TableField: View {
                 .blur(radius: 2.5)
                 .frame(width: b.width, height: b.height)
                 .offset(x: b.minX, y: b.minY)
+            if Self.quietEnds {
+                // Layout preview: the ends fall into shadow so the board reads as the one object,
+                // and the gilt moves to a fine inlay around the grid.
+                Path { p in
+                    p.addRect(CGRect(origin: .zero, size: size))
+                    p.addRect(b)
+                }
+                .fill(Color.black.opacity(theme.isDark ? 0.3 : 0.38), style: FillStyle(eoFill: true))
+                Rectangle()
+                    .stroke(theme.inlay.opacity(0.85), lineWidth: 1.5)
+                    .frame(width: b.width, height: b.height)
+                    .offset(x: b.minX, y: b.minY)
+            }
             // Gilt tooling around each player's end. It frames the strips and stops at the board,
             // never crossing it.
             ForEach(Array(endPanels(size: size, board: b).enumerated()), id: \.offset) { _, panel in
@@ -356,8 +369,12 @@ struct TableField: View {
         .accessibilityHidden(true)
     }
 
+    /// Layout preview switch (`-quietEnds YES`).
+    static let quietEnds = UserDefaults.standard.bool(forKey: "quietEnds")
+
     /// The space at each end of the board, inset from the screen edge and from the board.
     private func endPanels(size: CGSize, board b: CGRect) -> [CGRect] {
+        if Self.quietEnds { return [] }
         let edge: CGFloat = 9, gap: CGFloat = 7
         var panels: [CGRect] = []
         if layout.arrangement == .ends {

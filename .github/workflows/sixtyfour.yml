@@ -74,6 +74,8 @@ jobs:
 
       - name: Screenshots
         if: success() && !contains(github.event.head_commit.message, '[ui-only]')
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
           cat > /tmp/collect.py <<'PY'
           import json, os, shutil, sys
@@ -90,7 +92,10 @@ jobs:
                   shutil.copy(os.path.join(src, a["exportedFileName"]), f"shots/{dev.lower()}-{name}.png")
           PY
           mkdir -p shots
-          for dev in PRO13; do
+          # A commit tagged [preview] shoots only the layout preview, on the 11-inch iPad Air.
+          DEVS="PRO13"; ONLY="SixtyFourUITests/ScreenshotTests"
+          if [[ "$COMMIT_MSG" == *"[preview]"* ]]; then DEVS="AIR11"; ONLY="SixtyFourUITests/ScreenshotTests/testB0LayoutPreview"; fi
+          for dev in $DEVS; do
             udid="${!dev}"
             [ -z "$udid" ] && continue
             # Boot first: a cold simulator can kill the test runner before it starts.
@@ -99,7 +104,7 @@ jobs:
             for attempt in 1 2; do
               rm -rf "results/shots-$dev.xcresult"
               xcodebuild test-without-building -project SixtyFour.xcodeproj -scheme SixtyFour -derivedDataPath build \
-                -destination "id=$udid" -only-testing:SixtyFourUITests/ScreenshotTests \
+                -destination "id=$udid" -only-testing:"$ONLY" \
                 -resultBundlePath "results/shots-$dev.xcresult" > "shots-$dev.log" 2>&1 && break
               tail -20 "shots-$dev.log"
               grep -q "before starting test execution" "shots-$dev.log" || break
@@ -130,6 +135,7 @@ jobs:
           git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-shots
 
       - name: UI tests (interaction)
+        if: success() && !contains(github.event.head_commit.message, '[preview]')
         run: |
           set -o pipefail
           status=0

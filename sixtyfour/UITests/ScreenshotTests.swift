@@ -29,6 +29,18 @@ final class ScreenshotTests: XCTestCase {
         app.terminate()
     }
 
+    /// Layout options side by side, from the position in the owner's screenshot.
+    func testB0LayoutPreview() {
+        let moves = "c2c4 c7c5 g1f3 d7d5 b2b3 d5c4 f3d4"
+        let base = ["-moves", moves, "-theme", "house", "-timeControl", "off"]
+        shoot("20-now", args: base)
+        shoot("21-quiet-ends", args: base + ["-quietEnds", "YES"])
+        shoot("22-quiet-ends-bigger-pieces", args: base + ["-quietEnds", "YES", "-pieceScale", "1.3"])
+        shoot("23-recommended-with-clock", args: ["-moves", moves, "-theme", "house", "-timeControl", "rapid10",
+                                                   "-quietEnds", "YES", "-pieceScale", "1.3"], settle: 3.0)
+        shoot("22-quiet-ends-bigger-pieces", args: base + ["-quietEnds", "YES", "-pieceScale", "1.3"], landscape: true)
+    }
+
     func test1Opening() {
         shoot("01-opening", args: ["-fresh", "YES", "-theme", "house"])
         shoot("01-opening", args: ["-fresh", "YES", "-theme", "house"], landscape: true)

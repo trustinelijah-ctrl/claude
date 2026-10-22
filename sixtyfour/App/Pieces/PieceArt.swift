@@ -47,7 +47,11 @@ extension EnvironmentValues {
 enum PieceSprite {
     /// Sprite size relative to the square it stands on. Pieces are taller than their
     /// squares, as real pieces are; the tallest crowns reach a little into the square behind.
-    static let scale: CGFloat = 1.16
+    /// Layout previews can try a larger set with `-pieceScale`.
+    static let scale: CGFloat = {
+        let v = UserDefaults.standard.double(forKey: "pieceScale")
+        return v > 0 ? CGFloat(v) : 1.16
+    }()
     /// Centre of the base within the sprite, from the top.
     static let spriteBase: CGFloat = 0.81
     /// Where the base stands within its square, from the top, for a piece facing the bottom edge.
