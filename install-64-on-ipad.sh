@@ -20,11 +20,41 @@ unzip -q 64.zip
 cd claude-claude-table-chess-ipad/sixtyfour
 
 say "2/5  Finding your iPad…"
-LINE=$(xcrun xctrace list devices 2>/dev/null | awk '/^== Devices ==/{f=1;next} /^==/{f=0} f' | grep -i 'ipad' | head -1 || true)
-[ -n "$LINE" ] || fail "No iPad found. Plug it in with a cable, unlock it, tap Trust, and run this again.
-If it's connected: on the iPad open Settings ▸ Privacy & Security ▸ Developer Mode and turn it on."
-UDID=$(echo "$LINE" | sed -E 's/.*\(([0-9A-Fa-f-]+)\)[[:space:]]*$/\1/')
-echo "   $LINE"
+# Xcode's device tool (devicectl) is the reliable source; xctrace is the fallback for older Xcode.
+LIST=$(mktemp)
+xcrun devicectl list devices --json-output "$LIST" >/dev/null 2>&1 || true
+FOUND=$(/usr/bin/python3 - "$LIST" 2>/dev/null <<'PY' || true
+import json, sys
+try:
+    devices = json.load(open(sys.argv[1]))["result"]["devices"]
+except Exception:
+    sys.exit()
+ipads = [d for d in devices if d.get("hardwareProperties", {}).get("deviceType") == "iPad"]
+# Prefer one that is connected right now, then any paired iPad.
+ipads.sort(key=lambda d: d.get("connectionProperties", {}).get("tunnelState") != "connected")
+for d in ipads:
+    udid = d.get("hardwareProperties", {}).get("udid")
+    if udid:
+        print(udid + "|" + d.get("deviceProperties", {}).get("name", "iPad"))
+        break
+PY
+)
+UDID="${FOUND%%|*}"
+NAME="${FOUND#*|}"
+if [ -z "$UDID" ]; then
+  LINE=$(xcrun xctrace list devices 2>/dev/null | grep -i 'ipad' | grep -vi 'simulator' | head -1 || true)
+  if [ -n "$LINE" ]; then
+    UDID=$(echo "$LINE" | sed -E 's/.*\(([0-9A-Fa-f-]+)\)[[:space:]]*$/\1/')
+    NAME="$LINE"
+  fi
+fi
+if [ -z "$UDID" ]; then
+  echo "   This is what the Mac sees:"
+  xcrun devicectl list devices 2>&1 | sed 's/^/     /' | head -20
+  fail "No iPad found. Unplug and replug the cable, unlock the iPad, tap Trust if asked, and run this again.
+If it still isn't listed above: open Xcode ▸ Window ▸ Devices and Simulators and wait until the iPad appears there."
+fi
+echo "   $NAME ($UDID)"
 
 say "3/5  Finding your Apple ID team…"
 TEAM=$(defaults read com.apple.dt.Xcode IDEProvisioningTeamByIdentifier 2>/dev/null | grep -oE 'teamID = [A-Z0-9]+' | head -1 | awk '{print $3}' || true)
