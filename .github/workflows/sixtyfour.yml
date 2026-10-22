@@ -17,8 +17,9 @@ permissions:
 jobs:
   ios:
     name: Build, test, screenshots
-    # arm64 macOS runners are often out of capacity; the Intel image has the same Xcode.
-    runs-on: macos-15-intel
+    # Apple-silicon runners are several times faster for the simulator. If GitHub is short of
+    # them and the job sits queued, macos-15-intel has the same Xcode but needs the long timeout.
+    runs-on: macos-15
     timeout-minutes: 120
     defaults: { run: { working-directory: sixtyfour } }
     steps:
