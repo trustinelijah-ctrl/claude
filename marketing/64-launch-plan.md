@@ -158,3 +158,35 @@ Good next steps after launch:
 - An iPhone version of the puzzles and review.
 - Localization (German, Spanish, French).
 - Asking chess creators for honest reviews: send them a free year of Pro.
+
+## 7. Pricing and paid targeting (research, October 2026)
+
+**Apple Developer Program:** €99 a year for an individual. There is no cheaper tier: fee
+waivers exist only for nonprofits, schools and government bodies, and never for apps
+that sell in-app purchases. Apply for the **App Store Small Business Program** on day one:
+it lowers Apple's cut from 30% (26% in the EU) to 15%. In the EU you must declare yourself a
+"trader" to sell, and the App Store then shows your address, phone and email on 64's
+page. Consider a business address or a small company for that.
+
+**Pay what you want:** Apple doesn't allow a free-form price, but you can offer fixed
+choices (for example €5 / €10 / €20 a year, all unlocking the same Pro). In practice most
+people pick the cheapest option, so a "minimum €5" plan works out at about €5 a year.
+
+**Recommended price list:**
+
+| Product | Price | Why |
+| --- | --- | --- |
+| Pro yearly, 7-day free trial | €14.99 | The main offer; longer trials convert better than 3-day ones. |
+| Pro monthly | €2.99 | Mostly there to make the yearly plan look good. |
+| Pro lifetime (one-time) | €29.99 | Board-game and chess people dislike subscriptions; Family Sharing works. |
+
+**Targeting chess players:**
+
+1. **Apple Ads (App Store search):** keywords "chess", "chess for two", "2 player chess",
+   "chess board", "offline chess", "chess clock". Start at €10–20 a day, iPad only.
+2. **Instagram/Facebook (Meta) ads:** target iPad owners (device targeting) interested in
+   Chess, Chess.com, Lichess, Magnus Carlsen, The Queen's Gambit and board games. Run your
+   best organic Reel as the ad. Test €300–500 and expect very roughly €2–6 per install.
+3. **Creators:** a free year of Pro for 10–20 chess creators with 10k–100k followers.
+4. **Communities:** r/chess, r/ipad, r/AppHookup (launch discount), Product Hunt, local
+   chess clubs and cafés (a table card with a QR code).
