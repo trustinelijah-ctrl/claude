@@ -39,6 +39,14 @@ final class ScreenshotTests: XCTestCase {
         shoot("23-recommended-with-clock", args: ["-moves", moves, "-theme", "house", "-timeControl", "rapid10",
                                                    "-quietEnds", "YES", "-pieceScale", "1.3"], settle: 3.0)
         shoot("22-quiet-ends-bigger-pieces", args: base + ["-quietEnds", "YES", "-pieceScale", "1.3"], landscape: true)
+        shoot("24-vs-64-pins", args: ["-opponent", "computer", "-humanColor", "white", "-moves", "e2e4 e7e5 g1f3 b8c6"])
+        shoot("24-vs-64-pins", args: ["-opponent", "computer", "-humanColor", "white", "-moves", "e2e4 e7e5 g1f3 b8c6"], landscape: true)
+        shoot("25-resign-armed", args: base) { app in
+            app.otherElements["panel-white"].buttons["Resign"].tap()
+            RunLoop.current.run(until: Date().addingTimeInterval(0.6))
+        }
+        // The gold keeps falling long after the old 4.5-second shower would have ended.
+        shoot("26-win-gold-after-8s", args: ["-moves", "e2e4 e7e5 f1c4 b8c6 d1h5 g8f6 h5f7", "-showResult", "YES"], settle: 8)
     }
 
     func test1Opening() {

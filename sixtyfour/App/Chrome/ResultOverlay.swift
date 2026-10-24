@@ -77,25 +77,31 @@ struct GoldDust: View {
         TimelineView(.animation) { timeline in
             let t = timeline.date.timeIntervalSince(start)
             Canvas { ctx, size in
-                guard t < 4.5 else { return }
+                // It keeps falling for as long as the result is on screen: each leaf drifts
+                // down, and starts again from the top at a new place.
+                let fadeIn = min(1, t / 0.8)
                 for f in flecks {
-                    let life = t - f.delay
-                    guard life > 0 else { continue }
+                    let elapsed = t - f.delay
+                    guard elapsed > 0 else { continue }
+                    let period = (size.height + 40) / (f.speed * size.height)
+                    let round = (elapsed / period).rounded(.down)
+                    let life = elapsed - round * period
                     let y = -20 + life * f.speed * size.height
-                    guard y < size.height + 20 else { continue }
-                    let x = f.x * size.width + sin(life * 1.3 + f.phase) * f.sway
+                    let column = (f.x + round * 0.618).truncatingRemainder(dividingBy: 1)
+                    let x = column * size.width + sin(life * 1.3 + f.phase) * f.sway
                     // Flat leaf turning in the air: its width swells and thins as it spins.
                     let turn = abs(cos(life * f.spin + f.phase))
-                    let fade = min(1, life * 3) * max(0, min(1, (4.5 - t) / 1.2))
                     var leaf = ctx
                     leaf.translateBy(x: x, y: y)
                     leaf.rotate(by: .radians(life * f.spin * 0.6 + f.phase))
-                    leaf.opacity = fade * (0.55 + 0.45 * turn)
+                    leaf.opacity = fadeIn * (0.55 + 0.45 * turn)
                     let rect = CGRect(x: -f.size / 2, y: -f.size * 0.3, width: f.size * max(0.2, turn), height: f.size * 0.6)
                     leaf.fill(Path(roundedRect: rect, cornerRadius: 1), with: .color(golds[f.hue]))
                 }
             }
         }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 

@@ -45,6 +45,8 @@ struct SettingsCard: View {
 
     private var sections: some View {
         VStack(alignment: .leading, spacing: 22) {
+            // The game itself first: home, new game, draw and resign without scrolling.
+            section("Game") { gameControls }
             section("Opponent") {
                 Picker("Opponent", selection: $settings.opponent) {
                     Text("A friend").tag(Opponent.friend)
@@ -173,7 +175,6 @@ struct SettingsCard: View {
                 }
                 }
             }
-            section("Game") { gameControls }
             section("Account") { accountRows }
         }
         .padding(.horizontal, 26)

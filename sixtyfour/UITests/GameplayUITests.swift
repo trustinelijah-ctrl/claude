@@ -221,4 +221,22 @@ final class GameplayUITests: XCTestCase {
         // Hints are only offered against the computer.
         XCTAssertFalse(app.otherElements["panel-white"].buttons["Hint"].exists)
     }
+
+    func testResignAndHomeFromTheBar() {
+        launch()
+        tap("e2", "e4")
+        // Home is one tap away, and the game waits under Continue.
+        app.otherElements["panel-black"].buttons["Home"].tap()
+        let resume = app.buttons["home-continue"]
+        XCTAssertTrue(resume.waitForExistence(timeout: 10))
+        resume.tap()
+        settle(1.0)
+        XCTAssertTrue(boardValue.contains("Last move e4."), boardValue)
+        // Resigning takes two taps: the flag, then the red Resign it turns into.
+        app.otherElements["panel-black"].buttons["Resign"].tap()
+        let confirm = app.buttons["confirm-resign-black"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        confirm.tap()
+        XCTAssertTrue(app.otherElements["result"].waitForExistence(timeout: 6))
+    }
 }

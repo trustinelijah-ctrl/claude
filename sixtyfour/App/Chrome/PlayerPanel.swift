@@ -15,7 +15,12 @@ struct PlayerZone: View {
     /// Opens the full view of everything this player has taken.
     var showCaptures: () -> Void = {}
     var requestHint: () -> Void = {}
+    /// Back to the home screen; the game waits there under Continue.
+    var goHome: () -> Void = {}
     let openSettings: () -> Void
+
+    /// Resigning takes two taps: the flag turns into a "Resign" button for a few seconds.
+    @State private var resignArmed = false
 
     private var theme: BoardTheme { settings.theme }
     private var isComputer: Bool { settings.computerColor == color }
@@ -57,7 +62,7 @@ struct PlayerZone: View {
                 ClockFace(color: color, session: session, theme: theme, large: !layout.compact)
                     .rotationEffect(facesNearPlayer ? .degrees(180) : .zero)
             }
-            controls
+            fittedControls(alignment: .trailing)
                 .rotationEffect(facesNearPlayer ? .degrees(180) : .zero)
         }
         .padding(.trailing, 4)
@@ -76,7 +81,7 @@ struct PlayerZone: View {
             }
             status
                 .rotationEffect(facesNearPlayer ? .degrees(180) : .zero)
-            controls
+            fittedControls(alignment: .leading)
         }
         .frame(width: z.width, height: max(0, z.height - top), alignment: .bottomLeading)
         .position(x: z.width / 2, y: top + (z.height - top) / 2)
@@ -191,40 +196,95 @@ struct PlayerZone: View {
         return theme.ink
     }
 
+    /// The pins in one row, or in two when the space is too narrow for one.
+    private func fittedControls(alignment: HorizontalAlignment) -> some View {
+        ViewThatFits(in: .horizontal) {
+            controls(rows: nil)
+            VStack(alignment: alignment, spacing: 0) {
+                controls(rows: 0)
+                controls(rows: 1)
+            }
+        }
+    }
+
+    /// The player's pins: hint (against the computer), undo, resign, home and the menu.
+    /// `rows` picks the first or second half when a narrow column stacks them.
     @ViewBuilder
-    private var controls: some View {
+    private func controls(rows: Int?) -> some View {
         if !isComputer {
             HStack(spacing: 10) {
-                if session.canClaimDraw && isTurn {
-                    Button {
-                        session.feedback.ui()
-                        session.claimDraw()
-                    } label: {
-                        Text("Claim draw")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(theme.accent)
-                            .padding(.horizontal, 12)
-                            .frame(height: 34)
-                            .overlay(Capsule().strokeBorder(theme.accent.opacity(0.5), lineWidth: 0.75))
+                if rows != 1 {
+                    if session.canClaimDraw && isTurn {
+                        Button {
+                            session.feedback.ui()
+                            session.claimDraw()
+                        } label: {
+                            Text("Claim draw")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(theme.accent)
+                                .padding(.horizontal, 12)
+                                .frame(height: 34)
+                                .overlay(Capsule().strokeBorder(theme.accent.opacity(0.5), lineWidth: 0.75))
+                        }
+                        .buttonStyle(PressScaleStyle())
                     }
-                    .buttonStyle(PressScaleStyle())
-                }
-                // Hints are for practising against the computer, never in a game between two people.
-                if settings.isAgainstComputer {
-                    BrassPin(symbol: "lightbulb", label: "Hint", enabled: isTurn && !session.isHinting) {
-                        session.feedback.ui()
-                        requestHint()
+                    // Hints are for practising against the computer, never in a game between two people.
+                    if settings.isAgainstComputer {
+                        BrassPin(symbol: "lightbulb", label: "Hint", enabled: isTurn && !session.isHinting) {
+                            session.feedback.ui()
+                            requestHint()
+                        }
                     }
+                    BrassPin(symbol: "arrow.uturn.backward", label: "Undo", enabled: session.canUndo) {
+                        session.feedback.ui()
+                        session.undo()
+                    }
+                    resign
                 }
-                BrassPin(symbol: "arrow.uturn.backward", label: "Undo", enabled: session.canUndo) {
-                    session.feedback.ui()
-                    session.undo()
-                }
-                BrassPin(symbol: "ellipsis", label: "Settings", enabled: true) {
-                    session.feedback.ui()
-                    openSettings()
+                if rows != 0 {
+                    BrassPin(symbol: "house", label: "Home", enabled: true) {
+                        session.feedback.ui()
+                        goHome()
+                    }
+                    .accessibilityIdentifier("pin-home-\(color.rawValue)")
+                    BrassPin(symbol: "ellipsis", label: "Settings", enabled: true) {
+                        session.feedback.ui()
+                        openSettings()
+                    }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var resign: some View {
+        if resignArmed && !session.isOver {
+            Button {
+                session.feedback.ui()
+                resignArmed = false
+                session.resign(color)
+            } label: {
+                Text("Resign")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .frame(height: 34)
+                    .background(Capsule().fill(theme.check))
+                    .frame(minHeight: 44)
+            }
+            .buttonStyle(PressScaleStyle())
+            .transition(.scale(scale: 0.8).combined(with: .opacity))
+            .accessibilityIdentifier("confirm-resign-\(color.rawValue)")
+        } else {
+            BrassPin(symbol: "flag", label: "Resign", enabled: !session.isOver) {
+                session.feedback.ui()
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { resignArmed = true }
+                Task {
+                    try? await Task.sleep(for: .seconds(3))
+                    withAnimation(.easeOut(duration: 0.2)) { resignArmed = false }
+                }
+            }
+            .accessibilityIdentifier("pin-resign-\(color.rawValue)")
         }
     }
 }

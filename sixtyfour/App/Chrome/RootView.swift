@@ -38,12 +38,12 @@ struct RootView: View {
                 turnLight(theme, size: proxy.size, bottom: bottom)
 
                 PlayerZone(color: bottom, session: session, settings: settings, layout: layout,
-                           showCaptures: { capturesFor = bottom }, requestHint: hint) {
+                           showCaptures: { capturesFor = bottom }, requestHint: hint, goHome: leaveToHome) {
                     settingsFor = bottom
                 }
                 PlayerZone(color: bottom.opposite, session: session, settings: settings, layout: layout,
                            facesNearPlayer: settings.isAgainstComputer,
-                           showCaptures: { capturesFor = bottom.opposite }, requestHint: hint) {
+                           showCaptures: { capturesFor = bottom.opposite }, requestHint: hint, goHome: leaveToHome) {
                     settingsFor = bottom.opposite
                 }
                 .rotationEffect(.degrees(180))
