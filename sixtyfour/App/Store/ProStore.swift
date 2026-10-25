@@ -39,8 +39,15 @@ final class ProStore {
     }
     private(set) var products: [Plan: Product] = [:]
     private(set) var isPurchasing = false
-    /// Whether this Apple ID can still start the free week.
-    private(set) var trialAvailable = true
+    private(set) var isLoading = false
+    /// Whether this Apple ID can still start the free week. Unknown (false) until the store answers.
+    private(set) var trialAvailable = ProStore.isTestBuild
+    /// The plan behind the active entitlement, if any (nil for a test unlock).
+    private(set) var activePlan: Plan?
+
+    /// Real prices have arrived from the App Store. A development build without a store
+    /// shows the fallback prices so the paywall can still be tried.
+    var storeReady: Bool { !products.isEmpty || Self.isTestBuild }
     /// A short, plain message after a purchase or restore that did not go through.
     var message: String?
 
@@ -58,7 +65,7 @@ final class ProStore {
 
     init() {
         // `-pro YES` unlocks for screenshot runs.
-        isPro = UserDefaults.standard.bool(forKey: "pro") || UserDefaults.standard.bool(forKey: "pro.owned")
+        isPro = Self.forcedPro || UserDefaults.standard.bool(forKey: "pro.owned")
         updates = Task { [weak self] in
             for await result in Transaction.updates {
                 if case .verified(let t) = result {
@@ -81,6 +88,8 @@ final class ProStore {
     }
 
     func load() async {
+        isLoading = true
+        defer { isLoading = false }
         if products.isEmpty, let loaded = try? await Product.products(for: Plan.allCases.map(\.rawValue)) {
             for p in loaded {
                 if let plan = Plan(rawValue: p.id) { products[plan] = p }
@@ -88,6 +97,8 @@ final class ProStore {
         }
         if let sub = products[.yearly]?.subscription {
             trialAvailable = await sub.isEligibleForIntroOffer && sub.introductoryOffer != nil
+        } else if !products.isEmpty {
+            trialAvailable = false
         }
         await refresh()
     }
@@ -101,6 +112,15 @@ final class ProStore {
         return false
         #endif
     }
+    /// `-pro YES` unlocks for screenshot runs; development builds only.
+    private static var forcedPro: Bool {
+        #if DEBUG
+        return UserDefaults.standard.bool(forKey: "pro")
+        #else
+        return false
+        #endif
+    }
+
     var hasTestUnlock: Bool { Self.isTestBuild && UserDefaults.standard.bool(forKey: "pro.test") }
 
     func endTestUnlock() {
@@ -109,14 +129,16 @@ final class ProStore {
     }
 
     func refresh() async {
-        if UserDefaults.standard.bool(forKey: "pro") || hasTestUnlock { isPro = true; return }
-        var active = false
+        if Self.forcedPro || hasTestUnlock { isPro = true; return }
+        var active: Plan?
         for await result in Transaction.currentEntitlements {
-            if case .verified(let t) = result, Plan(rawValue: t.productID) != nil, t.revocationDate == nil {
-                active = true
+            if case .verified(let t) = result, let plan = Plan(rawValue: t.productID), t.revocationDate == nil {
+                // A one-time purchase wins over a subscription when both exist.
+                if active == nil || !plan.isSubscription { active = plan }
             }
         }
-        isPro = active
+        activePlan = active
+        isPro = active != nil
     }
 
     func purchase(_ plan: Plan) async {
@@ -170,7 +192,7 @@ final class ProStore {
         try? await AppStore.sync()
         let had = isPro
         await refresh()
-        if !isPro { message = "No active 64 Pro subscription was found for this Apple ID." }
+        if !isPro { message = "No 64 Pro purchase was found for this Apple ID." }
         else if !had {
             welcome = .restored
             Analytics.signal("purchase.restored")

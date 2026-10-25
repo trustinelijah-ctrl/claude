@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 import ChessCore
 
 /// Options, opened from either player's panel and turned to face them. Four tabs keep each
@@ -39,6 +40,7 @@ struct SettingsCard: View {
 
     private enum Confirm { case newGame, resign, draw }
     @State private var confirm: Confirm?
+    @State private var managing = false
     @State private var tab: Tab = Tab(rawValue: UserDefaults.standard.string(forKey: "optionsTab") ?? "") ?? .game
     @Namespace private var tabMarker
 
@@ -79,6 +81,7 @@ struct SettingsCard: View {
         )
         .environment(\.colorScheme, theme.isDark ? .dark : .light)
         .animation(.easeInOut(duration: 0.2), value: tab)
+        .manageSubscriptionsSheet(isPresented: $managing)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settings")
     }
@@ -318,6 +321,12 @@ struct SettingsCard: View {
                         capsuleButton("End test") { pro.endTestUnlock() }
                     } else {
                         Image(systemName: "checkmark.seal.fill").font(.system(size: 20)).foregroundStyle(theme.accent)
+                    }
+                }
+                if pro.activePlan?.isSubscription == true {
+                    divider
+                    navRow("Manage subscription", symbol: "creditcard", value: nil, id: "manage-subscription") {
+                        managing = true
                     }
                 }
                 if !pro.isPro {

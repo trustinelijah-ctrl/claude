@@ -50,7 +50,6 @@ struct RootView: View {
             .onChange(of: pro.isPro) { _, isPro in
                 if isPro { paywallOpen = false } else { settings.dropProChoices() }
             }
-            .task { await account.checkAppleCredential() }
             .onChange(of: scenePhase) { _, phase in scenePhaseChanged(phase) }
     }
 
@@ -287,6 +286,8 @@ struct RootView: View {
         switch phase {
         case .active:
             session.feedback.audio.resume()
+            // A subscription may have lapsed, renewed or been refunded while away.
+            Task { await pro.refresh() }
             if !overlayOpen { session.resumeClock() }
         case .background, .inactive:
             session.pauseClock()

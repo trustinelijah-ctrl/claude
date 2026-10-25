@@ -25,6 +25,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # App Store uploads must be built with Xcode 26 (since April 2026): use the newest on the runner.
+      - name: Select Xcode 26
+        run: |
+          X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$X" ]; then sudo xcode-select -s "$X"; else echo "::warning::No Xcode 26 on this runner"; fi
+          ls -d /Applications/Xcode*.app
+
       - name: Toolchain
         run: xcodebuild -version && swift --version && xcrun simctl list devicetypes | grep -i ipad
 
@@ -52,6 +59,15 @@ jobs:
             || { grep -E "error:" build.log | sort -u | head -150; tail -60 build.log; exit 1; }
           grep -E "warning:" build.log | grep -v -E "appintents|Metadata extraction" | sort -u | head -80 || true
           tail -3 build.log
+
+      # The App Store build: Release, for real devices, unsigned here (signing happens on the owner's Mac).
+      - name: Release build (device)
+        run: |
+          xcodebuild -project SixtyFour.xcodeproj -scheme SixtyFour -configuration Release \
+            -destination 'generic/platform=iOS' -derivedDataPath build-release \
+            CODE_SIGNING_ALLOWED=NO build > release.log 2>&1 \
+            || { grep -E "error:" release.log | sort -u | head -80; tail -40 release.log; exit 1; }
+          tail -2 release.log
 
       - name: Pick simulators
         run: |

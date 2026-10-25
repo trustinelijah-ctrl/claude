@@ -1,23 +1,10 @@
 import Foundation
-import TelemetryDeck
 
-/// A handful of anonymous signals (TelemetryDeck: no personal data, IDs hashed on device),
-/// so it is possible to see where people open the Pro page and whether they buy.
-/// Nothing is sent until an App ID is set, and never from test runs.
+/// The places where 64 would send an anonymous usage signal. Version 1.0 sends nothing and
+/// collects no data; a privacy-friendly service (TelemetryDeck) can be wired in here later,
+/// together with matching privacy-manifest and App Store privacy declarations.
 enum Analytics {
-    /// The TelemetryDeck App ID (Dashboard ▸ Set Up App). Empty: analytics stay off.
-    static let appID = ""
+    static func start() {}
 
-    private static var started = false
-
-    static func start() {
-        guard !appID.isEmpty, !ProcessInfo.processInfo.arguments.contains("-onboarded") else { return }
-        TelemetryDeck.initialize(config: TelemetryDeck.Config(appID: appID))
-        started = true
-    }
-
-    static func signal(_ name: String, _ parameters: [String: String] = [:]) {
-        guard started else { return }
-        TelemetryDeck.signal(name, parameters: parameters)
-    }
+    static func signal(_ name: String, _ parameters: [String: String] = [:]) {}
 }

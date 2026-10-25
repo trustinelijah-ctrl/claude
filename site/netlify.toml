@@ -1,0 +1,11 @@
+# Pretty URLs: /privacy serves privacy.html, /support serves support.html.
+[build]
+  publish = "."
+[[redirects]]
+  from = "/privacy"
+  to = "/privacy.html"
+  status = 200
+[[redirects]]
+  from = "/support"
+  to = "/support.html"
+  status = 200

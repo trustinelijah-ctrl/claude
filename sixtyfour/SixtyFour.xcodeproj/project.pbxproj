@@ -37,6 +37,7 @@
 		530C9E616BBF7F2FDDD7D522 /* capture_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = C3C9DF10B6707CA1984B39A3 /* capture_2.wav */; };
 		55110AEB4264458474F39F3C /* ReplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B15CC216E19BBD60FCCCA5B2 /* ReplayView.swift */; };
 		57F590E9E734D4C92DB343DC /* ui_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = EF14BC9EE2FD5F78AF05612F /* ui_1.wav */; };
+		583159D3525322C30E329775 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = CBADC4561C673EF6F2006266 /* PrivacyInfo.xcprivacy */; };
 		697512CBAD18A02B8F43B984 /* place_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = F5D41B0CAA6BEABEC9C20BAF /* place_3.wav */; };
 		6D0F260FD98A80572A9B790B /* capture_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = A65B8DDAB42FB2FB6D6085E8 /* capture_3.wav */; };
 		6F9A2362F9A6D24243E99565 /* SixtyFourApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87274A89173B4887E7709820 /* SixtyFourApp.swift */; };
@@ -83,7 +84,6 @@
 		EE939302573C2121C22EF139 /* GameReview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A802137C7AB6E78D8EE76A5 /* GameReview.swift */; };
 		F1E150746BACF11E283630E2 /* place_5.wav in Resources */ = {isa = PBXBuildFile; fileRef = 362A6497352684BBE80576A4 /* place_5.wav */; };
 		F2F33FE7F21BBE827E8FC96E /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18710F35DA5010AC56C2727C /* RootView.swift */; };
-		FB6AD1F590E93C952837F7A5 /* TelemetryDeck in Frameworks */ = {isa = PBXBuildFile; productRef = BB93E812207FEC17325913EA /* TelemetryDeck */; };
 		FBDA5E0BDE25B174ED27DEDD /* placeLight_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = E2F26A2286BEEA13CA408535 /* placeLight_2.wav */; };
 		FF1C2AC5A4D4DCD50E7AE91D /* PieceArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED14617D8133D1F79A0E78C3 /* PieceArt.swift */; };
 /* End PBXBuildFile section */
@@ -153,6 +153,7 @@
 		BF246BACA24142ED809D2C92 /* PGN.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PGN.swift; sourceTree = "<group>"; };
 		C3C9DF10B6707CA1984B39A3 /* capture_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = capture_2.wav; sourceTree = "<group>"; };
 		C8BB2775498A655DB9232384 /* PuzzleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PuzzleView.swift; sourceTree = "<group>"; };
+		CBADC4561C673EF6F2006266 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		CF4B1F200F0523CCFD1AB2BF /* ScreenshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotTests.swift; sourceTree = "<group>"; };
 		CF58169497B55D607AB7CF82 /* SixtyFour.storekit */ = {isa = PBXFileReference; path = SixtyFour.storekit; sourceTree = "<group>"; };
 		D20671ADF34BEB239FF107B1 /* ProCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProCard.swift; sourceTree = "<group>"; };
@@ -188,7 +189,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				06B95A435DA4C23C8843DABA /* ChessCore in Frameworks */,
-				FB6AD1F590E93C952837F7A5 /* TelemetryDeck in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -218,6 +218,7 @@
 		298CB60F894F893D5BB3C321 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				CBADC4561C673EF6F2006266 /* PrivacyInfo.xcprivacy */,
 				87274A89173B4887E7709820 /* SixtyFourApp.swift */,
 				A83978757237BFA113D930FF /* Board */,
 				7332BC728192B537822D88B6 /* Chrome */,
@@ -444,7 +445,6 @@
 			name = SixtyFour;
 			packageProductDependencies = (
 				43CB62449D4761E4B9908D24 /* ChessCore */,
-				BB93E812207FEC17325913EA /* TelemetryDeck */,
 			);
 			productName = SixtyFour;
 			productReference = FE2DC3095BB1E3AA65653EFF /* SixtyFour.app */;
@@ -499,7 +499,6 @@
 			mainGroup = 42FF91ABFD7C31B9484CEF15;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				BCDBDC13B92367CBA9EEA1AB /* XCRemoteSwiftPackageReference "SwiftSDK" */,
 				652ADCC42E3DC95E8FAEFD58 /* XCLocalSwiftPackageReference "ChessCore" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -518,6 +517,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				DB6DD0B8533C3EE2071B10BD /* Assets.xcassets in Resources */,
+				583159D3525322C30E329775 /* PrivacyInfo.xcprivacy in Resources */,
 				3915D9FB4F86FEAF7E9164B1 /* ambience_fire.m4a in Resources */,
 				9E0A640AAAF06DD8E899C214 /* ambience_night.m4a in Resources */,
 				B79CDC0F9C5C35589B50C299 /* ambience_rain.m4a in Resources */,
@@ -714,7 +714,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.2;
+				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -794,7 +794,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 0.2;
+				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -863,26 +863,10 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		BCDBDC13B92367CBA9EEA1AB /* XCRemoteSwiftPackageReference "SwiftSDK" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/TelemetryDeck/SwiftSDK";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.14.0;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
 /* Begin XCSwiftPackageProductDependency section */
 		43CB62449D4761E4B9908D24 /* ChessCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ChessCore;
-		};
-		BB93E812207FEC17325913EA /* TelemetryDeck */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = BCDBDC13B92367CBA9EEA1AB /* XCRemoteSwiftPackageReference "SwiftSDK" */;
-			productName = TelemetryDeck;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -55,7 +55,7 @@ final class AudioManager: @unchecked Sendable {
     private let log = Logger(subsystem: "app.table.chess", category: "audio")
 
     private var engine = AVAudioEngine()
-    private let submix = AVAudioMixerNode()
+    private var submix = AVAudioMixerNode()
     private var limiter: AVAudioUnitEffect?
     private var voices: [Voice] = []
     /// The ambience bed: one looping stereo player under the move sounds.
@@ -198,6 +198,8 @@ final class AudioManager: @unchecked Sendable {
     private func rebuild() {
         engine.stop()
         engine = AVAudioEngine()
+        // Every node belongs to one engine: build fresh ones for the new engine.
+        submix = AVAudioMixerNode()
         voices = []
         limiter = nil
         ambienceNode = AVAudioPlayerNode()

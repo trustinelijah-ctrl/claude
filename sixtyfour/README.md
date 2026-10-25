@@ -21,10 +21,7 @@ the simulator and on a development iPad without App Store Connect. Use
 *Debug ▸ StoreKit ▸ Manage Transactions* to cancel or refund and try again. For the App
 Store, create the same subscription group and product IDs in App Store Connect.
 
-**Sign in with Apple** needs the *Sign in with Apple* capability, which free (personal)
-developer teams cannot use, so the project ships without it and the app says so
-plainly and offers *Continue as Guest*. With a paid team, add the capability under
-*Signing & Capabilities* and the button works as is.
+There are no accounts: nothing to sign up for, and everything stays on the device.
 
 The project is generated from `project.yml` by [XcodeGen](https://github.com/yonaskolb/XcodeGen).
 The generated `SixtyFour.xcodeproj` is committed, so you do not need XcodeGen to build. After
@@ -144,8 +141,9 @@ bell. Several variations per frequent event. Source recordings are in `tools/sou
 decodes everything into memory once and plays through a fixed pool of 12 `AVAudioPlayerNode`s
 on one `AVAudioEngine`, with five pitch variations per sample, a peak limiter and stereo pan
 by board file. Sounds are scheduled on the audio clock so the knock lands on the frame the
-piece lands. The session is `.ambient`, which respects the silent setting and mixes with music
-at the table. Interruptions, route changes and media-server resets are handled.
+piece lands. By default the session is `.playback` (sound is the point of 64, so it plays with
+the silent switch on); Options ▸ Sound ▸ *Play in silent mode* switches to `.ambient`, which
+respects the switch. Either way it mixes with music at the table. Interruptions, route changes and media-server resets are handled.
 
 **Haptics.** `HapticManager` checks `CHHapticEngine.capabilitiesForHardware()` at
 runtime. iPads without a haptic actuator get no haptic calls at all; the tactile feel
@@ -188,7 +186,7 @@ See the bottom of this file for the hardware checklist.
 
 - Welcome: five pages with live scenes (an opening played across the board, the pieces
   under a moving gleam, a knight lifted and set down with its knock, 64 moving by
-  itself), ending in Sign in with Apple / Continue as Guest and the Pro offer.
+  itself), ending in *Start playing*; the Pro offer follows once.
 - 64 Pro (StoreKit 2, one purchase): Marble Noir, Rosewood and Midnight boards, the
   Gilded set (gold against gunmetal), Master and Grandmaster opponents, the full game
   library. Locked choices open the offer; restore is in the offer and in Settings.

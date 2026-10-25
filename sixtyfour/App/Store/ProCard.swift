@@ -27,13 +27,18 @@ struct ProCard: View {
     ]
 
     static let termsURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
-    static let privacyURL = URL(string: "https://github.com/trustinelijah-ctrl/claude/blob/claude/table-chess-ipad/sixtyfour/PRIVACY.md")!
+    static let privacyURL = URL(string: "https://play64.netlify.app/privacy")!
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             ViewThatFits(in: .vertical) {
                 info
-                ScrollView(.vertical, showsIndicators: false) { info }
+                // A short screen scrolls the features; the fade says there is more below.
+                ScrollView(.vertical, showsIndicators: false) { info.padding(.bottom, 18) }
+                    .mask(VStack(spacing: 0) {
+                        Color.black
+                        LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom).frame(height: 28)
+                    })
             }
             if !pro.isPro { purchase }
             if let message = pro.message {
@@ -89,13 +94,40 @@ struct ProCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// Plans, the button, and the small print. Always on screen.
+    /// Plans, the button, and the small print. Always on screen. Until the App Store has
+    /// answered with real prices, it says so and offers to try again, rather than guessing.
+    @ViewBuilder
     private var purchase: some View {
+        if pro.storeReady { plans } else { connecting }
+    }
+
+    private var connecting: some View {
+        VStack(spacing: 12) {
+            if pro.isLoading {
+                ProgressView()
+                Text("Connecting to the App Store…")
+            } else {
+                Text("The App Store isn't answering right now.")
+                Button("Try again") {
+                    feedback.ui()
+                    Task { await pro.load() }
+                }
+                .fontWeight(.semibold)
+                .foregroundStyle(theme.accent)
+            }
+        }
+        .font(.system(size: 14))
+        .foregroundStyle(theme.inkSecondary)
+        .frame(maxWidth: .infinity, minHeight: 120)
+    }
+
+    private var plans: some View {
         let lifetime = pro.lifetimePlan
         return VStack(alignment: .leading, spacing: 10) {
             VStack(spacing: 8) {
                 planRow(.yearly, title: "Yearly", price: "\(pro.price(.yearly)) a year",
-                        note: pro.trialAvailable ? "7 days free, then \(pro.yearlyPerMonth) a month" : "\(pro.yearlyPerMonth) a month")
+                        note: pro.trialAvailable ? "7 days free, then \(pro.price(.yearly)) a year (\(pro.yearlyPerMonth) a month)"
+                                                 : "\(pro.yearlyPerMonth) a month, billed yearly")
                 planRow(.monthly, title: "Monthly", price: "\(pro.price(.monthly)) a month", note: nil)
                 planRow(lifetime, title: lifetime == .founder ? "Founder lifetime" : "Lifetime",
                         price: pro.price(lifetime),
@@ -120,8 +152,9 @@ struct ProCard: View {
             .buttonStyle(PressScaleStyle())
             .disabled(pro.isPurchasing)
             .accessibilityIdentifier("unlock-pro")
-            HStack(spacing: 6) {
-                Text(plan.isSubscription ? "Renews automatically. Cancel anytime." : "One payment. No subscription.")
+            HStack(alignment: .top, spacing: 6) {
+                Text(disclosure)
+                    .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 4)
                 Button("Restore") {
                     feedback.ui()
@@ -141,6 +174,20 @@ struct ProCard: View {
         }
         .onChange(of: pro.lifetimePlan) { _, now in
             if !plan.isSubscription { plan = now }
+        }
+    }
+
+    /// What will be charged, and when, in plain words under the button (App Store guideline 3.1.2).
+    private var disclosure: String {
+        switch plan {
+        case .yearly where pro.trialAvailable:
+            return "Free for 7 days, then \(pro.price(.yearly)) a year. Renews automatically until cancelled; cancel at least a day before the trial ends to pay nothing."
+        case .yearly:
+            return "\(pro.price(.yearly)) a year. Renews automatically until cancelled."
+        case .monthly:
+            return "\(pro.price(.monthly)) a month. Renews automatically until cancelled."
+        case .lifetime, .founder:
+            return "One payment of \(pro.price(plan)). No subscription."
         }
     }
 
