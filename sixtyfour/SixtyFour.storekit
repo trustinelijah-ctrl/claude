@@ -1,86 +1,101 @@
 {
-  "identifier" : "6F0C9C52",
-  "nonRenewingSubscriptions" : [
-
-  ],
-  "products" : [
-
-  ],
-  "settings" : {
-    "_failTransactionsEnabled" : false,
-    "_locale" : "en_US",
-    "_storefront" : "USA",
-    "_storeKitErrors" : [
-
-    ]
-  },
-  "subscriptionGroups" : [
+  "identifier": "6F0C9C52",
+  "nonRenewingSubscriptions": [],
+  "products": [
     {
-      "id" : "21500001",
-      "localizations" : [
-
-      ],
-      "name" : "64 Pro",
-      "subscriptions" : [
+      "displayPrice": "39.99",
+      "familyShareable": true,
+      "internalID": "6740000021",
+      "localizations": [
         {
-          "adHocOffers" : [
-
-          ],
-          "codeOffers" : [
-
-          ],
-          "displayPrice" : "19.99",
-          "familyShareable" : true,
-          "groupNumber" : 1,
-          "internalID" : "6740000011",
-          "introductoryOffer" : {
-            "internalID" : "6740000013",
-            "paymentMode" : "free",
-            "subscriptionPeriod" : "P1W"
+          "description": "Every board and piece set, ambience, all puzzles, game review, hints and the strongest opponents. Yours for good.",
+          "displayName": "64 Pro Lifetime",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "app.sixtyfour.pro.lifetime",
+      "referenceName": "64 Pro Lifetime",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "24.99",
+      "familyShareable": true,
+      "internalID": "6740000022",
+      "localizations": [
+        {
+          "description": "Every board and piece set, ambience, all puzzles, game review, hints and the strongest opponents. Yours for good.",
+          "displayName": "64 Pro Founder",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "app.sixtyfour.pro.founder",
+      "referenceName": "64 Pro Founder (launch weeks)",
+      "type": "NonConsumable"
+    }
+  ],
+  "settings": {
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_storefront": "USA",
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [
+    {
+      "id": "21500001",
+      "localizations": [],
+      "name": "64 Pro",
+      "subscriptions": [
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "19.99",
+          "familyShareable": true,
+          "groupNumber": 1,
+          "internalID": "6740000011",
+          "introductoryOffer": {
+            "internalID": "6740000013",
+            "paymentMode": "free",
+            "subscriptionPeriod": "P1W"
           },
-          "localizations" : [
+          "localizations": [
             {
-              "description" : "Every board and piece set, hints, game review, stronger opponents.",
-              "displayName" : "64 Pro Yearly",
-              "locale" : "en_US"
+              "description": "Every board and piece set, hints, game review, stronger opponents.",
+              "displayName": "64 Pro Yearly",
+              "locale": "en_US"
             }
           ],
-          "productID" : "app.sixtyfour.pro.yearly",
-          "recurringSubscriptionPeriod" : "P1Y",
-          "referenceName" : "64 Pro Yearly",
-          "subscriptionGroupID" : "21500001",
-          "type" : "RecurringSubscription"
+          "productID": "app.sixtyfour.pro.yearly",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "64 Pro Yearly",
+          "subscriptionGroupID": "21500001",
+          "type": "RecurringSubscription"
         },
         {
-          "adHocOffers" : [
-
-          ],
-          "codeOffers" : [
-
-          ],
-          "displayPrice" : "2.99",
-          "familyShareable" : true,
-          "groupNumber" : 2,
-          "internalID" : "6740000012",
-          "introductoryOffer" : null,
-          "localizations" : [
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "3.99",
+          "familyShareable": true,
+          "groupNumber": 2,
+          "internalID": "6740000012",
+          "introductoryOffer": null,
+          "localizations": [
             {
-              "description" : "Every board and piece set, hints, game review, stronger opponents.",
-              "displayName" : "64 Pro Monthly",
-              "locale" : "en_US"
+              "description": "Every board and piece set, hints, game review, stronger opponents.",
+              "displayName": "64 Pro Monthly",
+              "locale": "en_US"
             }
           ],
-          "productID" : "app.sixtyfour.pro.monthly",
-          "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "64 Pro Monthly",
-          "subscriptionGroupID" : "21500001",
-          "type" : "RecurringSubscription"
+          "productID": "app.sixtyfour.pro.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "64 Pro Monthly",
+          "subscriptionGroupID": "21500001",
+          "type": "RecurringSubscription"
         }
       ]
     }
   ],
-  "version" : {
-    "major" : 3,
-    "minor" : 0
+  "version": {
+    "major": 3,
+    "minor": 0
   }
 }

@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 import ChessCore
 
 /// The whole window is the board. The grid is set into a surface that fills the screen;
@@ -27,6 +28,7 @@ struct RootView: View {
         return d.bool(forKey: "fresh") || d.string(forKey: "moves") != nil ? .board : .home
     }
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.requestReview) private var requestReview
 
     var body: some View {
         GeometryReader { proxy in
@@ -79,13 +81,13 @@ struct RootView: View {
                              learn: { screen = .learn },
                              games: { libraryOpen = true },
                              options: { settingsFor = bottom },
-                             upgrade: { paywallOpen = true })
+                             upgrade: { openPaywall("home") })
                         .transition(.opacity)
                         .zIndex(3)
                 }
 
                 if screen == .learn {
-                    PuzzleView(pro: pro, feedback: session.feedback, unlock: { paywallOpen = true }) {
+                    PuzzleView(pro: pro, feedback: session.feedback, unlock: { openPaywall("learn") }) {
                         screen = .home
                     }
                     .transition(.opacity)
@@ -119,7 +121,7 @@ struct RootView: View {
                         .transition(.opacity)
                         .zIndex(6)
                     SettingsCard(settings: settings, session: session, player: player, pro: pro, account: account,
-                                 showPaywall: { paywallOpen = true },
+                                 showPaywall: { openPaywall("options") },
                                  showLibrary: { settingsFor = nil; libraryOpen = true },
                                  showWelcome: { settingsFor = nil; account.replayWelcome() },
                                  goHome: screen == .board ? leaveToHome : nil) {
@@ -137,7 +139,7 @@ struct RootView: View {
                     dimmer(theme) { libraryOpen = false }.zIndex(8)
                     LibraryView(library: session.library, pro: pro, theme: theme, feedback: session.feedback,
                                 open: { saved in libraryOpen = false; replaying = saved },
-                                unlock: { paywallOpen = true },
+                                unlock: { openPaywall("library") },
                                 close: { libraryOpen = false })
                         .padding(20)
                         .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
@@ -153,7 +155,8 @@ struct RootView: View {
                         .transition(.opacity)
                         .zIndex(12)
                     PaywallSheet(pro: pro, theme: theme, feedback: session.feedback) { paywallOpen = false }
-                        .padding(24)
+                        .frame(maxHeight: proxy.size.height - proxy.safeAreaInsets.top - proxy.safeAreaInsets.bottom - 24)
+                        .padding(.horizontal, 20)
                         .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
                         .transition(.opacity.combined(with: .scale(scale: 0.96)))
                         .zIndex(12.5)
@@ -167,14 +170,22 @@ struct RootView: View {
 
                 if let saved = replaying {
                     ReplayView(saved: saved, theme: theme, feedback: session.feedback, pro: pro,
-                               unlock: { paywallOpen = true }) { replaying = nil }
+                               unlock: { openPaywall("review") }) { replaying = nil }
                         .transition(.opacity)
                         .zIndex(10)
                 }
 
                 if !account.hasOnboarded {
                     OnboardingView(pro: pro, account: account, feedback: session.feedback,
-                                   showPlans: { paywallOpen = true }) {}
+                                   showPlans: { openPaywall("welcome") }) {
+                        // 64 Pro is offered once, right after the welcome, then never pushed again.
+                        let key = "paywall.afterWelcome"
+                        guard !pro.isPro, !UserDefaults.standard.bool(forKey: key),
+                              !ProcessInfo.processInfo.arguments.contains("-onboarded") else { return }
+                        UserDefaults.standard.set(true, forKey: key)
+                        Analytics.signal("onboarding.completed")
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) { openPaywall("after-welcome") }
+                    }
                         .transition(.opacity)
                         .zIndex(11)
                 }
@@ -207,9 +218,13 @@ struct RootView: View {
         }
         .onChange(of: settings.soundEnabled) { session.feedback.apply(settings) }
         .onChange(of: settings.volume) { session.feedback.apply(settings) }
-        .onChange(of: settings.ambience) { session.feedback.apply(settings) }
+        .onChange(of: settings.ambience) {
+            session.feedback.apply(settings)
+            Analytics.signal("ambience.selected", ["scene": settings.ambience.rawValue])
+        }
         .onChange(of: settings.ambienceVolume) { session.feedback.apply(settings) }
         .onChange(of: settings.hapticsEnabled) { session.feedback.apply(settings) }
+        .onChange(of: settings.playInSilentMode) { session.feedback.apply(settings) }
         .onChange(of: settings.opponent) { syncOpponent() }
         .onChange(of: settings.botLevel) { syncOpponent() }
         .onChange(of: settings.humanColor) { syncOpponent() }
@@ -219,6 +234,18 @@ struct RootView: View {
         }
         .onChange(of: keepAwake, initial: true) { _, awake in
             UIApplication.shared.isIdleTimerDisabled = awake
+        }
+        .onChange(of: session.isResultPresented) { _, shown in
+            if shown, let r = session.result {
+                let outcome = r.winner == nil ? "draw" : (settings.isAgainstComputer ? (r.winner == settings.humanColor ? "win" : "loss") : "decisive")
+                Analytics.signal("game.finished", ["opponent": settings.isAgainstComputer ? settings.botLevel.rawValue : "friend",
+                                                   "outcome": outcome])
+            }
+            // A win is the moment to ask for a rating, at most once per version.
+            guard shown, ReviewPrompt.mayAsk, let r = session.result, let winner = r.winner else { return }
+            if settings.isAgainstComputer && winner != settings.humanColor { return }
+            ReviewPrompt.asked()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { requestReview() }
         }
         .onChange(of: pro.isPro) { _, isPro in
             if isPro { paywallOpen = false } else { settings.dropProChoices() }
@@ -254,7 +281,13 @@ struct RootView: View {
     }
 
     /// A new game from the home screen: against the computer at `level`, or two people.
+    private func openPaywall(_ source: String) {
+        Analytics.signal("paywall.shown", ["source": source])
+        paywallOpen = true
+    }
+
     private func start(against level: BotLevel?) {
+        Analytics.signal("game.started", ["opponent": level?.rawValue ?? "friend"])
         settings.opponent = level == nil ? .friend : .computer
         if let level { settings.botLevel = level }
         syncOpponent()
@@ -264,7 +297,7 @@ struct RootView: View {
 
     /// Hints come with 64 Pro.
     private func hint() {
-        if pro.isPro { session.requestHint() } else { paywallOpen = true }
+        if pro.isPro { session.requestHint() } else { openPaywall("hint") }
     }
 
     private func dimmer(_ theme: BoardTheme, close: @escaping () -> Void) -> some View {

@@ -150,7 +150,7 @@ What helps 64:
 
 What holds it back:
 
-- iPad only: a smaller market than iPhone.
+- (Resolved: 64 now runs on iPhone too.)
 - Strong free competitors for playing online.
 
 Good next steps after launch:
@@ -183,7 +183,7 @@ people pick the cheapest option, so a "minimum €5" plan works out at about €
 **Targeting chess players:**
 
 1. **Apple Ads (App Store search):** keywords "chess", "chess for two", "2 player chess",
-   "chess board", "offline chess", "chess clock". Start at €10–20 a day, iPad only.
+   "chess board", "offline chess", "chess clock". Start at €10–20 a day (see the growth review: wait for conversion data first).
 2. **Instagram/Facebook (Meta) ads:** target iPad owners (device targeting) interested in
    Chess, Chess.com, Lichess, Magnus Carlsen, The Queen's Gambit and board games. Run your
    best organic Reel as the ad. Test €300–500 and expect very roughly €2–6 per install.

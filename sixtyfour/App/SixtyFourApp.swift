@@ -9,6 +9,7 @@ struct SixtyFourApp: App {
     @State private var account = AccountStore()
 
     init() {
+        Analytics.start()
         let feedback = FeedbackCoordinator()
         _settings = State(initialValue: SettingsStore())
         _session = State(initialValue: GameSession(feedback: feedback, initialGame: Self.launchGame()))

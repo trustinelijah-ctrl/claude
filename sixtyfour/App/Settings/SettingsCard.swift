@@ -255,6 +255,10 @@ struct SettingsCard: View {
                 volumeRow(value: $settings.volume, enabled: settings.soundEnabled) {
                     session.feedback.audio.play(.placeHeavy, gain: 0.9)
                 }
+                divider
+                row("Play in silent mode", detail: "Hear the pieces even with the silent switch on.") {
+                    Toggle("", isOn: $settings.playInSilentMode).labelsHidden().tint(theme.accent)
+                }
                 if session.feedback.haptics.hasHardware {
                     divider
                     toggleRow("Vibration", isOn: $settings.hapticsEnabled)
@@ -262,7 +266,7 @@ struct SettingsCard: View {
             }
         }
         group("Ambience", badge: pro.isPro ? nil : "PRO",
-              footer: "Plays softly under the game, separate from the piece sounds. Follows the silent switch.") {
+              footer: "Plays softly under the game, with its own volume.") {
             VStack(spacing: 0) {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 10)], spacing: 10) {
                     ForEach(Ambience.available) { a in ambienceTile(a) }
@@ -310,17 +314,32 @@ struct SettingsCard: View {
                 }
             }
         }
-        group("Account") {
+        group("Help") {
             VStack(spacing: 0) {
-                row(account.kind == .apple ? "Signed in\(account.name.map { " as \($0)" } ?? " with Apple")" : "Playing as a guest") {
-                    if account.kind == .apple {
-                        capsuleButton("Sign out") { account.signOut() }
-                    }
+                navRow("Show the welcome again", symbol: "sparkles", value: nil, id: "show-welcome") {
+                    showWelcome()
                 }
                 divider
-                navRow(account.kind == .apple ? "Show the welcome again" : "Sign in, or show the welcome again",
-                       symbol: "sparkles", value: nil, id: "show-welcome") {
-                    showWelcome()
+                Link(destination: ProCard.privacyURL) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "hand.raised").font(.system(size: 15)).foregroundStyle(theme.accent).frame(width: 22)
+                        Text("Privacy Policy").font(.system(size: 15)).foregroundStyle(theme.ink)
+                        Spacer()
+                        Image(systemName: "arrow.up.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(theme.inkSecondary)
+                    }
+                    .padding(.horizontal, 14)
+                    .frame(minHeight: 52)
+                }
+                divider
+                Link(destination: ProCard.termsURL) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "doc.text").font(.system(size: 15)).foregroundStyle(theme.accent).frame(width: 22)
+                        Text("Terms of Use").font(.system(size: 15)).foregroundStyle(theme.ink)
+                        Spacer()
+                        Image(systemName: "arrow.up.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(theme.inkSecondary)
+                    }
+                    .padding(.horizontal, 14)
+                    .frame(minHeight: 52)
                 }
             }
         }

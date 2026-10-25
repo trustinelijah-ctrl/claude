@@ -1,4 +1,5 @@
 import SwiftUI
+import StoreKit
 import ChessCore
 
 /// Learn: checkmate puzzles. Find the mate; the computer defends as well as it can in between.
@@ -20,6 +21,7 @@ struct PuzzleView: View {
     @State private var shown: Move?
     @State private var solved: Set<String> = PuzzleView.loadSolved()
     @State private var nextID = 0
+    @Environment(\.requestReview) private var requestReview
 
     private enum Status: Equatable { case yourMove, thinking, wrong, solved }
     private let theme = BoardTheme.with(.house)
@@ -298,6 +300,11 @@ struct PuzzleView: View {
         if let puzzle {
             solved.insert(puzzle.id)
             UserDefaults.standard.set(Array(solved), forKey: "puzzle.solved")
+            Analytics.signal("puzzle.solved", ["mateIn": "\(puzzle.mateIn)"])
+            if solved.count == 3, ReviewPrompt.mayAsk {
+                ReviewPrompt.asked()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { requestReview() }
+            }
         }
         feedback.audio.play(.checkmate, delay: 0.3, gain: 0.7)
         Task {

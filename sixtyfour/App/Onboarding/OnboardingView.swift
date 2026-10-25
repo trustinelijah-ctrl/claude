@@ -1,9 +1,8 @@
 import SwiftUI
-import AuthenticationServices
 import ChessCore
 
-/// The welcome: two short pages with live scenes built from the real board and pieces,
-/// then a page to sign in or play as a guest, with 64 Pro offered once, plainly.
+/// The welcome: the board between two seats, then a knight to pick up and hear land, then
+/// "Start playing". 64 Pro is offered once, after the welcome, never in the way of it.
 struct OnboardingView: View {
     let pro: ProStore
     let account: AccountStore
@@ -12,8 +11,9 @@ struct OnboardingView: View {
     let finish: () -> Void
 
     @State private var page: Int
-    @State private var signInNote: String?
     @State private var appeared = false
+    @State private var knightLanded = false
+    @State private var forward = true
 
     static let pageCount = 3
     private let theme = BoardTheme.with(.house)
@@ -37,11 +37,14 @@ struct OnboardingView: View {
     private let copy: [Copy] = [
         Copy(title: "Chess, across the table.",
              body: "Set the \(Brand.device) between you and play the person in front of you."),
-        Copy(title: "Pieces you can feel.",
-             body: "Every piece is modeled and lit by hand. Pick one up, set it down, and hear the wood."),
+        Copy(title: "Pick up the knight.",
+             body: "Tap it, then a glowing square, or drag it there. Sound on."),
         Copy(title: "Welcome to 64.",
-             body: "Sign in with Apple or play as a guest. Your games stay on this \(Brand.device)."),
+             body: "Your games stay on this \(Brand.device). Turn the sound up: every piece has its own voice."),
     ]
+
+    private let landedCopy = Copy(title: "Hear that?",
+                                  body: "Every piece has its own weight and sound. Heavier pieces knock deeper.")
 
     var body: some View {
         GeometryReader { proxy in
@@ -51,16 +54,21 @@ struct OnboardingView: View {
             ZStack {
                 OnboardingBackdrop(theme: theme, page: page)
 
-                TabView(selection: $page) {
-                    ForEach(0..<Self.pageCount, id: \.self) { i in
-                        pageView(i, size: size, wide: wide)
-                            .padding(.top, safe.top + 70)
-                            .padding(.bottom, safe.bottom + (i == Self.pageCount - 1 ? 28 : 130))
-                            .padding(.horizontal, max(32, safe.leading + 24))
-                            .tag(i)
-                    }
-                }
-                .tabViewStyle(.page(indexDisplayMode: .never))
+                // Pages slide by button or swipe; a custom pager, so dragging the knight on
+                // page two never turns the page by accident.
+                pageView(page, size: size, wide: wide)
+                    .padding(.top, safe.top + 70)
+                    .padding(.bottom, safe.bottom + (page == Self.pageCount - 1 ? 28 : 130))
+                    .padding(.horizontal, max(32, safe.leading + 24))
+                    .id(page)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: forward ? .trailing : .leading).combined(with: .opacity),
+                        removal: .move(edge: forward ? .leading : .trailing).combined(with: .opacity)))
+                    .contentShape(Rectangle())
+                    .gesture(DragGesture(minimumDistance: 30).onEnded { v in
+                        guard abs(v.translation.width) > abs(v.translation.height), abs(v.translation.width) > 60 else { return }
+                        go(to: page + (v.translation.width < 0 ? 1 : -1))
+                    })
 
                 VStack(spacing: 0) {
                     topBar.padding(.top, safe.top + 16)
@@ -98,9 +106,7 @@ struct OnboardingView: View {
                 .accessibilityLabel("64")
             Spacer()
             if page < Self.pageCount - 1 {
-                Button("Skip") {
-                    withAnimation(.easeInOut(duration: 0.4)) { page = Self.pageCount - 1 }
-                }
+                Button("Skip") { go(to: Self.pageCount - 1) }
                 .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(Brand.cream.opacity(0.65))
                 .frame(minWidth: 44, minHeight: 44)
@@ -119,7 +125,7 @@ struct OnboardingView: View {
             }
             .animation(.spring(response: 0.4, dampingFraction: 0.8), value: page)
             Button {
-                withAnimation(.easeInOut(duration: 0.4)) { page = min(page + 1, Self.pageCount - 1) }
+                go(to: page + 1)
             } label: {
                 Text("Continue")
                     .font(.system(size: 17, weight: .semibold))
@@ -130,6 +136,13 @@ struct OnboardingView: View {
             }
             .buttonStyle(PressScaleStyle())
         }
+    }
+
+    private func go(to target: Int) {
+        let t = min(max(target, 0), Self.pageCount - 1)
+        guard t != page else { return }
+        forward = t > page
+        withAnimation(.easeInOut(duration: 0.4)) { page = t }
     }
 
     // MARK: Pages
@@ -144,7 +157,8 @@ struct OnboardingView: View {
             layout {
                 scene(i, size: visual)
                     .frame(width: visual, height: visual)
-                text(copy[i], centered: !wide)
+                text(i == 1 && knightLanded ? landedCopy : copy[i], centered: !wide)
+                    .animation(.easeInOut(duration: 0.3), value: knightLanded)
                     .frame(maxWidth: wide ? 420 : 520, alignment: wide ? .leading : .center)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -156,7 +170,7 @@ struct OnboardingView: View {
         let active = page == i
         switch i {
         case 0: FaceToFaceScene(theme: theme, size: size, active: active, feedback: feedback)
-        default: CraftScene(theme: theme, size: size, active: active)
+        default: KnightScene(theme: theme, size: size, active: active, feedback: feedback) { knightLanded = true }
         }
     }
 
@@ -180,89 +194,21 @@ struct OnboardingView: View {
     // MARK: Finale
 
     private var actions: some View {
-        VStack(spacing: 12) {
-            SignInWithAppleButton(.signIn) { request in
-                request.requestedScopes = [.fullName]
-            } onCompletion: { result in
-                switch result {
-                case .success(let auth):
-                    if let credential = auth.credential as? ASAuthorizationAppleIDCredential {
-                        account.signedIn(credential)
-                        feedback.ui()
-                        finish()
-                    }
-                case .failure(let error):
-                    if (error as? ASAuthorizationError)?.code == .canceled { return }
-                    // Without the Sign in with Apple capability (a free developer team, say)
-                    // the request fails at once; say so plainly and offer the guest seat.
-                    signInNote = "Sign in with Apple isn't available in this build. You can play as a guest and sign in later from Settings."
-                }
-            }
-            .signInWithAppleButtonStyle(.white)
-            .frame(height: 52)
-            .clipShape(Capsule())
-
-            Button {
-                feedback.ui()
-                account.continueAsGuest()
-                finish()
-            } label: {
-                Text("Continue as Guest")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Brand.cream)
-                    .frame(maxWidth: .infinity, minHeight: 52)
-                    .overlay(Capsule().strokeBorder(theme.accent.opacity(0.7), lineWidth: 1))
-                    .contentShape(Capsule())
-            }
-            .buttonStyle(PressScaleStyle())
-
-            if let signInNote {
-                Text(signInNote)
-                    .font(.system(size: 14))
-                    .foregroundStyle(Brand.cream.opacity(0.7))
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .transition(.opacity)
-            }
-        }
-        .frame(maxWidth: 400)
-        .animation(.easeInOut(duration: 0.3), value: signInNote)
-    }
-
-    /// A single line about Pro, not a sales page.
-    private var proLine: some View {
         Button {
             feedback.ui()
-            showPlans()
+            account.continueAsGuest()
+            finish()
         } label: {
-            HStack(spacing: 14) {
-                Image(systemName: "crown.fill")
-                    .font(.system(size: 16))
-                    .foregroundStyle(theme.accent)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(pro.isPro ? "64 Pro is active" : "Try 64 Pro free for 7 days")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Brand.cream)
-                    Text("More boards and sets, hints, game review, stronger opponents.")
-                        .font(.system(size: 13))
-                        .foregroundStyle(Brand.cream.opacity(0.6))
-                        .multilineTextAlignment(.leading)
-                }
-                Spacer(minLength: 0)
-                if !pro.isPro {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Brand.cream.opacity(0.5))
-                }
-            }
-            .padding(16)
-            .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.black.opacity(0.22)))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(theme.accent.opacity(0.4), lineWidth: 0.75))
+            Text("Start playing")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Brand.brown)
+                .frame(maxWidth: .infinity, minHeight: 54)
+                .background(Capsule().fill(Brand.cream))
+                .overlay(Capsule().strokeBorder(theme.accent, lineWidth: 1))
         }
         .buttonStyle(PressScaleStyle())
-        .disabled(pro.isPro)
         .frame(maxWidth: 400)
-        .accessibilityIdentifier("onboarding-pro")
+        .accessibilityIdentifier("onboarding-start")
     }
 
     private func finale(size: CGSize, wide: Bool) -> some View {
@@ -279,7 +225,6 @@ struct OnboardingView: View {
                 text(copy[Self.pageCount - 1], centered: true)
                     .frame(maxWidth: 520)
                 actions
-                proLine
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             ScrollView(.vertical, showsIndicators: false) {
@@ -287,7 +232,6 @@ struct OnboardingView: View {
                     mark.frame(height: 120)
                     text(copy[Self.pageCount - 1], centered: true)
                     actions
-                    proLine
                 }
                 .frame(maxWidth: .infinity)
             }

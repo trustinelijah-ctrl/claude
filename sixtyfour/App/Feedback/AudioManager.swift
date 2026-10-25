@@ -72,6 +72,8 @@ final class AudioManager: @unchecked Sendable {
     private var ready = false
     private var enabled = true
     private var volume: Float = 0.5
+    /// Sound is the point of 64, so by default it plays even with the silent switch on.
+    private var playsInSilentMode = true
 
     private static let voiceCount = 12
     private static let format = AVAudioFormat(standardFormatWithSampleRate: 48_000, channels: 1)!
@@ -103,6 +105,14 @@ final class AudioManager: @unchecked Sendable {
     private static func loudness(_ v: Float) -> Float { pow(v, 1.6) }
 
     // MARK: Public
+
+    func setPlaysInSilentMode(_ on: Bool) {
+        queue.async {
+            guard on != self.playsInSilentMode else { return }
+            self.playsInSilentMode = on
+            self.configureSession()
+        }
+    }
 
     func setEnabled(_ on: Bool) {
         queue.async {
@@ -164,20 +174,25 @@ final class AudioManager: @unchecked Sendable {
     // MARK: Setup
 
     private func setUp() {
-        let session = AVAudioSession.sharedInstance()
-        do {
-            // Ambient: respects the silent setting and mixes with whatever music is playing at the table.
-            try session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
-            try session.setPreferredIOBufferDuration(0.005)
-            try session.setActive(true)
-        } catch {
-            log.error("Audio session: \(error.localizedDescription)")
-        }
+        configureSession()
         loadLibrary()
         buildGraph()
         startEngine()
         ready = true
         applyAmbience()
+    }
+
+    /// Playback (heard with the silent switch on) or ambient (silenced by it); either way it
+    /// mixes with whatever music is playing at the table.
+    private func configureSession() {
+        let session = AVAudioSession.sharedInstance()
+        do {
+            try session.setCategory(playsInSilentMode ? .playback : .ambient, mode: .default, options: [.mixWithOthers])
+            try session.setPreferredIOBufferDuration(0.005)
+            try session.setActive(true)
+        } catch {
+            log.error("Audio session: \(error.localizedDescription)")
+        }
     }
 
     private func rebuild() {

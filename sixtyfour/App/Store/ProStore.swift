@@ -2,7 +2,9 @@ import Foundation
 import Observation
 import StoreKit
 
-/// 64 Pro: a subscription, monthly or yearly (the yearly plan starts with a week free).
+/// 64 Pro: a subscription, monthly or yearly (the yearly plan starts with a week free), or
+/// a one-time Lifetime purchase. In the launch weeks a cheaper Founder lifetime is on sale;
+/// once it is taken off sale in App Store Connect the app offers the regular Lifetime.
 /// Entitlements are read from StoreKit's verified transactions, so a reinstall or another
 /// iPad picks the subscription straight up, and it ends by itself when it lapses.
 ///
@@ -14,10 +16,22 @@ final class ProStore {
     enum Plan: String, CaseIterable, Identifiable {
         case yearly = "app.sixtyfour.pro.yearly"
         case monthly = "app.sixtyfour.pro.monthly"
+        case lifetime = "app.sixtyfour.pro.lifetime"
+        case founder = "app.sixtyfour.pro.founder"
         var id: String { rawValue }
-        var fallbackPrice: String { self == .yearly ? "$19.99" : "$2.99" }
-        var period: String { self == .yearly ? "year" : "month" }
+        var fallbackPrice: String {
+            switch self {
+            case .yearly: return "€19.99"
+            case .monthly: return "€3.99"
+            case .lifetime: return "€39.99"
+            case .founder: return "€24.99"
+            }
+        }
+        var isSubscription: Bool { self == .yearly || self == .monthly }
     }
+
+    /// The one-time option on offer: Founder while it is on sale, Lifetime after.
+    var lifetimePlan: Plan { products[.founder] != nil || products.isEmpty ? .founder : .lifetime }
 
     /// Remembered between launches, so Pro is there at once while the store is checked.
     private(set) var isPro = false {
@@ -34,6 +48,8 @@ final class ProStore {
     enum Welcome: Equatable {
         /// Subscribed; `trialEnds` is when the free week ends, if it started one.
         case subscribed(trialEnds: Date?)
+        /// Bought once, for good.
+        case lifetime
         case restored
     }
     var welcome: Welcome?
@@ -60,7 +76,7 @@ final class ProStore {
 
     /// The yearly price as a monthly figure, for comparison.
     var yearlyPerMonth: String {
-        guard let p = products[.yearly] else { return "$1.67" }
+        guard let p = products[.yearly] else { return "€1.67" }
         return (p.price / 12).formatted(p.priceFormatStyle)
     }
 
@@ -105,12 +121,13 @@ final class ProStore {
 
     func purchase(_ plan: Plan) async {
         message = nil
+        Analytics.signal("purchase.started", ["plan": "\(plan)"])
         if products[plan] == nil { await load() }
         guard let product = products[plan] else {
             if Self.isTestBuild {
                 UserDefaults.standard.set(true, forKey: "pro.test")
                 isPro = true
-                welcome = .subscribed(trialEnds: plan == .yearly && trialAvailable ? Self.weekFromNow : nil)
+                welcome = plan.isSubscription ? .subscribed(trialEnds: plan == .yearly && trialAvailable ? Self.weekFromNow : nil) : .lifetime
                 message = "Test purchase: Pro is on in this development build. Nothing was charged."
             } else {
                 message = "The App Store isn't reachable right now. Try again in a moment."
@@ -125,9 +142,14 @@ final class ProStore {
                 if case .verified(let t) = verification {
                     await t.finish()
                     isPro = true
-                    let trial = t.offerType == .introductory
-                    welcome = .subscribed(trialEnds: trial ? (t.expirationDate ?? Self.weekFromNow) : nil)
-                    trialAvailable = false
+                    Analytics.signal("purchase.completed", ["plan": "\(plan)"])
+                    if plan.isSubscription {
+                        let trial = t.offerType == .introductory
+                        welcome = .subscribed(trialEnds: trial ? (t.expirationDate ?? Self.weekFromNow) : nil)
+                        trialAvailable = false
+                    } else {
+                        welcome = .lifetime
+                    }
                 } else {
                     message = "The purchase couldn't be verified."
                 }
@@ -149,6 +171,9 @@ final class ProStore {
         let had = isPro
         await refresh()
         if !isPro { message = "No active 64 Pro subscription was found for this Apple ID." }
-        else if !had { welcome = .restored }
+        else if !had {
+            welcome = .restored
+            Analytics.signal("purchase.restored")
+        }
     }
 }

@@ -79,10 +79,12 @@ struct ProWelcome: View {
                 }
                 .buttonStyle(PressScaleStyle())
                 .accessibilityIdentifier("pro-welcome-done")
-                Text("Manage or cancel anytime in Settings ▸ your name ▸ Subscriptions.")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Brand.cream.opacity(0.5))
-                    .multilineTextAlignment(.center)
+                if case .subscribed = welcome {
+                    Text("Manage or cancel anytime in Settings ▸ your name ▸ Subscriptions.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Brand.cream.opacity(0.5))
+                        .multilineTextAlignment(.center)
+                }
             }
         }
         .padding(28)
@@ -137,6 +139,8 @@ struct ProWelcome: View {
             return "Your free week has started. Nothing is charged before \(day), and you can cancel before then."
         case .subscribed(nil):
             return "Thank you for supporting 64. Everything is unlocked."
+        case .lifetime:
+            return "Yours for good, and shared with your family. Thank you for supporting 64."
         case .restored:
             return "Your subscription was found. Everything is unlocked again."
         }

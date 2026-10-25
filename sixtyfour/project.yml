@@ -17,6 +17,9 @@ fileGroups:
 packages:
   ChessCore:
     path: ChessCore
+  TelemetryDeck:
+    url: https://github.com/TelemetryDeck/SwiftSDK
+    from: 2.14.0
 targets:
   SixtyFour:
     type: application
@@ -27,6 +30,8 @@ targets:
           - "Info.plist"
     dependencies:
       - package: ChessCore
+      - package: TelemetryDeck
+        product: TelemetryDeck
     info:
       path: App/Info.plist
       properties:

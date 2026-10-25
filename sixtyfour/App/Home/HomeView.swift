@@ -87,7 +87,7 @@ struct HomeView: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
             entry("Learn", detail: "Checkmate puzzles, from one move to three", symbol: "graduationcap.fill",
-                  primary: false, badge: pro.isPro ? nil : "PRO", id: "home-learn") {
+                  primary: false, badge: pro.isPro ? nil : "\(PuzzleView.freeCount) FREE", id: "home-learn") {
                 learn()
             }
             HStack(spacing: 12) {

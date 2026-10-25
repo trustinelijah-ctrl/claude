@@ -154,3 +154,164 @@ struct CraftScene: View {
             )
     }
 }
+
+/// Page two, hands-on: a corner of the board with a knight to pick up. Tap it and then a
+/// glowing square, or drag it there, and hear it land. Any of its three moves counts.
+struct KnightScene: View {
+    let theme: BoardTheme
+    let size: CGFloat
+    let active: Bool
+    let feedback: FeedbackCoordinator
+    /// Called once, when the knight has landed.
+    let landed: () -> Void
+
+    @State private var knight = Square(file: 6, rank: 0)          // g1
+    @State private var selected = false
+    @State private var drag: CGSize = .zero
+    @State private var dragging = false
+    @State private var landing = 0
+    @State private var done = false
+    @State private var pulse = false
+
+    private static let targets = [Square(file: 5, rank: 2), Square(file: 7, rank: 2), Square(file: 4, rank: 1)]   // f3, h3, e2
+    private static let others: [(Square, Piece)] = [
+        (Square(file: 4, rank: 0), Piece(.white, .king)), (Square(file: 7, rank: 0), Piece(.white, .rook)),
+        (Square(file: 5, rank: 1), Piece(.white, .pawn)), (Square(file: 6, rank: 1), Piece(.white, .pawn)),
+        (Square(file: 7, rank: 1), Piece(.white, .pawn)), (Square(file: 5, rank: 0), Piece(.white, .bishop)),
+    ]
+
+    var body: some View {
+        // The board at twice the scene's size, showing only its bottom-right quarter (e1 to h4).
+        let g = BoardGeometry(size: size * 2)
+        let at = { (sq: Square) -> CGPoint in
+            let c = g.center(sq)
+            return CGPoint(x: c.x - size, y: c.y - size)
+        }
+        ZStack(alignment: .topLeading) {
+            BoardSurface(theme: theme, geometry: g, showCoordinates: true, mirrorCoordinates: false)
+                .frame(width: size * 2, height: size * 2)
+                .offset(x: -size, y: -size)
+            if !done {
+                ForEach(Self.targets, id: \.self) { t in
+                    Circle()
+                        .fill(theme.hint)
+                        .frame(width: g.square * 0.3, height: g.square * 0.3)
+                        .overlay(Circle().strokeBorder(theme.accent.opacity(0.8), lineWidth: 2)
+                            .frame(width: g.square * (pulse ? 0.8 : 0.5), height: g.square * (pulse ? 0.8 : 0.5))
+                            .opacity(pulse ? 0 : 0.9))
+                        .position(at(t))
+                        .opacity(selected || dragging ? 1 : 0.55)
+                }
+            }
+            if landing > 0 {
+                LandingRing(color: theme.turnGlow, size: g.square)
+                    .position(at(knight))
+                    .id(landing)
+            }
+            ForEach(Self.others.indices, id: \.self) { i in
+                PieceBody(piece: Self.others[i].1, size: g.square, hold: .resting, rotated: false, light: .zero,
+                          shadowStrength: theme.pieceShadow)
+                    .position(at(Self.others[i].0))
+                    .zIndex(Double(at(Self.others[i].0).y))
+            }
+            PieceBody(piece: Piece(.white, .knight), size: g.square, hold: dragging ? .dragging : (selected ? .held : .resting),
+                      rotated: false, light: .zero, shadowStrength: theme.pieceShadow)
+                .keyframeAnimator(initialValue: CGFloat(1), trigger: landing) { content, squash in
+                    content.scaleEffect(x: 2 - squash, y: squash, anchor: UnitPoint(x: 0.5, y: PieceSprite.squareBase))
+                } keyframes: { _ in
+                    KeyframeTrack {
+                        CubicKeyframe(0.9, duration: 0.05)
+                        SpringKeyframe(1.0, duration: 0.32, spring: Spring(response: 0.26, dampingRatio: 0.5))
+                    }
+                }
+                .scaleEffect(dragging ? 1.16 : (selected ? 1.1 : 1), anchor: UnitPoint(x: 0.5, y: PieceSprite.squareBase))
+                .offset(x: drag.width, y: drag.height - (dragging ? g.square * 0.34 : 0))
+                .position(at(knight))
+                .zIndex(10_000)
+                .animation(Motion.pickup, value: selected)
+                .gesture(knightDrag(g, at: at))
+                .onTapGesture { tapKnight() }
+                .accessibilityElement()
+                .accessibilityLabel("Knight")
+                .accessibilityAddTraits(.isButton)
+                .accessibilityIdentifier("onboarding-knight")
+        }
+        .frame(width: size, height: size)
+        .clipShape(RoundedRectangle(cornerRadius: size * 0.04, style: .continuous))
+        .contentShape(Rectangle())
+        .onTapGesture { location in
+            guard selected, let sq = square(at: location, g) else { return }
+            if Self.targets.contains(sq) { move(to: sq) } else { selected = false }
+        }
+        .shadow(color: .black.opacity(0.55), radius: 26, y: 14)
+        .onAppear {
+            withAnimation(.easeOut(duration: 1.2).repeatForever(autoreverses: false)) { pulse = true }
+        }
+    }
+
+    private func square(at p: CGPoint, _ g: BoardGeometry) -> Square? {
+        g.square(at: CGPoint(x: p.x + size, y: p.y + size))
+    }
+
+    private func tapKnight() {
+        guard !done else { return }
+        selected.toggle()
+        if selected { feedback.pickup(at: knight) }
+    }
+
+    private func knightDrag(_ g: BoardGeometry, at: @escaping (Square) -> CGPoint) -> some Gesture {
+        DragGesture(minimumDistance: 6)
+            .onChanged { v in
+                guard !done else { return }
+                if !dragging {
+                    dragging = true
+                    if !selected { feedback.pickup(at: knight) }
+                }
+                drag = v.translation
+            }
+            .onEnded { v in
+                guard !done else { return }
+                let c = at(knight)
+                let drop = CGPoint(x: c.x + v.translation.width, y: c.y + v.translation.height - g.square * 0.34)
+                dragging = false
+                if let sq = square(at: drop, g), Self.targets.contains(sq) {
+                    drag = .zero
+                    move(to: sq, dropped: true)
+                } else {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) { drag = .zero }
+                    selected = false
+                    feedback.invalid(at: knight)
+                }
+            }
+    }
+
+    private func move(to sq: Square, dropped: Bool = false) {
+        selected = false
+        done = true
+        let flight = dropped ? 0.0 : 0.38
+        withAnimation(dropped ? .easeOut(duration: 0.08) : .timingCurve(0.3, 0, 0.2, 1, duration: flight)) { knight = sq }
+        DispatchQueue.main.asyncAfter(deadline: .now() + flight * 0.86 + 0.02) {
+            feedback.audio.play(.place, gain: 1)
+            feedback.haptics.place(after: 0, weight: 0.8)
+            landing += 1
+            landed()
+        }
+    }
+}
+
+/// A ring of light running out from where a piece lands.
+private struct LandingRing: View {
+    let color: Color
+    let size: CGFloat
+    @State private var open = false
+
+    var body: some View {
+        Circle()
+            .strokeBorder(color.opacity(0.85), lineWidth: 2.5)
+            .frame(width: size, height: size)
+            .scaleEffect(open ? 1.5 : 0.4)
+            .opacity(open ? 0 : 1)
+            .allowsHitTesting(false)
+            .onAppear { withAnimation(.easeOut(duration: 0.7)) { open = true } }
+    }
+}

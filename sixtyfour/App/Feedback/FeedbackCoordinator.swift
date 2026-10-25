@@ -8,6 +8,7 @@ final class FeedbackCoordinator {
     let haptics = HapticManager()
 
     func apply(_ settings: SettingsStore) {
+        audio.setPlaysInSilentMode(settings.playInSilentMode)
         audio.setEnabled(settings.soundEnabled)
         audio.setVolume(settings.volume)
         audio.setAmbience(settings.ambience)

@@ -41,8 +41,10 @@
 		6F9A2362F9A6D24243E99565 /* SixtyFourApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87274A89173B4887E7709820 /* SixtyFourApp.swift */; };
 		715B84EEA8CBFCE1DFCB48C5 /* ProCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20671ADF34BEB239FF107B1 /* ProCard.swift */; };
 		7867AE74D3B37E96A3E47311 /* pickup_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = B4D001202644A4CE8D489099 /* pickup_1.wav */; };
+		7BAC4D756016113AB4D5D272 /* ReviewPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF5919F15C6551E8E2AE0BF /* ReviewPrompt.swift */; };
 		7D19F586741F7E96507E841F /* place_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = 756EE8CAFA112D17F1BFC188 /* place_1.wav */; };
 		8219F689440334880E576E07 /* BoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 268E05E19CEA75E497E8EEA2 /* BoardView.swift */; };
+		83B63E670D50A59B33F53A95 /* Analytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79EAE8ABFA391D8925E8DA30 /* Analytics.swift */; };
 		84E5F6E8D00469CF4C3D02F1 /* FeedbackCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A8F54B4228A1EF5435B6DA2 /* FeedbackCoordinator.swift */; };
 		9135E4343A416676A6FC359F /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BFE116B7FEFC37F6539846B /* LibraryView.swift */; };
 		9613A7446EA51D6F441C433D /* place_4.wav in Resources */ = {isa = PBXBuildFile; fileRef = 6F827AA66C21A1177E3CC3AD /* place_4.wav */; };
@@ -79,6 +81,7 @@
 		EE939302573C2121C22EF139 /* GameReview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A802137C7AB6E78D8EE76A5 /* GameReview.swift */; };
 		F1E150746BACF11E283630E2 /* place_5.wav in Resources */ = {isa = PBXBuildFile; fileRef = 362A6497352684BBE80576A4 /* place_5.wav */; };
 		F2F33FE7F21BBE827E8FC96E /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18710F35DA5010AC56C2727C /* RootView.swift */; };
+		FB6AD1F590E93C952837F7A5 /* TelemetryDeck in Frameworks */ = {isa = PBXBuildFile; productRef = BB93E812207FEC17325913EA /* TelemetryDeck */; };
 		FBDA5E0BDE25B174ED27DEDD /* placeLight_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = E2F26A2286BEEA13CA408535 /* placeLight_2.wav */; };
 		FF1C2AC5A4D4DCD50E7AE91D /* PieceArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED14617D8133D1F79A0E78C3 /* PieceArt.swift */; };
 /* End PBXBuildFile section */
@@ -124,6 +127,7 @@
 		6FCF6E8997D62CC17970B60D /* ambience_fire.m4a */ = {isa = PBXFileReference; path = ambience_fire.m4a; sourceTree = "<group>"; };
 		756EE8CAFA112D17F1BFC188 /* place_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = place_1.wav; sourceTree = "<group>"; };
 		7861FE4B6477E3E14B43423F /* Puzzle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Puzzle.swift; sourceTree = "<group>"; };
+		79EAE8ABFA391D8925E8DA30 /* Analytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Analytics.swift; sourceTree = "<group>"; };
 		8311669191ABBA28483F971A /* placeHeavy_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = placeHeavy_2.wav; sourceTree = "<group>"; };
 		83B914BF1564D2E0055DB22C /* ResultOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultOverlay.swift; sourceTree = "<group>"; };
 		8528AE3452F60359349BF2AB /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
@@ -171,6 +175,7 @@
 		F8BEDCF36380A85758134058 /* clockPress_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = clockPress_1.wav; sourceTree = "<group>"; };
 		FA6CD621A39FD6F6E0DCCA43 /* capture_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = capture_1.wav; sourceTree = "<group>"; };
 		FE2DC3095BB1E3AA65653EFF /* SixtyFour.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SixtyFour.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FEF5919F15C6551E8E2AE0BF /* ReviewPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewPrompt.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -179,6 +184,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				06B95A435DA4C23C8843DABA /* ChessCore in Frameworks */,
+				FB6AD1F590E93C952837F7A5 /* TelemetryDeck in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -397,9 +403,11 @@
 			isa = PBXGroup;
 			children = (
 				F59E896E844CBC51292E6393 /* AccountStore.swift */,
+				79EAE8ABFA391D8925E8DA30 /* Analytics.swift */,
 				D20671ADF34BEB239FF107B1 /* ProCard.swift */,
 				EC61DA587C5891E39E748813 /* ProStore.swift */,
 				DC07CDBEEDDA56251C09B24F /* ProWelcome.swift */,
+				FEF5919F15C6551E8E2AE0BF /* ReviewPrompt.swift */,
 			);
 			path = Store;
 			sourceTree = "<group>";
@@ -430,6 +438,7 @@
 			name = SixtyFour;
 			packageProductDependencies = (
 				43CB62449D4761E4B9908D24 /* ChessCore */,
+				BB93E812207FEC17325913EA /* TelemetryDeck */,
 			);
 			productName = SixtyFour;
 			productReference = FE2DC3095BB1E3AA65653EFF /* SixtyFour.app */;
@@ -484,6 +493,7 @@
 			mainGroup = 42FF91ABFD7C31B9484CEF15;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				BCDBDC13B92367CBA9EEA1AB /* XCRemoteSwiftPackageReference "SwiftSDK" */,
 				652ADCC42E3DC95E8FAEFD58 /* XCLocalSwiftPackageReference "ChessCore" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -547,6 +557,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B357911096B6827ACF00C3EB /* AccountStore.swift in Sources */,
+				83B63E670D50A59B33F53A95 /* Analytics.swift in Sources */,
 				A1AC50E315917313ED6092B9 /* AudioManager.swift in Sources */,
 				EDFD852DB1218C25D05D31A7 /* BoardGeometry.swift in Sources */,
 				20B0B87A611A1F3FB1017350 /* BoardMarks.swift in Sources */,
@@ -575,6 +586,7 @@
 				350E5390B5B7F9B39D257B31 /* RecordBook.swift in Sources */,
 				55110AEB4264458474F39F3C /* ReplayView.swift in Sources */,
 				B016C03FF4C58F2A9FEDAF06 /* ResultOverlay.swift in Sources */,
+				7BAC4D756016113AB4D5D272 /* ReviewPrompt.swift in Sources */,
 				F2F33FE7F21BBE827E8FC96E /* RootView.swift in Sources */,
 				1B75D56560B804934BC53CB7 /* SettingsCard.swift in Sources */,
 				A24C4356CEF053BDC4B063C5 /* SettingsStore.swift in Sources */,
@@ -843,10 +855,26 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		BCDBDC13B92367CBA9EEA1AB /* XCRemoteSwiftPackageReference "SwiftSDK" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/TelemetryDeck/SwiftSDK";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.14.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		43CB62449D4761E4B9908D24 /* ChessCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ChessCore;
+		};
+		BB93E812207FEC17325913EA /* TelemetryDeck */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BCDBDC13B92367CBA9EEA1AB /* XCRemoteSwiftPackageReference "SwiftSDK" */;
+			productName = TelemetryDeck;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

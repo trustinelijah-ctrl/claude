@@ -4,7 +4,7 @@ Chess for two people across one iPad, or one person against the computer. The bo
 fills the screen; each player has a slim strip at their end with the pieces they have
 taken, an optional clock, and small brass pins for hint, undo and the menu.
 
-Swift + SwiftUI, iPadOS 17 or later, iPad only, works fully offline.
+Swift + SwiftUI, iOS and iPadOS 17 or later, iPhone and iPad, works fully offline.
 
 ## Build and run
 
