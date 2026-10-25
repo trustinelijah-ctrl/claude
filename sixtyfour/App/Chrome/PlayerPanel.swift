@@ -51,7 +51,37 @@ struct PlayerZone: View {
     // MARK: Arrangements (in zone coordinates)
 
     /// Portrait: captured pieces on the left; status, clock and pins on the right.
+    @ViewBuilder
     private var ends: some View {
+        if layout.stacked { stackedEnds } else { wideEnds }
+    }
+
+    /// A narrow end: tray, status and clock in a row along the board, the pins beneath.
+    private var stackedEnds: some View {
+        let z = layout.zone
+        let trayRight = layout.tray.maxX - z.minX
+        return VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                Spacer(minLength: trayRight)
+                status
+                    .rotationEffect(facesNearPlayer ? .degrees(180) : .zero)
+                if session.clock != nil {
+                    ClockFace(color: color, session: session, theme: theme, large: false)
+                        .rotationEffect(facesNearPlayer ? .degrees(180) : .zero)
+                }
+            }
+            .frame(height: layout.tray.height)
+            Spacer(minLength: 0)
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
+                fittedControls(alignment: .trailing)
+            }
+        }
+        .padding(.trailing, 4)
+        .frame(width: z.width, height: z.height)
+    }
+
+    private var wideEnds: some View {
         let z = layout.zone
         let trayRight = layout.tray.maxX - z.minX
         return HStack(spacing: 14) {
@@ -212,7 +242,7 @@ struct PlayerZone: View {
     @ViewBuilder
     private func controls(rows: Int?) -> some View {
         if !isComputer {
-            HStack(spacing: 10) {
+            HStack(spacing: layout.stacked ? 4 : 10) {
                 if rows != 1 {
                     if session.canClaimDraw && isTurn {
                         Button {

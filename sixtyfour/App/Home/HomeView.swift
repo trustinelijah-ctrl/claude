@@ -27,26 +27,13 @@ struct HomeView: View {
             let wide = size.width > size.height * 1.1
             ZStack {
                 OnboardingBackdrop(theme: theme, page: 0)
-                let layout = wide ? AnyLayout(HStackLayout(spacing: 64)) : AnyLayout(VStackLayout(spacing: 36))
-                layout {
-                    VStack(spacing: 14) {
-                        Image("Logo")
-                            .resizable()
-                            .renderingMode(.template)
-                            .scaledToFit()
-                            .foregroundStyle(Brand.cream)
-                            .frame(height: wide ? min(size.height * 0.34, 260) : min(size.height * 0.2, 220))
-                            .accessibilityLabel("64")
-                        Text("Chess, across the table.")
-                            .font(.system(size: 17, weight: .medium))
-                            .foregroundStyle(Brand.cream.opacity(0.65))
+                // A short screen (a small iPhone with the levels open) scrolls instead of clipping.
+                ViewThatFits(in: .vertical) {
+                    content(size: size, wide: wide, safe: proxy.safeAreaInsets)
+                    ScrollView(.vertical, showsIndicators: false) {
+                        content(size: size, wide: wide, safe: proxy.safeAreaInsets)
                     }
-                    menu
-                        .frame(maxWidth: 440)
                 }
-                .padding(.horizontal, 32)
-                .padding(.top, proxy.safeAreaInsets.top + 20)
-                .padding(.bottom, proxy.safeAreaInsets.bottom + 20)
             }
             .frame(width: size.width, height: size.height)
         }
@@ -54,6 +41,30 @@ struct HomeView: View {
         .environment(\.colorScheme, .dark)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("home")
+    }
+
+    private func content(size: CGSize, wide: Bool, safe: EdgeInsets) -> some View {
+        let layout = wide ? AnyLayout(HStackLayout(spacing: 64)) : AnyLayout(VStackLayout(spacing: size.width < 500 ? 24 : 36))
+        return layout {
+            VStack(spacing: 14) {
+                Image("Logo")
+                    .resizable()
+                    .renderingMode(.template)
+                    .scaledToFit()
+                    .foregroundStyle(Brand.cream)
+                    .frame(height: wide ? min(size.height * 0.34, 260) : min(size.height * 0.2, 220))
+                    .accessibilityLabel("64")
+                Text("Chess, across the table.")
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(Brand.cream.opacity(0.65))
+            }
+            menu
+                .frame(maxWidth: 440)
+        }
+        .padding(.horizontal, size.width < 500 ? 20 : 32)
+        .padding(.top, safe.top + 20)
+        .padding(.bottom, safe.bottom + 20)
+        .frame(maxWidth: .infinity)
     }
 
     private var menu: some View {
@@ -110,25 +121,13 @@ struct HomeView: View {
     /// Strength and side, then start.
     private var levelPicker: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                ForEach(BotLevel.allCases) { level in
-                    let locked = level.isPro && !pro.isPro
-                    Button {
-                        feedback.ui()
-                        if locked { upgrade() } else { settings.botLevel = level }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text(level.title)
-                            if locked { Image(systemName: "lock.fill").font(.system(size: 9)) }
-                        }
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(settings.botLevel == level ? Brand.brown : Brand.cream.opacity(locked ? 0.5 : 0.85))
-                        .padding(.horizontal, 10)
-                        .frame(height: 34)
-                        .frame(maxWidth: .infinity)
-                        .background(Capsule().fill(settings.botLevel == level ? Brand.cream : Color.black.opacity(0.25)))
-                    }
-                    .buttonStyle(.plain)
+            // Five levels in a row; a phone takes them in rows of three.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    ForEach(BotLevel.allCases) { levelButton($0) }
+                }
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
+                    ForEach(BotLevel.allCases) { levelButton($0) }
                 }
             }
             HStack(spacing: 8) {
@@ -158,6 +157,28 @@ struct HomeView: View {
         }
         .padding(14)
         .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.black.opacity(0.18)))
+    }
+
+    private func levelButton(_ level: BotLevel) -> some View {
+        let locked = level.isPro && !pro.isPro
+        return Button {
+            feedback.ui()
+            if locked { upgrade() } else { settings.botLevel = level }
+        } label: {
+            HStack(spacing: 4) {
+                Text(level.title)
+                if locked { Image(systemName: "lock.fill").font(.system(size: 9)) }
+            }
+            .font(.system(size: 13, weight: .semibold))
+            .lineLimit(1)
+            .fixedSize()
+            .foregroundStyle(settings.botLevel == level ? Brand.brown : Brand.cream.opacity(locked ? 0.5 : 0.85))
+            .padding(.horizontal, 10)
+            .frame(height: 34)
+            .frame(maxWidth: .infinity)
+            .background(Capsule().fill(settings.botLevel == level ? Brand.cream : Color.black.opacity(0.25)))
+        }
+        .buttonStyle(.plain)
     }
 
     private func entry(_ title: String, detail: String, symbol: String, primary: Bool, badge: String? = nil,

@@ -67,6 +67,10 @@ jobs:
                       sys.exit(0)
           PY
           pick() { xcrun simctl list devices available -j | python3 /tmp/pick.py "$1"; }
+          first() { for p in "$@"; do u=$(pick "$p"); [ -n "$u" ] && { echo "$u"; return; }; done; }
+          echo "PHONESE=$(first 'iPhone SE' 'iPhone 13 mini' 'iPhone 16e' 'iPhone 17e')" >> $GITHUB_ENV
+          echo "PHONEMAX=$(first 'iPhone 17 Pro Max' 'iPhone 16 Pro Max' 'iPhone 16 Plus' 'iPhone 15 Pro Max')" >> $GITHUB_ENV
+          xcrun simctl list devices available | grep -i iphone | head -20
           echo "MINI=$(pick 'iPad mini')" >> $GITHUB_ENV
           echo "PRO13=$(pick 'iPad Pro 13')" >> $GITHUB_ENV
           echo "AIR11=$(pick 'iPad Air 11')" >> $GITHUB_ENV
@@ -93,8 +97,10 @@ jobs:
           PY
           mkdir -p shots
           # A commit tagged [preview] shoots only the layout preview, on the 11-inch iPad Air.
-          DEVS="PRO13"; ONLY="SixtyFourUITests/ScreenshotTests"
+          # A commit tagged [iphone] shoots only the iPhones, for a quick look at the phone layout.
+          DEVS="PRO13 PHONESE PHONEMAX"; ONLY="SixtyFourUITests/ScreenshotTests"
           if [[ "$COMMIT_MSG" == *"[preview]"* ]]; then DEVS="AIR11"; ONLY="SixtyFourUITests/ScreenshotTests/testB0LayoutPreview"; fi
+          if [[ "$COMMIT_MSG" == *"[iphone]"* ]]; then DEVS="PHONESE PHONEMAX"; fi
           for dev in $DEVS; do
             udid="${!dev}"
             [ -z "$udid" ] && continue
@@ -135,7 +141,7 @@ jobs:
           git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-shots
 
       - name: UI tests (interaction)
-        if: success() && !contains(github.event.head_commit.message, '[preview]')
+        if: success() && !contains(github.event.head_commit.message, '[preview]') && !contains(github.event.head_commit.message, '[iphone]')
         run: |
           set -o pipefail
           status=0

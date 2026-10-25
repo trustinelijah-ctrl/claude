@@ -22,6 +22,9 @@ struct TableLayout: Equatable {
     /// Height of a piece standing in the tray.
     let trayPiece: CGFloat
     let compact: Bool
+    /// A narrow end (iPhone, or a slim iPad window): the tray, status and clock share a row
+    /// along the board, and the pins sit in a row of their own at the player's edge.
+    let stacked: Bool
 
     static let minEnd: CGFloat = 84
 
@@ -45,16 +48,23 @@ struct TableLayout: Equatable {
             let top = boardOrigin.y + board
             zone = CGRect(x: sideInset, y: top + 8, width: size.width - 2 * sideInset,
                           height: max(60, size.height - top - 8 - inset))
-            compact = zone.height < 120
-            // Captured pieces stand along the left of the strip; the clock and pins take the right.
-            let trayH = min(zone.height * 0.7, board / 8 * 0.9)
-            let trayW = min(zone.width * 0.5, board * 0.48)
-            tray = CGRect(x: zone.minX, y: zone.midY - trayH / 2, width: trayW, height: trayH)
+            stacked = zone.width < 560
+            compact = zone.height < 120 || stacked
+            if stacked {
+                let rowH = min(zone.height * 0.5, board / 8 * 0.9)
+                tray = CGRect(x: zone.minX, y: zone.minY, width: zone.width * 0.5, height: rowH)
+            } else {
+                // Captured pieces stand along the left of the strip; the clock and pins take the right.
+                let trayH = min(zone.height * 0.7, board / 8 * 0.9)
+                let trayW = min(zone.width * 0.5, board * 0.48)
+                tray = CGRect(x: zone.minX, y: zone.midY - trayH / 2, width: trayW, height: trayH)
+            }
         case .sides:
             let left = boardOrigin.x + board
             zone = CGRect(x: left + 10, y: size.height / 2, width: max(80, size.width - left - 10 - sideInset),
                           height: size.height / 2 - inset)
             compact = zone.width < 170
+            stacked = false
             let trayW = zone.width
             let trayH = min(zone.height * 0.48, board / 8 * 1.9)
             tray = CGRect(x: zone.minX, y: zone.minY + 8, width: trayW, height: trayH)

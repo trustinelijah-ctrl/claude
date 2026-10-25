@@ -42,6 +42,9 @@ targets:
         UIApplicationSupportsIndirectInputEvents: true
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
+        # iPhone: portrait only; the board takes the width and the players sit at either end.
+        UISupportedInterfaceOrientations~iphone:
+          - UIInterfaceOrientationPortrait
         UISupportedInterfaceOrientations~ipad:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationPortraitUpsideDown
@@ -51,7 +54,7 @@ targets:
       base:
         PRODUCT_NAME: SixtyFour
         PRODUCT_BUNDLE_IDENTIFIER: app.sixtyfour.chess
-        TARGETED_DEVICE_FAMILY: "2"
+        TARGETED_DEVICE_FAMILY: "1,2"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         ENABLE_PREVIEWS: YES
@@ -66,7 +69,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.sixtyfour.chess.uitests
         TEST_TARGET_NAME: SixtyFour
-        TARGETED_DEVICE_FAMILY: "2"
+        TARGETED_DEVICE_FAMILY: "1,2"
         GENERATE_INFOPLIST_FILE: YES
 schemes:
   SixtyFour:

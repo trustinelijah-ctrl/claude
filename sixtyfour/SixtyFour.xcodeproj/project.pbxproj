@@ -553,7 +553,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = app.sixtyfour.chess.uitests;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = 2;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = SixtyFour;
 			};
 			name = Release;
@@ -570,7 +570,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = app.sixtyfour.chess.uitests;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = 2;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = SixtyFour;
 			};
 			name = Debug;
@@ -657,7 +657,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = app.sixtyfour.chess;
 				PRODUCT_NAME = SixtyFour;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = 2;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -736,7 +736,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = app.sixtyfour.chess;
 				PRODUCT_NAME = SixtyFour;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = 2;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
