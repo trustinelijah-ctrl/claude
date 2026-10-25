@@ -3,7 +3,28 @@ import AudioToolbox
 import os
 
 enum SoundEffect: String, CaseIterable {
-    case place, capture, pickup, invalid, ui, promotion, check, checkmate, draw, reset
+    case place, placeLight, placeHeavy, capture, pickup, invalid, ui, promotion, check, checkmate, draw, reset
+    case clockPress, clockTick, topple
+}
+
+/// A sound bed under the game, for 64 Pro.
+enum Ambience: String, CaseIterable, Identifiable {
+    case off, rain, fire
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .off: return "Off"
+        case .rain: return "Rain"
+        case .fire: return "Fireplace"
+        }
+    }
+    fileprivate var file: String? {
+        switch self {
+        case .off: return nil
+        case .rain: return "ambience_rain"
+        case .fire: return "ambience_fire"
+        }
+    }
 }
 
 /// Low-latency playback of the sound palette.
@@ -20,6 +41,13 @@ final class AudioManager: @unchecked Sendable {
     private let submix = AVAudioMixerNode()
     private var limiter: AVAudioUnitEffect?
     private var voices: [Voice] = []
+    /// The ambience bed: one looping stereo player under the move sounds.
+    private var ambienceNode = AVAudioPlayerNode()
+    private var ambienceBuffers: [Ambience: AVAudioPCMBuffer] = [:]
+    private var ambience: Ambience = .off
+    private var fadeToken = 0
+    private static let ambienceLevel: Float = 0.55
+    private static let stereo = AVAudioFormat(standardFormatWithSampleRate: 48_000, channels: 2)!
     private var library: [SoundEffect: [AVAudioPCMBuffer]] = [:]
     private var lastPick: [SoundEffect: Int] = [:]
     private var ready = false
@@ -58,7 +86,19 @@ final class AudioManager: @unchecked Sendable {
     // MARK: Public
 
     func setEnabled(_ on: Bool) {
-        queue.async { self.enabled = on }
+        queue.async {
+            self.enabled = on
+            self.applyAmbience()
+        }
+    }
+
+    /// Fades the ambience bed over to `choice` (or out, for `.off`).
+    func setAmbience(_ choice: Ambience) {
+        queue.async {
+            guard choice != self.ambience else { return }
+            self.ambience = choice
+            self.applyAmbience()
+        }
     }
 
     func setVolume(_ value: Double) {
@@ -108,6 +148,7 @@ final class AudioManager: @unchecked Sendable {
         buildGraph()
         startEngine()
         ready = true
+        applyAmbience()
     }
 
     private func rebuild() {
@@ -115,6 +156,7 @@ final class AudioManager: @unchecked Sendable {
         engine = AVAudioEngine()
         voices = []
         limiter = nil
+        ambienceNode = AVAudioPlayerNode()
         buildGraph()
         startEngine()
     }
@@ -138,6 +180,8 @@ final class AudioManager: @unchecked Sendable {
             engine.connect(v.node, to: submix, format: Self.format)
             voices.append(v)
         }
+        engine.attach(ambienceNode)
+        engine.connect(ambienceNode, to: submix, format: Self.stereo)
         engine.connect(submix, to: limiter, format: stereo)
         engine.connect(limiter, to: engine.mainMixerNode, format: stereo)
         submix.outputVolume = Self.loudness(volume)
@@ -152,9 +196,52 @@ final class AudioManager: @unchecked Sendable {
                 v.busyUntil = 0
                 if !v.node.isPlaying { v.node.play() }
             }
+            if ready, ambience != .off, !ambienceNode.isPlaying { applyAmbience() }
         } catch {
             log.error("Audio engine start: \(error.localizedDescription)")
         }
+    }
+
+    // MARK: Ambience
+
+    private func applyAmbience() {
+        guard ready else { return }
+        guard enabled, let buffer = ambienceBuffer(ambience), engine.isRunning else {
+            fade(to: 0, over: 0.8, thenStop: true)
+            return
+        }
+        fadeToken += 1
+        ambienceNode.stop()
+        ambienceNode.volume = 0
+        ambienceNode.scheduleBuffer(buffer, at: nil, options: .loops, completionHandler: nil)
+        ambienceNode.play()
+        fade(to: Self.ambienceLevel, over: 1.6)
+    }
+
+    private func fade(to target: Float, over seconds: Double, thenStop: Bool = false) {
+        fadeToken += 1
+        let token = fadeToken
+        let start = ambienceNode.volume
+        let steps = 30
+        for i in 1...steps {
+            queue.asyncAfter(deadline: .now() + seconds * Double(i) / Double(steps)) {
+                guard token == self.fadeToken else { return }
+                let p = Float(i) / Float(steps)
+                self.ambienceNode.volume = start + (target - start) * p * p * (3 - 2 * p)
+                if i == steps && thenStop { self.ambienceNode.stop() }
+            }
+        }
+    }
+
+    private func ambienceBuffer(_ choice: Ambience) -> AVAudioPCMBuffer? {
+        if let b = ambienceBuffers[choice] { return b }
+        guard let name = choice.file, let url = Self.url(for: name),
+              let buffer = Self.decode(url, to: Self.stereo) else { return nil }
+        // Loops are made a whole number of seconds long; an encoder may pad the end a little.
+        let seconds = floor(Double(buffer.frameLength) / buffer.format.sampleRate)
+        if seconds >= 1 { buffer.frameLength = AVAudioFrameCount(seconds * buffer.format.sampleRate) }
+        ambienceBuffers[choice] = buffer
+        return buffer
     }
 
     // MARK: Library
@@ -192,8 +279,9 @@ final class AudioManager: @unchecked Sendable {
         return nil
     }
 
-    /// Decodes a file into a mono 48 kHz float buffer, converting if a replacement recording differs.
-    private static func decode(_ url: URL) -> AVAudioPCMBuffer? {
+    /// Decodes a file into a 48 kHz float buffer (mono unless asked otherwise), converting if a
+    /// replacement recording differs.
+    private static func decode(_ url: URL, to format: AVAudioFormat = AudioManager.format) -> AVAudioPCMBuffer? {
         guard let file = try? AVAudioFile(forReading: url),
               let raw = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(file.length)),
               (try? file.read(into: raw)) != nil else { return nil }

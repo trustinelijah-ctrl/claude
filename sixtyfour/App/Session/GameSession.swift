@@ -20,6 +20,8 @@ struct Ripple: Identifiable, Equatable {
     let square: Square
     let style: Style
     let delay: Double
+    /// How heavy the piece that made it is, 0.5 (pawn) to 0.9 (rook, queen, king).
+    var weight: Float = 0.7
 }
 
 /// The game at the table: rules state, the physical pieces, selection, the computer
@@ -63,6 +65,8 @@ final class GameSession {
     private(set) var timeControl: TimeControl = .off
     @ObservationIgnored private var clockSnapshots: [ChessClock?] = []
     @ObservationIgnored private var flagTask: Task<Void, Never>?
+    /// Ticks the running clock audibly through its last ten seconds.
+    @ObservationIgnored private var tickTask: Task<Void, Never>?
 
     /// A suggested move for the side to move, shown as an arrow for a few seconds.
     private(set) var hint: Move?
@@ -140,6 +144,7 @@ final class GameSession {
 
     func pauseClock() {
         flagTask?.cancel()
+        tickTask?.cancel()
         clock?.pause()
     }
 
@@ -152,12 +157,25 @@ final class GameSession {
     /// Wakes when the running clock would reach zero, and calls the flag if it has.
     private func armFlag() {
         flagTask?.cancel()
+        tickTask?.cancel()
         guard let c = clock, c.isTicking, let side = c.running, !game.isOver else { return }
         let left = c.timeLeft(side)
         flagTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(left + 0.02))
             guard !Task.isCancelled, let self, let c = self.clock, c.running == side else { return }
             if c.timeLeft(side) <= 0 { self.flag(side) } else { self.armFlag() }
+        }
+        tickTask = Task { @MainActor [weak self] in
+            while !Task.isCancelled {
+                guard let left = self?.clock?.timeLeft(side), left > 0.05 else { return }
+                // Sleep to the ten-second mark, then to each whole second after it.
+                let wait = left > 10 ? left - 10 : left - floor(left)
+                try? await Task.sleep(for: .seconds(wait < 0.01 ? 1 : wait))
+                guard !Task.isCancelled, let self, let c = self.clock, c.isTicking, c.running == side,
+                      !self.game.isOver else { return }
+                let now = c.timeLeft(side)
+                if now > 0.05 && now <= 10.05 { self.feedback.clockTick() }
+            }
         }
     }
 
@@ -414,12 +432,16 @@ final class GameSession {
         tokens = next
 
         feedback.moveCommitted(played, landing: landing, rookLanding: rookLanding, result: game.result)
+        // In a timed game the player sets the piece down, then presses the clock.
+        if clock != nil && !game.isOver {
+            feedback.clockPressed(by: fx.piece.color, landing: max(landing, rookLanding ?? 0))
+        }
 
         // Landings: the settle, a ring of light, and for a ghost move, the hand letting go.
         after(landing) { s in
             if let moverID { s.land(moverID) }
             if style == .ghost { s.ghostLiftID = nil }
-            s.ripple(at: move.to, fx.isCapture ? .capture : .land)
+            s.ripple(at: move.to, fx.isCapture ? .capture : .land, weight: FeedbackCoordinator.weight(of: fx.piece.kind))
         }
         if let rookLanding, let rookID, let rt = fx.rookTo {
             after(rookLanding) { s in
@@ -459,11 +481,11 @@ final class GameSession {
         tokens[i].landing += 1
     }
 
-    private func ripple(at square: Square, _ style: Ripple.Style) {
+    private func ripple(at square: Square, _ style: Ripple.Style, weight: Float = 0.7) {
         rippleID += 1
-        let r = Ripple(id: rippleID, square: square, style: style, delay: 0)
+        let r = Ripple(id: rippleID, square: square, style: style, delay: 0, weight: weight)
         ripples.append(r)
-        after(0.8) { s in s.ripples.removeAll { $0.id == r.id } }
+        after(1.0) { s in s.ripples.removeAll { $0.id == r.id } }
     }
 
     // MARK: Game control
@@ -548,6 +570,7 @@ final class GameSession {
         snapshots = []
         hint = nil
         flagTask?.cancel()
+        tickTask?.cancel()
         clock = timeControl == .off ? nil : ChessClock(timeControl)
         clockSnapshots = []
         var regathered = TokenLayout.regather(tokens, into: game.position, nextID: &nextID)
@@ -623,7 +646,7 @@ final class GameSession {
     private func topple(_ color: PieceColor) {
         guard game.result?.winner == color.opposite else { return }
         fallenKing = color
-        feedback.kingFalls()
+        feedback.kingFalls(impact: Topple.impact)
     }
 
     /// Restores a finished game's end state after launch, without the drama.

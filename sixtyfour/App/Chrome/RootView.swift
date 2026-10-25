@@ -200,6 +200,7 @@ struct RootView: View {
         }
         .onChange(of: settings.soundEnabled) { session.feedback.apply(settings) }
         .onChange(of: settings.volume) { session.feedback.apply(settings) }
+        .onChange(of: settings.ambience) { session.feedback.apply(settings) }
         .onChange(of: settings.opponent) { syncOpponent() }
         .onChange(of: settings.botLevel) { syncOpponent() }
         .onChange(of: settings.humanColor) { syncOpponent() }

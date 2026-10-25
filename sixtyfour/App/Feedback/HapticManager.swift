@@ -26,8 +26,8 @@ final class HapticManager {
         rigid.prepare()
     }
 
-    func place(after delay: TimeInterval) {
-        fire(after: delay) { $0.rigid.impactOccurred(intensity: 0.7) }
+    func place(after delay: TimeInterval, weight: Float = 0.7) {
+        fire(after: delay) { $0.rigid.impactOccurred(intensity: CGFloat(weight)) }
     }
 
     func capture(after delay: TimeInterval) {

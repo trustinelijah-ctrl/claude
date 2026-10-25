@@ -297,7 +297,7 @@ struct RippleLayer: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             ForEach(ripples) { r in
-                RippleView(style: r.style, square: geometry.square, color: theme.turnGlow)
+                RippleView(style: r.style, weight: CGFloat(r.weight), square: geometry.square, color: theme.turnGlow)
                     .position(geometry.center(r.square))
             }
         }
@@ -306,28 +306,51 @@ struct RippleLayer: View {
     }
 }
 
+/// The sound of a landing, made visible: a ring runs out through the wood, with fainter
+/// echoes behind it. Heavier pieces send it further; a capture sends three.
 private struct RippleView: View {
     let style: Ripple.Style
+    let weight: CGFloat
     let square: CGFloat
     let color: Color
-    @State private var open = false
 
     var body: some View {
-        let strength: Double = style == .capture ? 0.75 : (style == .land ? 0.5 : 0.4)
-        let reach: CGFloat = style == .capture ? 1.35 : (style == .land ? 1.05 : 0.9)
+        let rings = style == .capture ? 3 : (style == .land ? 2 : 1)
         ZStack {
-            Circle()
-                .strokeBorder(color.opacity(strength), lineWidth: max(1.5, square * (style == .capture ? 0.05 : 0.03)))
-            if style != .pickup {
-                Circle().fill(RadialGradient(colors: [color.opacity(strength * 0.35), .clear],
-                                             center: .center, startRadius: 0, endRadius: square * 0.5))
+            ForEach(0..<rings, id: \.self) { i in
+                Ring(style: style, echo: i, weight: weight, square: square, color: color)
             }
         }
-        .frame(width: square, height: square)
-        .scaleEffect(open ? reach : 0.35)
-        .opacity(open ? 0 : 1)
-        .onAppear {
-            withAnimation(.easeOut(duration: style == .pickup ? 0.45 : 0.6)) { open = true }
+    }
+
+    private struct Ring: View {
+        let style: Ripple.Style
+        let echo: Int
+        let weight: CGFloat
+        let square: CGFloat
+        let color: Color
+        @State private var open = false
+
+        var body: some View {
+            let fade = pow(0.55, Double(echo))
+            let strength: Double = (style == .capture ? 0.75 : (style == .land ? 0.5 : 0.4)) * fade
+            let heft = 0.85 + 0.35 * weight
+            let reach: CGFloat = (style == .capture ? 1.35 : (style == .land ? 1.05 : 0.9)) * heft * (1 + 0.2 * CGFloat(echo))
+            ZStack {
+                Circle()
+                    .strokeBorder(color.opacity(strength), lineWidth: max(1, square * (style == .capture ? 0.05 : 0.03) * (1 - 0.3 * CGFloat(echo))))
+                if style != .pickup && echo == 0 {
+                    Circle().fill(RadialGradient(colors: [color.opacity(strength * 0.35), .clear],
+                                                 center: .center, startRadius: 0, endRadius: square * 0.5))
+                }
+            }
+            .frame(width: square, height: square)
+            .scaleEffect(open ? reach : 0.35)
+            .opacity(open ? 0 : (echo == 0 ? 1 : 0))
+            .onAppear {
+                withAnimation(.easeOut(duration: style == .pickup ? 0.45 : 0.6 + 0.08 * Double(echo))
+                    .delay(0.07 * Double(echo))) { open = true }
+            }
         }
     }
 }

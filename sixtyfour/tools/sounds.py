@@ -130,6 +130,49 @@ def place(i):
     return finish(room(mix((c, 0.0), (t, 0.4), (b, 0.8)), level=db(-30)), -9.0)
 
 
+def place_light(i):
+    """A pawn: smaller and lighter than the other pieces, so a little higher and quicker."""
+    b = body(WOOD_LIGHT[(i + 2) % 5], 1.42 + RNG.uniform(-0.04, 0.04), 85) * db(-4)
+    t = tock(ratio=1.2 + RNG.uniform(-0.05, 0.06), ms=55, gain=-4)
+    c = contact(CHIP_LAY[i % 2], ms=16, gain=-3.0 + RNG.uniform(-1, 1), bright=12500)
+    return finish(room(mix((c, 0.0), (t, 0.3), (b, 0.6)), level=db(-32)), -10.5)
+
+
+def place_heavy(i):
+    """Rook, queen and king: more wood under them, a deeper knock and a longer ring."""
+    b = body(WOOD_MEDIUM[i % 5], 1.06 + RNG.uniform(-0.03, 0.03), 150)
+    t = tock(ratio=0.9 + RNG.uniform(-0.04, 0.04), ms=95, gain=-2.5)
+    c = contact(CHIP_LAY[(i + 1) % 2], gain=-5.0 + RNG.uniform(-1, 1), bright=10000)
+    return finish(room(mix((c, 0.0), (t, 0.5), (b, 1.0)), level=db(-28)), -8.0)
+
+
+def clock_press():
+    """A mechanical chess clock: the plunger snapping down, then the case answering."""
+    snap = crop(hp(from_onset(load('switch3.ogg')), 400), 35, fade_ms=18) * db(-2)
+    click = crop(lp(from_onset(load('click3.ogg')), 9000), 25, fade_ms=12) * db(-8)
+    case = body(WOOD_LIGHT[3], 1.6, 70) * db(-9)
+    return finish(room(mix((snap, 0.0), (click, 2.0), (case, 1.5)), level=db(-30)), -14.0)
+
+
+def clock_tick():
+    """The last seconds: a small, dry tick, the escapement of the clock."""
+    tick = crop(hp(lp(from_onset(load('click3.ogg')), 7000), 900), 18, fade_ms=10)
+    return finish(tick, -24.0)
+
+
+def topple():
+    """A king tipping over: the hard knock of the crown on wood, two small bounces and a
+    short roll on its side. The animation is timed to this: knock 0 ms, bounces 105 and 175 ms."""
+    knock = mix((contact(CHIP_LAY[0], gain=-4, bright=12000), 0.0), (tock(ratio=0.86, ms=110, gain=-1.5), 0.4),
+                (body(WOOD_MEDIUM[2], 0.98, 200), 0.8))
+    b1 = mix((contact(CHIP_LAY[1], ms=14, gain=-6), 0.0), (tock(ratio=1.05, ms=60, gain=-6), 0.3),
+             (body(WOOD_LIGHT[1], 1.3, 80) * db(-8), 0.5))
+    b2 = mix((contact(CHIP_LAY[0], ms=12, gain=-12), 0.0), (tock(ratio=1.15, ms=45, gain=-12), 0.3))
+    roll_src = from_onset(load('chips-handle-4.ogg'))
+    roll = crop(lp(hp(roll_src, 300), 3500), 220, fade_ms=160) * db(-20)
+    return finish(room(mix((knock, 0.0), (b1, 105.0), (b2, 175.0), (roll, 190.0)), level=db(-26)), -8.0)
+
+
 def capture(i):
     clack = crop(lp(CHIP_CLACK[i % 4], 12000), 36, fade_ms=20) * db(-3.0)
     b = body(WOOD_MEDIUM[(i + 1) % 5], 1.12 + RNG.uniform(-0.03, 0.03), 150)
@@ -205,6 +248,12 @@ if __name__ == '__main__':
         files[f'place_{i + 1}'] = place(i)
     for i in range(4):
         files[f'capture_{i + 1}'] = capture(i)
+    for i in range(4):
+        files[f'placeLight_{i + 1}'] = place_light(i)
+        files[f'placeHeavy_{i + 1}'] = place_heavy(i)
+    files['clockPress_1'] = clock_press()
+    files['clockTick_1'] = clock_tick()
+    files['topple_1'] = topple()
     for i in range(3):
         files[f'pickup_{i + 1}'] = pickup(i)
     files['invalid_1'] = invalid()

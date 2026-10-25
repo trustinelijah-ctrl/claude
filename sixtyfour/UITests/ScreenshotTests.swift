@@ -49,6 +49,26 @@ final class ScreenshotTests: XCTestCase {
         shoot("26-win-gold-after-8s", args: ["-moves", "e2e4 e7e5 f1c4 b8c6 d1h5 g8f6 h5f7", "-showResult", "YES"], settle: 8)
     }
 
+    /// The satisfying details: the king falling on resignation, ambience in the menu.
+    func testB1Details() {
+        let moves = "c2c4 c7c5 g1f3 d7d5 b2b3 d5c4 f3d4"
+        shoot("27-king-falling", args: ["-moves", moves]) { app in
+            app.otherElements["panel-black"].buttons["Resign"].tap()
+            app.buttons["confirm-resign-black"].tap()
+            RunLoop.current.run(until: Date().addingTimeInterval(0.3 + 0.5))
+        }
+        shoot("27-king-down", args: ["-moves", moves]) { app in
+            app.otherElements["panel-black"].buttons["Resign"].tap()
+            app.buttons["confirm-resign-black"].tap()
+            RunLoop.current.run(until: Date().addingTimeInterval(1.25))
+        }
+        shoot("28-ambience", args: ["-pro", "YES", "-moves", moves, "-openSettings", "white", "-ambience", "fire"]) { app in
+            app.otherElements["settings"].swipeUp()
+            RunLoop.current.run(until: Date().addingTimeInterval(0.8))
+        }
+        shoot("29-clock-low", args: ["-moves", moves, "-timeControl", "bullet1"], settle: 1.0)
+    }
+
     func test1Opening() {
         shoot("01-opening", args: ["-fresh", "YES", "-theme", "house"])
         shoot("01-opening", args: ["-fresh", "YES", "-theme", "house"], landscape: true)

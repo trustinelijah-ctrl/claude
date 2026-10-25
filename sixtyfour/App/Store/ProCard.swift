@@ -21,6 +21,7 @@ struct ProCard: View {
         Feature(symbol: "brain.head.profile", title: "Master and Grandmaster", detail: "The computer at full strength"),
         Feature(symbol: "square.grid.3x3.fill", title: "Six more boards, two more sets",
                 detail: "Marble, Rosewood, Midnight, Ebony, Olive, Salon; Boxwood and Gilded pieces"),
+        Feature(symbol: "cloud.rain", title: "Ambience", detail: "Rain at the window or a crackling fire while you play"),
         Feature(symbol: "tray.full", title: "Every game kept", detail: "Your whole history, exportable as PGN"),
     ]
 

@@ -10,6 +10,7 @@ final class FeedbackCoordinator {
     func apply(_ settings: SettingsStore) {
         audio.setEnabled(settings.soundEnabled)
         audio.setVolume(settings.volume)
+        audio.setAmbience(settings.ambience)
     }
 
     /// Screen-space stereo position of a square. White sits at the bottom, so file a is on the left.
@@ -35,11 +36,40 @@ final class FeedbackCoordinator {
         audio.play(.place, gain: 0.32)
     }
 
-    /// A king tipped onto the board: a soft wooden knock and a single tap.
-    func kingFalls() {
-        audio.play(.capture, gain: 0.45)
-        audio.play(.place, delay: 0.12, gain: 0.25)
-        haptics.place(after: 0)
+    /// A king tipped onto the board. The sound carries the knock, two bounces and a short
+    /// roll; `impact` is when the crown meets the board in the animation.
+    func kingFalls(impact: TimeInterval) {
+        audio.play(.topple, delay: impact, gain: 0.8)
+        haptics.capture(after: impact)
+        haptics.place(after: impact + 0.105, weight: 0.35)
+        haptics.place(after: impact + 0.175, weight: 0.15)
+    }
+
+    /// The chess clock's plunger, pressed by the player who just moved.
+    func clockPressed(by color: PieceColor, landing: TimeInterval) {
+        audio.play(.clockPress, delay: landing + 0.07, gain: 0.8, pan: color == .white ? 0.25 : -0.25)
+    }
+
+    /// One tick of the clock in its last seconds.
+    func clockTick() {
+        audio.play(.clockTick, gain: 0.7)
+    }
+
+    /// Pawns are light, rooks, queens and kings heavy; the board answers each differently.
+    static func placement(for kind: PieceKind) -> SoundEffect {
+        switch kind {
+        case .pawn: return .placeLight
+        case .rook, .queen, .king: return .placeHeavy
+        case .knight, .bishop: return .place
+        }
+    }
+
+    static func weight(of kind: PieceKind) -> Float {
+        switch kind {
+        case .pawn: return 0.5
+        case .rook, .queen, .king: return 0.9
+        case .knight, .bishop: return 0.7
+        }
     }
 
     func ui() {
@@ -55,8 +85,8 @@ final class FeedbackCoordinator {
             audio.play(.capture, delay: landing, pan: pan(to))
             haptics.capture(after: landing)
         } else {
-            audio.play(.place, delay: landing, gain: 0.95, pan: pan(to))
-            haptics.place(after: landing)
+            audio.play(Self.placement(for: played.effect.piece.kind), delay: landing, gain: 0.95, pan: pan(to))
+            haptics.place(after: landing, weight: Self.weight(of: played.effect.piece.kind))
         }
         if let rookTo = played.effect.rookTo, let rookLanding {
             audio.play(.place, delay: rookLanding, gain: 0.72, pan: pan(rookTo))

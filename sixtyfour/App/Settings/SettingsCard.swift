@@ -153,6 +153,26 @@ struct SettingsCard: View {
                 .foregroundStyle(theme.inkSecondary)
                 .disabled(!settings.soundEnabled)
                 .opacity(settings.soundEnabled ? 1 : 0.4)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 6) {
+                        Text("Ambience").font(.system(size: 15)).foregroundStyle(theme.ink)
+                        if !pro.isPro {
+                            Image(systemName: "lock.fill").font(.system(size: 10)).foregroundStyle(theme.inkSecondary)
+                        }
+                    }
+                    Picker("Ambience", selection: ambience) {
+                        ForEach(Ambience.allCases) { Text($0.title).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .accessibilityIdentifier("ambience")
+                    Text(pro.isPro ? "Rain at the window, or a fire in the grate, under the game."
+                                   : "Rain and a fireplace come with 64 Pro.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(theme.inkSecondary)
+                }
+                .disabled(!settings.soundEnabled)
+                .opacity(settings.soundEnabled ? 1 : 0.4)
             }
             section("On the board") {
                 row("Coordinates") {
@@ -185,6 +205,12 @@ struct SettingsCard: View {
     private var strength: Binding<BotLevel> {
         Binding(get: { settings.botLevel }, set: { level in
             if level.isPro && !pro.isPro { showPaywall() } else { settings.botLevel = level }
+        })
+    }
+
+    private var ambience: Binding<Ambience> {
+        Binding(get: { settings.ambience }, set: { choice in
+            if choice != .off && !pro.isPro { showPaywall() } else { settings.ambience = choice }
         })
     }
 
