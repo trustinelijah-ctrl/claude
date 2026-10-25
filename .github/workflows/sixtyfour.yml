@@ -20,7 +20,7 @@ jobs:
     # Apple-silicon runners are several times faster for the simulator. If GitHub is short of
     # them and the job sits queued, macos-15-intel has the same Xcode but needs the long timeout.
     runs-on: macos-15
-    timeout-minutes: 120
+    timeout-minutes: 180
     defaults: { run: { working-directory: sixtyfour } }
     steps:
       - uses: actions/checkout@v4
@@ -44,6 +44,7 @@ jobs:
           diff -r -q /tmp/committed.xcodeproj SixtyFour.xcodeproj -x xcuserdata -x '*.xcworkspace' || echo "::warning::Committed SixtyFour.xcodeproj differs from project.yml output"
 
       - name: Build for testing
+        id: build
         run: |
           xcodebuild -project SixtyFour.xcodeproj -scheme SixtyFour -configuration Debug \
             -destination 'generic/platform=iOS Simulator' -derivedDataPath build \
@@ -76,8 +77,23 @@ jobs:
           echo "AIR11=$(pick 'iPad Air 11')" >> $GITHUB_ENV
           xcrun simctl list devices available | grep -i ipad
 
+      - name: UI tests (interaction)
+        if: steps.build.outcome == 'success' && !contains(github.event.head_commit.message, '[preview]') && !contains(github.event.head_commit.message, '[iphone]')
+        run: |
+          set -o pipefail
+          status=0
+          # A hard limit of 45 minutes, so a stuck test still prints what happened.
+          perl -e 'alarm shift; exec @ARGV' 2700 xcodebuild test-without-building -project SixtyFour.xcodeproj -scheme SixtyFour -derivedDataPath build \
+            -destination "id=$AIR11" -only-testing:SixtyFourUITests/GameplayUITests \
+            -retry-tests-on-failure -test-iterations 2 \
+            -resultBundlePath results/ui.xcresult > ui.log 2>&1 || status=$?
+          grep -E "Test Case .*(passed|failed)|error:|XCTAssert" ui.log | head -80 || true
+          grep -A3 "DIAG" ui.log | grep -v "^--$" | head -400 || true
+          tail -5 ui.log
+          exit $status
+
       - name: Screenshots
-        if: success() && !contains(github.event.head_commit.message, '[ui-only]')
+        if: always() && steps.build.outcome == 'success' && !contains(github.event.head_commit.message, '[ui-only]')
         env:
           COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
@@ -98,7 +114,7 @@ jobs:
           mkdir -p shots
           # A commit tagged [preview] shoots only the layout preview, on the 11-inch iPad Air.
           # A commit tagged [iphone] shoots only the iPhones, for a quick look at the phone layout.
-          DEVS="PRO13 PHONESE PHONEMAX"; ONLY="SixtyFourUITests/ScreenshotTests"
+          DEVS="PRO13 PHONESE"; ONLY="SixtyFourUITests/ScreenshotTests"
           if [[ "$COMMIT_MSG" == *"[preview]"* ]]; then DEVS="AIR11"; ONLY="SixtyFourUITests/ScreenshotTests/testB0LayoutPreview"; fi
           if [[ "$COMMIT_MSG" == *"[iphone]"* ]]; then DEVS="PHONESE PHONEMAX"; fi
           for dev in $DEVS; do
@@ -140,16 +156,3 @@ jobs:
           git add -A && git commit -q -m "Screenshots for ${GITHUB_SHA}"
           git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-shots
 
-      - name: UI tests (interaction)
-        if: success() && !contains(github.event.head_commit.message, '[preview]') && !contains(github.event.head_commit.message, '[iphone]')
-        run: |
-          set -o pipefail
-          status=0
-          xcodebuild test-without-building -project SixtyFour.xcodeproj -scheme SixtyFour -derivedDataPath build \
-            -destination "id=$AIR11" -only-testing:SixtyFourUITests/GameplayUITests \
-            -retry-tests-on-failure -test-iterations 2 \
-            -resultBundlePath results/ui.xcresult > ui.log 2>&1 || status=$?
-          grep -E "Test Case .*(passed|failed)|error:|XCTAssert" ui.log | head -80 || true
-          grep -A3 "DIAG" ui.log | grep -v "^--$" | head -400 || true
-          tail -5 ui.log
-          exit $status
