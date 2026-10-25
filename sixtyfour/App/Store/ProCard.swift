@@ -9,12 +9,12 @@ struct ProCard: View {
 
     @State private var plan: ProStore.Plan = .yearly
 
-    private struct Feature: Identifiable {
+    struct Feature: Identifiable {
         let symbol: String, title: String, detail: String
         var id: String { title }
     }
 
-    private let features: [Feature] = [
+    static let features: [Feature] = [
         Feature(symbol: "magnifyingglass", title: "Game review",
                 detail: "Every finished game checked move by move, with mistakes and the better move shown"),
         Feature(symbol: "lightbulb", title: "Hints", detail: "A suggested move whenever you're stuck"),
@@ -36,7 +36,7 @@ struct ProCard: View {
                     .foregroundStyle(theme.inkSecondary)
             }
             VStack(alignment: .leading, spacing: 12) {
-                ForEach(features) { f in
+                ForEach(Self.features) { f in
                     HStack(alignment: .top, spacing: 12) {
                         Image(systemName: f.symbol)
                             .font(.system(size: 15, weight: .semibold))

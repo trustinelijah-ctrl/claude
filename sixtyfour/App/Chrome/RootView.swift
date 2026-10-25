@@ -159,6 +159,12 @@ struct RootView: View {
                         .zIndex(12.5)
                 }
 
+                if let welcome = pro.welcome {
+                    ProWelcome(welcome: welcome, feedback: session.feedback) { pro.welcome = nil }
+                        .transition(.opacity.combined(with: .scale(scale: 1.02)))
+                        .zIndex(13)
+                }
+
                 if let saved = replaying {
                     ReplayView(saved: saved, theme: theme, feedback: session.feedback, pro: pro,
                                unlock: { paywallOpen = true }) { replaying = nil }
@@ -178,6 +184,7 @@ struct RootView: View {
             .animation(.easeInOut(duration: 0.35), value: screen)
             .animation(.easeInOut(duration: 0.28), value: libraryOpen)
             .animation(.easeInOut(duration: 0.28), value: paywallOpen)
+            .animation(.easeInOut(duration: 0.4), value: pro.welcome)
             .animation(.easeInOut(duration: 0.35), value: replaying)
             .animation(.easeInOut(duration: 0.6), value: account.hasOnboarded)
             .animation(.easeInOut(duration: 0.28), value: capturesFor)
@@ -201,6 +208,8 @@ struct RootView: View {
         .onChange(of: settings.soundEnabled) { session.feedback.apply(settings) }
         .onChange(of: settings.volume) { session.feedback.apply(settings) }
         .onChange(of: settings.ambience) { session.feedback.apply(settings) }
+        .onChange(of: settings.ambienceVolume) { session.feedback.apply(settings) }
+        .onChange(of: settings.hapticsEnabled) { session.feedback.apply(settings) }
         .onChange(of: settings.opponent) { syncOpponent() }
         .onChange(of: settings.botLevel) { syncOpponent() }
         .onChange(of: settings.humanColor) { syncOpponent() }
@@ -230,7 +239,7 @@ struct RootView: View {
 
     /// Anything covering the board stops the clock.
     private var overlayOpen: Bool {
-        settingsFor != nil || capturesFor != nil || paywallOpen || libraryOpen || replaying != nil
+        settingsFor != nil || capturesFor != nil || paywallOpen || libraryOpen || replaying != nil || pro.welcome != nil
             || !account.hasOnboarded || screen != .board
     }
 
@@ -304,6 +313,9 @@ struct RootView: View {
                                 humanColor: settings.isAgainstComputer ? settings.humanColor : nil, duration: 754)
         }
         if d.bool(forKey: "showPaywall") { paywallOpen = true }
+        if let w = d.string(forKey: "showProWelcome") {
+            pro.welcome = w == "restored" ? .restored : .subscribed(trialEnds: w == "trial" ? Date().addingTimeInterval(7 * 86_400) : nil)
+        }
         if d.bool(forKey: "showLibrary") { libraryOpen = true }
         if d.bool(forKey: "showReplay") { replaying = session.library.games.first }
         if d.bool(forKey: "showResult"), session.result != nil { session.isResultPresented = true }

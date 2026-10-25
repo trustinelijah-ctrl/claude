@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""Ambience for 64 Pro: rain at the window and a fire in the grate, made from noise.
+"""Ambience for 64 Pro that is synthesised rather than recorded: a fire in the grate and
+a summer night of crickets. The recorded scenes come from tools/scenes.py.
 
 Both are seamless stereo loops: the tail of a longer render is crossfaded into its head,
 so the loop point can't be heard.
 
-  python3 tools/ambience.py App/Resources/Sounds
+  python3 tools/ambience.py App/Resources/Sounds [fire] [night]
 
-Writes ambience_rain.m4a and ambience_fire.m4a (AAC). Replace either with a recording
-of the same name to change it; the app trims encoder padding and loops whatever is there.
+Replace either output with a recording of the same name to change it; the app trims
+encoder padding and loops whatever is there.
 """
 import os
 import subprocess
@@ -19,7 +20,7 @@ import numpy as np
 from scipy import signal
 
 SR = 48000
-LOOP = 30.0          # seconds in the finished loop
+LOOP = 60.0          # seconds in the finished loop
 XFADE = 3.0          # seconds crossfaded at the loop point
 RNG = np.random.default_rng(6464)
 
@@ -181,6 +182,62 @@ def fire(seconds):
     return L, R
 
 
+def room(x, seconds=0.35, wet=0.22):
+    """A small room around dry sounds: a short, dark, decaying noise tail."""
+    n = int(seconds * SR)
+    ir = RNG.standard_normal(n) * np.exp(-np.arange(n) / (seconds * SR / 5))
+    ir = filt(ir, 'lowpass', 3500)
+    ir /= np.sqrt((ir ** 2).sum())
+    return x + signal.fftconvolve(x, ir)[:len(x)] * wet
+
+
+def fire_room(seconds):
+    L, R = fire(seconds)
+    return room(L), room(R)
+
+
+# ---------------------------------------------------------------- night
+
+def chirp(f0):
+    """One cricket call: three or four quick pulses of a pure, high tone."""
+    pulses = RNG.integers(3, 5)
+    pulse = int(0.012 * SR)
+    gap = int(0.022 * SR)
+    out = np.zeros(pulses * (pulse + gap))
+    t = np.arange(pulse) / SR
+    env = np.sin(np.pi * np.arange(pulse) / pulse) ** 2
+    for i in range(pulses):
+        f = f0 * RNG.uniform(0.995, 1.005)
+        out[i * (pulse + gap):i * (pulse + gap) + pulse] += np.sin(2 * np.pi * f * t) * env
+    return out
+
+
+def night(seconds):
+    n = int(seconds * SR)
+    L = np.zeros(n)
+    R = np.zeros(n)
+    # A handful of crickets, near and far, each keeping its own steady rhythm.
+    for _ in range(7):
+        f0 = RNG.uniform(3900, 5200)
+        period = RNG.uniform(0.32, 0.75)
+        dist = RNG.uniform(0.15, 1.0)
+        p = RNG.uniform(-0.8, 0.8)
+        gl, gr = np.cos((p + 1) * np.pi / 4), np.sin((p + 1) * np.pi / 4)
+        t = RNG.uniform(0, period)
+        while t < seconds - 0.2:
+            c = chirp(f0) * dist * 0.08
+            s0 = int(t * SR)
+            L[s0:s0 + len(c)] += c * gl
+            R[s0:s0 + len(c)] += c * gr
+            # Crickets pause now and then.
+            t += period * (RNG.uniform(0.97, 1.03) if RNG.random() > 0.04 else RNG.uniform(3, 8))
+    # Far-off ones blur into a shimmer; the night air is a soft, dark hush.
+    L, R = filt(L, 'lowpass', 7500), filt(R, 'lowpass', 7500)
+    air_l = filt(pink(n), 'lowpass', 900) * lfo(n, 0.02, 0.08, 0.3) * 0.02
+    air_r = filt(pink(n), 'lowpass', 900) * lfo(n, 0.02, 0.08, 0.3) * 0.02
+    return room(L + air_l, 0.5, 0.3), room(R + air_r, 0.5, 0.3)
+
+
 # ---------------------------------------------------------------- loop and write
 
 def seamless(make):
@@ -218,5 +275,8 @@ def write(path, L, R, peak_db):
 if __name__ == '__main__':
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
-    write(os.path.join(out, 'ambience_rain.m4a'), *seamless(rain), peak_db=-2.5)
-    write(os.path.join(out, 'ambience_fire.m4a'), *seamless(fire), peak_db=-6.0)
+    only = sys.argv[2:] or ['fire', 'night']
+    if 'fire' in only:
+        write(os.path.join(out, 'ambience_fire.m4a'), *seamless(fire_room), peak_db=-6.0)
+    if 'night' in only:
+        write(os.path.join(out, 'ambience_night.m4a'), *seamless(night), peak_db=-9.0)

@@ -7,7 +7,12 @@ import UIKit
 /// touch comes from the lift, shadow, sound and settle of the piece instead.
 @MainActor
 final class HapticManager {
-    let isSupported: Bool = CHHapticEngine.capabilitiesForHardware().supportsHaptics
+    private let hardware: Bool = CHHapticEngine.capabilitiesForHardware().supportsHaptics
+    /// The player's choice in Options.
+    var enabled = true
+    var isSupported: Bool { hardware && enabled }
+    /// Whether this device can vibrate at all, for showing the option.
+    var hasHardware: Bool { hardware }
 
     private lazy var light = UIImpactFeedbackGenerator(style: .light)
     private lazy var rigid = UIImpactFeedbackGenerator(style: .rigid)

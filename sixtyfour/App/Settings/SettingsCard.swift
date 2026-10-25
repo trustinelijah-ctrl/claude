@@ -1,7 +1,8 @@
 import SwiftUI
 import ChessCore
 
-/// Settings and game controls, opened from either player's panel and turned to face them.
+/// Options, opened from either player's panel and turned to face them. Four tabs keep each
+/// page short: the game in hand, how the board looks, sound, and everything else.
 struct SettingsCard: View {
     @Bindable var settings: SettingsStore
     let session: GameSession
@@ -11,286 +12,91 @@ struct SettingsCard: View {
     var showPaywall: () -> Void = {}
     var showLibrary: () -> Void = {}
     var showWelcome: () -> Void = {}
-    /// Back to the home screen; nil when settings were opened from there.
+    /// Back to the home screen; nil when options were opened from there.
     var goHome: (() -> Void)? = nil
     let close: () -> Void
 
+    enum Tab: String, CaseIterable, Identifiable {
+        case game, board, sound, more
+        var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .game: return "Game"
+            case .board: return "Board"
+            case .sound: return "Sound"
+            case .more: return "More"
+            }
+        }
+        var symbol: String {
+            switch self {
+            case .game: return "flag.checkered"
+            case .board: return "square.grid.3x3.fill"
+            case .sound: return "speaker.wave.2.fill"
+            case .more: return "person.crop.circle"
+            }
+        }
+    }
+
     private enum Confirm { case newGame, resign, draw }
     @State private var confirm: Confirm?
+    @State private var tab: Tab = Tab(rawValue: UserDefaults.standard.string(forKey: "optionsTab") ?? "") ?? .game
+    @Namespace private var tabMarker
 
     private var theme: BoardTheme { settings.theme }
+    private var surface: Color { theme.isDark ? Color(hex: 0x1D1713) : Color(hex: 0xF9F6F0) }
 
     var body: some View {
         VStack(spacing: 0) {
             header
-            ViewThatFits(in: .vertical) {
-                sections
-                ScrollView(.vertical, showsIndicators: false) { sections }
+            tabBar
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 22) {
+                    switch tab {
+                    case .game: gamePage
+                    case .board: boardPage
+                    case .sound: soundPage
+                    case .more: morePage
+                    }
+                }
+                .padding(.horizontal, 22)
+                .padding(.top, 18)
+                .padding(.bottom, 26)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .id(tab)
+                .transition(.opacity)
             }
         }
-        .frame(maxWidth: 420)
+        .frame(maxWidth: 600, maxHeight: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .fill(theme.isDark ? Color(hex: 0x1D1713) : Color(hex: 0xF9F6F0))
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(surface)
                 .shadow(color: .black.opacity(theme.isDark ? 0.55 : 0.22), radius: 40, y: 18)
         )
+        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .strokeBorder(theme.panelStroke, lineWidth: 1)
         )
         .environment(\.colorScheme, theme.isDark ? .dark : .light)
+        .animation(.easeInOut(duration: 0.2), value: tab)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settings")
     }
 
-    private var sections: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            // The game itself first: home, new game, draw and resign without scrolling.
-            section("Game") { gameControls }
-            section("Opponent") {
-                Picker("Opponent", selection: $settings.opponent) {
-                    Text("A friend").tag(Opponent.friend)
-                    Text("64").tag(Opponent.computer)
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                if settings.isAgainstComputer {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Strength").font(.system(size: 15)).foregroundStyle(theme.ink)
-                        Picker("Strength", selection: strength) {
-                            ForEach(BotLevel.allCases) { level in
-                                Text(level.title).tag(level)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .labelsHidden()
-                        if !pro.isPro {
-                            Text("Master and Grandmaster come with 64 Pro.")
-                                .font(.system(size: 12))
-                                .foregroundStyle(theme.inkSecondary)
-                        }
-                    }
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("You play").font(.system(size: 15)).foregroundStyle(theme.ink)
-                        Picker("You play", selection: $settings.humanColor) {
-                            Text("White").tag(PieceColor.white)
-                            Text("Black").tag(PieceColor.black)
-                        }
-                        .pickerStyle(.segmented)
-                        .labelsHidden()
-                    }
-                }
-            }
-            .animation(.easeInOut(duration: 0.25), value: settings.isAgainstComputer)
-            section("Clock") {
-                Picker("Clock", selection: $settings.timeControl) {
-                    ForEach(TimeControl.allCases) { Text($0.title).tag($0) }
-                }
-                .pickerStyle(.menu)
-                .tint(theme.accent)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .accessibilityIdentifier("time-control")
-                Text(settings.timeControl == .off ? "No clock. Take as long as you like."
-                                                  : "Each side's clock starts after White's first move. Changing this resets both clocks.")
-                    .font(.system(size: 12))
-                    .foregroundStyle(theme.inkSecondary)
-            }
-            section("Board") {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10, alignment: .top), count: 3),
-                          alignment: .leading, spacing: 16) {
-                    ForEach(ThemeID.allCases) { id in
-                        ThemeSwatch(theme: .with(id), selected: settings.themeID == id, ink: theme,
-                                    locked: id.isPro && !pro.isPro) {
-                            session.feedback.ui()
-                            if id.isPro && !pro.isPro { showPaywall(); return }
-                            withAnimation(.easeInOut(duration: 0.35)) { settings.themeID = id }
-                        }
-                    }
-                }
-            }
-            section("Pieces") {
-                HStack(spacing: 10) {
-                    ForEach(PieceSet.allCases) { set in
-                        pieceSetButton(set)
-                    }
-                }
-            }
-            section("Your games") {
-                Button {
-                    session.feedback.ui()
-                    showLibrary()
-                } label: {
-                    HStack {
-                        Image(systemName: "film.stack").foregroundStyle(theme.accent)
-                        Text(session.library.games.isEmpty ? "No finished games yet" : "Replay your games")
-                            .font(.system(size: 15))
-                            .foregroundStyle(theme.ink)
-                        Spacer()
-                        Text("\(session.library.games.count)")
-                            .font(.system(size: 15))
-                            .foregroundStyle(theme.inkSecondary)
-                        Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(theme.inkSecondary)
-                    }
-                    .frame(minHeight: 40)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("open-library")
-            }
-            section("Sound") {
-                row("Sound effects") {
-                    Toggle("", isOn: $settings.soundEnabled).labelsHidden().tint(theme.accent)
-                }
-                HStack(spacing: 12) {
-                    Image(systemName: "speaker.fill").font(.system(size: 11))
-                    Slider(value: $settings.volume, in: 0...1, onEditingChanged: { editing in
-                        if !editing { session.feedback.audio.play(.place, gain: 0.9) }
-                    })
-                    .tint(theme.accent)
-                    Image(systemName: "speaker.wave.3.fill").font(.system(size: 11))
-                }
-                .foregroundStyle(theme.inkSecondary)
-                .disabled(!settings.soundEnabled)
-                .opacity(settings.soundEnabled ? 1 : 0.4)
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 6) {
-                        Text("Ambience").font(.system(size: 15)).foregroundStyle(theme.ink)
-                        if !pro.isPro {
-                            Image(systemName: "lock.fill").font(.system(size: 10)).foregroundStyle(theme.inkSecondary)
-                        }
-                    }
-                    Picker("Ambience", selection: ambience) {
-                        ForEach(Ambience.allCases) { Text($0.title).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    .accessibilityIdentifier("ambience")
-                    Text(pro.isPro ? "Rain at the window, or a fire in the grate, under the game."
-                                   : "Rain and a fireplace come with 64 Pro.")
-                        .font(.system(size: 12))
-                        .foregroundStyle(theme.inkSecondary)
-                }
-                .disabled(!settings.soundEnabled)
-                .opacity(settings.soundEnabled ? 1 : 0.4)
-            }
-            section("On the board") {
-                row("Coordinates") {
-                    Toggle("", isOn: $settings.showCoordinates).labelsHidden().tint(theme.accent)
-                }
-                row("Legal move hints") {
-                    Toggle("", isOn: $settings.showMoveHints).labelsHidden().tint(theme.accent)
-                }
-                if !settings.isAgainstComputer {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Black's pieces")
-                        .font(.system(size: 15))
-                        .foregroundStyle(theme.ink)
-                    Picker("Black's pieces", selection: $settings.pieceFacing) {
-                        Text("Face Black").tag(PieceFacing.eachPlayer)
-                        Text("Face White").tag(PieceFacing.white)
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                }
-                }
-            }
-            section("Account") { accountRows }
-        }
-        .padding(.horizontal, 26)
-        .padding(.vertical, 22)
-    }
-
-    /// Choosing a Pro opponent without Pro opens the offer instead.
-    private var strength: Binding<BotLevel> {
-        Binding(get: { settings.botLevel }, set: { level in
-            if level.isPro && !pro.isPro { showPaywall() } else { settings.botLevel = level }
-        })
-    }
-
-    private var ambience: Binding<Ambience> {
-        Binding(get: { settings.ambience }, set: { choice in
-            if choice != .off && !pro.isPro { showPaywall() } else { settings.ambience = choice }
-        })
-    }
-
-    private func pieceSetButton(_ set: PieceSet) -> some View {
-        let selected = settings.pieceSet == set
-        let locked = set.isPro && !pro.isPro
-        return Button {
-            session.feedback.ui()
-            if locked { showPaywall(); return }
-            withAnimation(.easeInOut(duration: 0.3)) { settings.pieceSet = set }
-        } label: {
-            VStack(spacing: 6) {
-                HStack(spacing: -10) {
-                    StandingPiece(piece: Piece(.white, .queen), size: 46, shadow: 0.3)
-                    StandingPiece(piece: Piece(.black, .knight), size: 46, shadow: 0.3)
-                }
-                .environment(\.pieceSet, set)
-                HStack(spacing: 4) {
-                    Text(set.title).font(.system(size: 13, weight: .semibold)).foregroundStyle(theme.ink)
-                    if locked { Image(systemName: "lock.fill").font(.system(size: 10)).foregroundStyle(theme.accent) }
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
-            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(theme.ink.opacity(0.05)))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(selected ? theme.accent : .clear, lineWidth: 2))
-            .opacity(locked ? 0.75 : 1)
-        }
-        .buttonStyle(PressScaleStyle())
-        .accessibilityLabel(set.title)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-
-    @ViewBuilder
-    private var accountRows: some View {
-        row(account.kind == .apple ? "Signed in\(account.name.map { " as \($0)" } ?? " with Apple")" : "Playing as a guest") {
-            if account.kind == .apple {
-                Button("Sign out") { account.signOut() }
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(theme.accent)
-            }
-        }
-        row(pro.isPro ? "64 Pro is active" : "64 Pro") {
-            if !pro.isPro {
-                Button("See plans") {
-                    session.feedback.ui()
-                    showPaywall()
-                }
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(theme.accent)
-            } else if pro.hasTestUnlock {
-                Button("End test") { pro.endTestUnlock() }
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(theme.accent)
-            } else {
-                Image(systemName: "checkmark.seal.fill").foregroundStyle(theme.accent)
-            }
-        }
-        Button {
-            session.feedback.ui()
-            showWelcome()
-        } label: {
-            Text(account.kind == .apple ? "Show the welcome again" : "Sign in or show the welcome again")
-                .font(.system(size: 14))
-                .foregroundStyle(theme.inkSecondary)
-                .frame(minHeight: 36)
-        }
-        .buttonStyle(.plain)
-    }
+    // MARK: Frame
 
     private var header: some View {
-        HStack(alignment: .center) {
+        HStack(alignment: .center, spacing: 12) {
             Image("Logo")
                 .resizable()
                 .renderingMode(.template)
                 .scaledToFit()
-                .frame(height: 30)
+                .frame(height: 24)
+                .foregroundStyle(theme.accent)
+                .accessibilityHidden(true)
+            Text("Options")
+                .font(.system(size: 20, weight: .bold))
                 .foregroundStyle(theme.ink)
-                .accessibilityLabel("64")
             Spacer()
             Button {
                 session.feedback.ui()
@@ -298,43 +104,251 @@ struct SettingsCard: View {
             } label: {
                 Text("Done")
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(theme.accent)
-                    .frame(minWidth: 44, minHeight: 44)
+                    .foregroundStyle(theme.isDark ? Color(hex: 0x1D1713) : .white)
+                    .padding(.horizontal, 16)
+                    .frame(minHeight: 34)
+                    .background(Capsule().fill(theme.accent))
+                    .frame(minHeight: 44)
             }
             .buttonStyle(PressScaleStyle())
         }
-        .padding(.horizontal, 26)
-        .padding(.top, 18)
-        .padding(.bottom, 10)
-        .overlay(alignment: .bottom) {
-            Rectangle().fill(theme.panelStroke).frame(height: 1)
+        .padding(.horizontal, 22)
+        .padding(.top, 14)
+    }
+
+    private var tabBar: some View {
+        HStack(spacing: 6) {
+            ForEach(Tab.allCases) { t in
+                Button {
+                    session.feedback.ui()
+                    confirm = nil
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.85)) { tab = t }
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: t.symbol).font(.system(size: 16, weight: .semibold))
+                        Text(t.title).font(.system(size: 12, weight: .semibold))
+                    }
+                    .foregroundStyle(tab == t ? theme.accent : theme.inkSecondary)
+                    .frame(maxWidth: .infinity, minHeight: 54)
+                    .background {
+                        if tab == t {
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(theme.accent.opacity(0.13))
+                                .matchedGeometryEffect(id: "tab", in: tabMarker)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("tab-\(t.rawValue)")
+                .accessibilityAddTraits(tab == t ? .isSelected : [])
+            }
+        }
+        .padding(5)
+        .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(theme.ink.opacity(0.05)))
+        .padding(.horizontal, 22)
+        .padding(.top, 12)
+        .padding(.bottom, 2)
+    }
+
+    // MARK: Pages
+
+    @ViewBuilder
+    private var gamePage: some View {
+        group("This game") { gameControls.padding(14) }
+        group("Opponent") {
+            VStack(alignment: .leading, spacing: 0) {
+                Picker("Opponent", selection: $settings.opponent) {
+                    Text("A friend").tag(Opponent.friend)
+                    Text("64").tag(Opponent.computer)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .padding(14)
+                if settings.isAgainstComputer {
+                    divider
+                    row("Strength", detail: pro.isPro ? nil : "Master and Grandmaster come with 64 Pro") {
+                        Picker("Strength", selection: strength) {
+                            ForEach(BotLevel.allCases) { level in
+                                Text(level.isPro && !pro.isPro ? "\(level.title) (Pro)" : level.title).tag(level)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(theme.accent)
+                    }
+                    divider
+                    row("You play") {
+                        Picker("You play", selection: $settings.humanColor) {
+                            Text("White").tag(PieceColor.white)
+                            Text("Black").tag(PieceColor.black)
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                        .frame(maxWidth: 180)
+                    }
+                }
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: settings.isAgainstComputer)
+        group("Clock", footer: settings.timeControl == .off ? "No clock. Take as long as you like."
+                                : "Each clock starts after White's first move. Changing this resets both.") {
+            row("Time control") {
+                Picker("Clock", selection: $settings.timeControl) {
+                    ForEach(TimeControl.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.menu)
+                .tint(theme.accent)
+                .accessibilityIdentifier("time-control")
+            }
         }
     }
+
+    @ViewBuilder
+    private var boardPage: some View {
+        group("Board") {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 100, maximum: 140), spacing: 12, alignment: .top)],
+                      alignment: .leading, spacing: 18) {
+                ForEach(ThemeID.allCases) { id in
+                    ThemeSwatch(theme: .with(id), selected: settings.themeID == id, ink: theme,
+                                locked: id.isPro && !pro.isPro) {
+                        session.feedback.ui()
+                        if id.isPro && !pro.isPro { showPaywall(); return }
+                        withAnimation(.easeInOut(duration: 0.35)) { settings.themeID = id }
+                    }
+                }
+            }
+            .padding(16)
+        }
+        group("Pieces") {
+            HStack(spacing: 10) {
+                ForEach(PieceSet.allCases) { set in pieceSetButton(set) }
+            }
+            .padding(12)
+        }
+        group("On the board") {
+            VStack(spacing: 0) {
+                toggleRow("Coordinates", isOn: $settings.showCoordinates)
+                divider
+                toggleRow("Legal move hints", isOn: $settings.showMoveHints)
+                if !settings.isAgainstComputer {
+                    divider
+                    row("Black's pieces") {
+                        Picker("Black's pieces", selection: $settings.pieceFacing) {
+                            Text("Face Black").tag(PieceFacing.eachPlayer)
+                            Text("Face White").tag(PieceFacing.white)
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                        .frame(maxWidth: 220)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var soundPage: some View {
+        group("Sound effects") {
+            VStack(spacing: 0) {
+                toggleRow("Pieces, clock and board", isOn: $settings.soundEnabled)
+                divider
+                volumeRow(value: $settings.volume, enabled: settings.soundEnabled) {
+                    session.feedback.audio.play(.placeHeavy, gain: 0.9)
+                }
+                if session.feedback.haptics.hasHardware {
+                    divider
+                    toggleRow("Vibration", isOn: $settings.hapticsEnabled)
+                }
+            }
+        }
+        group("Ambience", badge: pro.isPro ? nil : "PRO",
+              footer: "Plays softly under the game, separate from the piece sounds. Follows the silent switch.") {
+            VStack(spacing: 0) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 92), spacing: 10)], spacing: 10) {
+                    ForEach(Ambience.available) { a in ambienceTile(a) }
+                }
+                .padding(12)
+                .accessibilityIdentifier("ambience")
+                divider
+                volumeRow(value: $settings.ambienceVolume, enabled: settings.ambience != .off, preview: nil)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var morePage: some View {
+        group("Your games") {
+            navRow(session.library.games.isEmpty ? "No finished games yet" : "Replay your games",
+                   symbol: "film.stack", value: "\(session.library.games.count)", id: "open-library") {
+                showLibrary()
+            }
+        }
+        group("64 Pro") {
+            VStack(spacing: 0) {
+                row(pro.isPro ? "Active" : "Not subscribed", detail: pro.isPro ? "Thank you for supporting 64." : "Boards, sets, review, hints, ambience and more") {
+                    if !pro.isPro {
+                        capsuleButton("See plans") { showPaywall() }
+                    } else if pro.hasTestUnlock {
+                        capsuleButton("End test") { pro.endTestUnlock() }
+                    } else {
+                        Image(systemName: "checkmark.seal.fill").font(.system(size: 20)).foregroundStyle(theme.accent)
+                    }
+                }
+                if !pro.isPro {
+                    divider
+                    navRow("Restore purchases", symbol: "arrow.clockwise", value: nil, id: "restore") {
+                        Task { await pro.restore() }
+                    }
+                }
+                if let message = pro.message {
+                    divider
+                    Text(message)
+                        .font(.system(size: 13))
+                        .foregroundStyle(theme.inkSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(14)
+                }
+            }
+        }
+        group("Account") {
+            VStack(spacing: 0) {
+                row(account.kind == .apple ? "Signed in\(account.name.map { " as \($0)" } ?? " with Apple")" : "Playing as a guest") {
+                    if account.kind == .apple {
+                        capsuleButton("Sign out") { account.signOut() }
+                    }
+                }
+                divider
+                navRow(account.kind == .apple ? "Show the welcome again" : "Sign in, or show the welcome again",
+                       symbol: "sparkles", value: nil, id: "show-welcome") {
+                    showWelcome()
+                }
+            }
+        }
+        Text("64 · version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")")
+            .font(.system(size: 12))
+            .foregroundStyle(theme.inkSecondary.opacity(0.7))
+            .frame(maxWidth: .infinity)
+    }
+
+    // MARK: Game controls
 
     @ViewBuilder
     private var gameControls: some View {
         switch confirm {
         case nil:
-            VStack(spacing: 10) {
-                HStack(spacing: 10) {
-                    if let goHome {
-                        wideButton("Home", prominent: false, perform: goHome)
-                            .accessibilityIdentifier("settings-home")
-                    }
-                    wideButton("New Game", prominent: true) { confirm = .newGame }
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                if let goHome {
+                    actionTile("Home", symbol: "house.fill", perform: goHome)
+                        .accessibilityIdentifier("settings-home")
                 }
-                HStack(spacing: 10) {
-                    if !settings.isAgainstComputer {
-                        wideButton("Agree to Draw", prominent: false) { confirm = .draw }
-                            .disabled(session.isOver)
-                    }
-                    wideButton("Resign", prominent: false) { confirm = .resign }
-                        .disabled(session.isOver)
+                actionTile("New game", symbol: "arrow.counterclockwise") { confirm = .newGame }
+                if !settings.isAgainstComputer {
+                    actionTile("Agree to draw", symbol: "equal.circle.fill", enabled: !session.isOver) { confirm = .draw }
                 }
-                .opacity(session.isOver ? 0.4 : 1)
+                actionTile("Resign", symbol: "flag.fill", tint: theme.check, enabled: !session.isOver) { confirm = .resign }
             }
         case .newGame?:
-            confirmation("Put the pieces back and start again?", action: "New Game") {
+            confirmation("Put the pieces back and start again?", action: "New game") {
                 session.newGame()
                 close()
             }
@@ -351,10 +365,31 @@ struct SettingsCard: View {
         }
     }
 
+    private func actionTile(_ title: String, symbol: String, tint: Color? = nil, enabled: Bool = true,
+                            perform: @escaping () -> Void) -> some View {
+        Button {
+            session.feedback.ui()
+            withAnimation(.easeInOut(duration: 0.2)) { perform() }
+        } label: {
+            VStack(spacing: 6) {
+                Image(systemName: symbol).font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(tint ?? theme.accent)
+                Text(title).font(.system(size: 14, weight: .semibold)).foregroundStyle(theme.ink)
+            }
+            .frame(maxWidth: .infinity, minHeight: 70)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(theme.ink.opacity(0.06)))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(theme.ink.opacity(0.06), lineWidth: 0.75))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressScaleStyle())
+        .disabled(!enabled)
+        .opacity(enabled ? 1 : 0.4)
+    }
+
     private func confirmation(_ text: String, action: String, perform: @escaping () -> Void) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(text)
-                .font(.system(size: 15))
+                .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(theme.ink)
             HStack(spacing: 10) {
                 wideButton("Cancel", prominent: false) { confirm = nil }
@@ -381,23 +416,189 @@ struct SettingsCard: View {
         .buttonStyle(PressScaleStyle())
     }
 
-    private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(.system(size: 11, weight: .semibold))
-                .textCase(.uppercase)
-                .tracking(1.6)
-                .foregroundStyle(theme.inkSecondary)
+    // MARK: Pieces of a page
+
+    /// Choosing a Pro opponent without Pro opens the offer instead.
+    private var strength: Binding<BotLevel> {
+        Binding(get: { settings.botLevel }, set: { level in
+            if level.isPro && !pro.isPro { showPaywall() } else { settings.botLevel = level }
+        })
+    }
+
+    private func ambienceTile(_ a: Ambience) -> some View {
+        let selected = settings.ambience == a
+        let locked = a != .off && !pro.isPro
+        return Button {
+            session.feedback.ui()
+            if locked { showPaywall(); return }
+            withAnimation(.easeInOut(duration: 0.2)) { settings.ambience = a }
+        } label: {
+            VStack(spacing: 6) {
+                Image(systemName: a.symbol)
+                    .font(.system(size: 20))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(selected ? theme.accent : theme.ink.opacity(0.75))
+                    .frame(height: 26)
+                HStack(spacing: 3) {
+                    Text(a.title).font(.system(size: 13, weight: .semibold)).foregroundStyle(theme.ink)
+                    if locked { Image(systemName: "lock.fill").font(.system(size: 9)).foregroundStyle(theme.accent) }
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 72)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(selected ? theme.accent.opacity(0.14) : theme.ink.opacity(0.05)))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(selected ? theme.accent : .clear, lineWidth: 1.5))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressScaleStyle())
+        .accessibilityLabel(a.title)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    private func pieceSetButton(_ set: PieceSet) -> some View {
+        let selected = settings.pieceSet == set
+        let locked = set.isPro && !pro.isPro
+        return Button {
+            session.feedback.ui()
+            if locked { showPaywall(); return }
+            withAnimation(.easeInOut(duration: 0.3)) { settings.pieceSet = set }
+        } label: {
+            VStack(spacing: 6) {
+                HStack(spacing: -10) {
+                    StandingPiece(piece: Piece(.white, .queen), size: 46, shadow: 0.3)
+                    StandingPiece(piece: Piece(.black, .knight), size: 46, shadow: 0.3)
+                }
+                .environment(\.pieceSet, set)
+                HStack(spacing: 4) {
+                    Text(set.title).font(.system(size: 13, weight: .semibold)).foregroundStyle(theme.ink)
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                    if locked { Image(systemName: "lock.fill").font(.system(size: 10)).foregroundStyle(theme.accent) }
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(theme.ink.opacity(0.05)))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(selected ? theme.accent : .clear, lineWidth: 2))
+            .opacity(locked ? 0.75 : 1)
+        }
+        .buttonStyle(PressScaleStyle())
+        .accessibilityLabel(set.title)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    /// A titled, rounded group of rows, like a page of a well-kept notebook.
+    private func group<Content: View>(_ title: String, badge: String? = nil, footer: String? = nil,
+                                      @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Text(title)
+                    .font(.system(size: 12, weight: .semibold))
+                    .textCase(.uppercase)
+                    .tracking(1.4)
+                    .foregroundStyle(theme.inkSecondary)
+                if let badge {
+                    Text(badge)
+                        .font(.system(size: 9, weight: .heavy))
+                        .foregroundStyle(Brand.brown)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(theme.accent))
+                }
+            }
+            .padding(.leading, 4)
             content()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(theme.ink.opacity(0.045)))
+                .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(theme.ink.opacity(0.07), lineWidth: 0.75))
+            if let footer {
+                Text(footer)
+                    .font(.system(size: 12))
+                    .foregroundStyle(theme.inkSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 4)
+            }
         }
     }
 
-    private func row<Trailing: View>(_ title: String, @ViewBuilder trailing: () -> Trailing) -> some View {
-        HStack {
-            Text(title).font(.system(size: 15)).foregroundStyle(theme.ink)
-            Spacer()
+    private var divider: some View {
+        Rectangle().fill(theme.ink.opacity(0.08)).frame(height: 0.75).padding(.leading, 14)
+    }
+
+    private func row<Trailing: View>(_ title: String, detail: String? = nil,
+                                     @ViewBuilder trailing: () -> Trailing) -> some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.system(size: 15)).foregroundStyle(theme.ink)
+                if let detail {
+                    Text(detail).font(.system(size: 12)).foregroundStyle(theme.inkSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            Spacer(minLength: 8)
             trailing()
         }
+        .padding(.horizontal, 14)
+        .frame(minHeight: 52)
+    }
+
+    private func toggleRow(_ title: String, isOn: Binding<Bool>) -> some View {
+        row(title) { Toggle("", isOn: isOn).labelsHidden().tint(theme.accent) }
+    }
+
+    private func volumeRow(value: Binding<Double>, enabled: Bool, preview: (() -> Void)?) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "speaker.fill").font(.system(size: 11))
+            Slider(value: value, in: 0...1, onEditingChanged: { editing in
+                if !editing { preview?() }
+            })
+            .tint(theme.accent)
+            Image(systemName: "speaker.wave.3.fill").font(.system(size: 11))
+        }
+        .foregroundStyle(theme.inkSecondary)
+        .padding(.horizontal, 14)
+        .frame(minHeight: 52)
+        .disabled(!enabled)
+        .opacity(enabled ? 1 : 0.4)
+    }
+
+    private func navRow(_ title: String, symbol: String, value: String?, id: String,
+                        action: @escaping () -> Void) -> some View {
+        Button {
+            session.feedback.ui()
+            action()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: symbol).font(.system(size: 15)).foregroundStyle(theme.accent).frame(width: 22)
+                Text(title).font(.system(size: 15)).foregroundStyle(theme.ink)
+                Spacer()
+                if let value { Text(value).font(.system(size: 15)).foregroundStyle(theme.inkSecondary) }
+                Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(theme.inkSecondary)
+            }
+            .padding(.horizontal, 14)
+            .frame(minHeight: 52)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(id)
+    }
+
+    private func capsuleButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button {
+            session.feedback.ui()
+            action()
+        } label: {
+            Text(title)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(theme.accent)
+                .padding(.horizontal, 14)
+                .frame(minHeight: 32)
+                .overlay(Capsule().strokeBorder(theme.accent.opacity(0.6), lineWidth: 1))
+                .frame(minHeight: 44)
+        }
+        .buttonStyle(PressScaleStyle())
     }
 }
 

@@ -4,26 +4,43 @@ import os
 
 enum SoundEffect: String, CaseIterable {
     case place, placeLight, placeHeavy, capture, pickup, invalid, ui, promotion, check, checkmate, draw, reset
-    case clockPress, clockTick, topple
+    case clockPress, clockTick, topple, notch
 }
 
 /// A sound bed under the game, for 64 Pro.
 enum Ambience: String, CaseIterable, Identifiable {
-    case off, rain, fire
+    case off, rain, storm, fire, cafe, sea, forest, night
     var id: String { rawValue }
     var title: String {
         switch self {
         case .off: return "Off"
         case .rain: return "Rain"
+        case .storm: return "Storm"
         case .fire: return "Fireplace"
+        case .cafe: return "Café"
+        case .sea: return "Sea"
+        case .forest: return "Forest"
+        case .night: return "Night"
         }
     }
-    fileprivate var file: String? {
+    var symbol: String {
         switch self {
-        case .off: return nil
-        case .rain: return "ambience_rain"
-        case .fire: return "ambience_fire"
+        case .off: return "speaker.slash.fill"
+        case .rain: return "cloud.rain.fill"
+        case .storm: return "cloud.bolt.rain.fill"
+        case .fire: return "flame.fill"
+        case .cafe: return "cup.and.saucer.fill"
+        case .sea: return "water.waves"
+        case .forest: return "leaf.fill"
+        case .night: return "moon.stars.fill"
         }
+    }
+    fileprivate var file: String? { self == .off ? nil : "ambience_\(rawValue)" }
+
+    /// The scenes whose recordings are in the app (and Off).
+    static let available: [Ambience] = allCases.filter { a in
+        guard let f = a.file else { return true }
+        return ["m4a", "caf", "wav", "aac"].contains { Bundle.main.url(forResource: f, withExtension: $0) != nil }
     }
 }
 
@@ -46,7 +63,9 @@ final class AudioManager: @unchecked Sendable {
     private var ambienceBuffers: [Ambience: AVAudioPCMBuffer] = [:]
     private var ambience: Ambience = .off
     private var fadeToken = 0
-    private static let ambienceLevel: Float = 0.55
+    private var ambienceVolume: Float = 0.6
+    /// Ambience has its own level, independent of the move sounds.
+    private var ambienceTarget: Float { Self.loudness(ambienceVolume) * 0.9 }
     private static let stereo = AVAudioFormat(standardFormatWithSampleRate: 48_000, channels: 2)!
     private var library: [SoundEffect: [AVAudioPCMBuffer]] = [:]
     private var lastPick: [SoundEffect: Int] = [:]
@@ -89,6 +108,16 @@ final class AudioManager: @unchecked Sendable {
         queue.async {
             self.enabled = on
             self.applyAmbience()
+        }
+    }
+
+    func setAmbienceVolume(_ value: Double) {
+        queue.async {
+            self.ambienceVolume = Float(max(0, min(1, value)))
+            if self.ambience != .off, self.ambienceNode.isPlaying {
+                self.fadeToken += 1
+                self.ambienceNode.volume = self.ambienceTarget
+            }
         }
     }
 
@@ -181,7 +210,8 @@ final class AudioManager: @unchecked Sendable {
             voices.append(v)
         }
         engine.attach(ambienceNode)
-        engine.connect(ambienceNode, to: submix, format: Self.stereo)
+        // Straight to the main mix: the effects volume and switch don't touch it.
+        engine.connect(ambienceNode, to: engine.mainMixerNode, format: Self.stereo)
         engine.connect(submix, to: limiter, format: stereo)
         engine.connect(limiter, to: engine.mainMixerNode, format: stereo)
         submix.outputVolume = Self.loudness(volume)
@@ -206,7 +236,7 @@ final class AudioManager: @unchecked Sendable {
 
     private func applyAmbience() {
         guard ready else { return }
-        guard enabled, let buffer = ambienceBuffer(ambience), engine.isRunning else {
+        guard let buffer = ambienceBuffer(ambience), engine.isRunning else {
             fade(to: 0, over: 0.8, thenStop: true)
             return
         }
@@ -215,7 +245,7 @@ final class AudioManager: @unchecked Sendable {
         ambienceNode.volume = 0
         ambienceNode.scheduleBuffer(buffer, at: nil, options: .loops, completionHandler: nil)
         ambienceNode.play()
-        fade(to: Self.ambienceLevel, over: 1.6)
+        fade(to: ambienceTarget, over: 1.6)
     }
 
     private func fade(to target: Float, over seconds: Double, thenStop: Bool = false) {

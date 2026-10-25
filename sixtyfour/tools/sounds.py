@@ -146,6 +146,12 @@ def place_heavy(i):
     return finish(room(mix((c, 0.0), (t, 0.5), (b, 1.0)), level=db(-28)), -8.0)
 
 
+def notch():
+    """A carried piece passing over a square: the faintest detent, felt as much as heard."""
+    tick = crop(lp(hp(from_onset(load('switch2.ogg')), 1200), 6000), 14, fade_ms=9)
+    return finish(tick, -30.0)
+
+
 def clock_press():
     """A mechanical chess clock: the plunger snapping down, then the case answering."""
     snap = crop(hp(from_onset(load('switch3.ogg')), 400), 35, fade_ms=18) * db(-2)
@@ -253,6 +259,7 @@ if __name__ == '__main__':
         files[f'placeHeavy_{i + 1}'] = place_heavy(i)
     files['clockPress_1'] = clock_press()
     files['clockTick_1'] = clock_tick()
+    files['notch_1'] = notch()
     files['topple_1'] = topple()
     for i in range(3):
         files[f'pickup_{i + 1}'] = pickup(i)

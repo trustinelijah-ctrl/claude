@@ -61,9 +61,9 @@ struct PlayerZone: View {
         let z = layout.zone
         let trayRight = layout.tray.maxX - z.minX
         return VStack(spacing: 0) {
-            HStack(spacing: 10) {
+            HStack(spacing: 16) {
                 Spacer(minLength: trayRight)
-                status
+                statusPill
                     .rotationEffect(facesNearPlayer ? .degrees(180) : .zero)
                 if session.clock != nil {
                     ClockFace(color: color, session: session, theme: theme, large: false)
@@ -84,16 +84,21 @@ struct PlayerZone: View {
     private var wideEnds: some View {
         let z = layout.zone
         let trayRight = layout.tray.maxX - z.minX
-        return HStack(spacing: 14) {
-            Spacer(minLength: trayRight)
-            status
+        // The status sits on its own in the open middle of the strip, well clear of the
+        // clock and pins at the end.
+        return HStack(spacing: 0) {
+            Spacer(minLength: trayRight + 16)
+            statusPill
                 .rotationEffect(facesNearPlayer ? .degrees(180) : .zero)
-            if session.clock != nil {
-                ClockFace(color: color, session: session, theme: theme, large: !layout.compact)
+            Spacer(minLength: 28)
+            HStack(spacing: 18) {
+                if session.clock != nil {
+                    ClockFace(color: color, session: session, theme: theme, large: !layout.compact)
+                        .rotationEffect(facesNearPlayer ? .degrees(180) : .zero)
+                }
+                fittedControls(alignment: .trailing)
                     .rotationEffect(facesNearPlayer ? .degrees(180) : .zero)
             }
-            fittedControls(alignment: .trailing)
-                .rotationEffect(facesNearPlayer ? .degrees(180) : .zero)
         }
         .padding(.trailing, 4)
         .frame(width: z.width, height: z.height)
@@ -109,7 +114,7 @@ struct PlayerZone: View {
                 ClockFace(color: color, session: session, theme: theme, large: !layout.compact)
                     .rotationEffect(facesNearPlayer ? .degrees(180) : .zero)
             }
-            status
+            statusPill
                 .rotationEffect(facesNearPlayer ? .degrees(180) : .zero)
             fittedControls(alignment: .leading)
         }
@@ -171,10 +176,25 @@ struct PlayerZone: View {
         }
     }
 
+    private var hasStatus: Bool { isComputer || statusLine != nil || lead > 0 }
+
+    /// The status in a quiet capsule, so it reads as its own label rather than crowding the pins.
+    @ViewBuilder
+    private var statusPill: some View {
+        if hasStatus {
+            status
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .background(Capsule().fill(theme.ink.opacity(0.07)))
+                .overlay(Capsule().strokeBorder(theme.accent.opacity(0.22), lineWidth: 0.75))
+                .transition(.opacity.combined(with: .scale(scale: 0.92)))
+        }
+    }
+
     /// A short line only when there is something to say: whose move, check, or the computer thinking.
     @ViewBuilder
     private var status: some View {
-        VStack(alignment: .trailing, spacing: 2) {
+        VStack(alignment: .center, spacing: 1) {
             if isComputer {
                 HStack(spacing: 6) {
                     if session.isThinking { ThinkingDots(color: theme.accent) }

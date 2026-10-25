@@ -151,7 +151,10 @@ final class GameplayUITests: XCTestCase {
         launch()
         app.otherElements["panel-black"].buttons["Settings"].tap()
         XCTAssertTrue(app.otherElements["settings"].waitForExistence(timeout: 20))
-        app.buttons["Ivory & Slate"].tap()
+        app.buttons["tab-board"].tap()
+        let slate = app.buttons["Ivory & Slate"]
+        XCTAssertTrue(slate.waitForExistence(timeout: 5))
+        slate.tap()
         app.buttons["Done"].tap()
         settle()
         XCTAssertFalse(app.otherElements["settings"].exists)

@@ -9,3 +9,7 @@ results/
 *.log
 __pycache__/
 tools/puzzles/.build/
+
+# Ambience source recordings are large; tools/scenes.py downloads them (see CREDITS.md).
+tools/sources/ambience/*
+!tools/sources/ambience/CREDITS.md

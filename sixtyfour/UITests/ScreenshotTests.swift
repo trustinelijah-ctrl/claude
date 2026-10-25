@@ -62,10 +62,12 @@ final class ScreenshotTests: XCTestCase {
             app.buttons["confirm-resign-black"].tap()
             RunLoop.current.run(until: Date().addingTimeInterval(1.25))
         }
-        shoot("28-ambience", args: ["-pro", "YES", "-moves", moves, "-openSettings", "white", "-ambience", "fire"]) { app in
-            app.otherElements["settings"].swipeUp()
-            RunLoop.current.run(until: Date().addingTimeInterval(0.8))
-        }
+        shoot("28-options-sound", args: ["-pro", "YES", "-moves", moves, "-openSettings", "white", "-ambience", "rain",
+                                         "-optionsTab", "sound"])
+        shoot("28-options-board", args: ["-moves", moves, "-openSettings", "white", "-optionsTab", "board"])
+        shoot("28-options-more", args: ["-moves", moves, "-openSettings", "white", "-optionsTab", "more"])
+        shoot("28-options-vs-64", args: ["-opponent", "computer", "-moves", moves, "-openSettings", "white", "-optionsTab", "game"])
+        shoot("30-pro-welcome-trial", args: ["-pro", "YES", "-moves", moves, "-showProWelcome", "trial"], settle: 2.6)
         shoot("29-clock-low", args: ["-moves", moves, "-timeControl", "bullet1"], settle: 1.0)
     }
 

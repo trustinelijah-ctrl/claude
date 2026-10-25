@@ -235,7 +235,9 @@ struct BoardView: View {
             grip.tilt = max(-13, min(13, Double(value.velocity.width) * 0.011))
             let c = g.center(origin)
             let lift = g.liftOffset(for: grip.color)
-            grip.hover = g.square(at: CGPoint(x: c.x + t.width + lift.width, y: c.y + t.height + lift.height))
+            let hover = g.square(at: CGPoint(x: c.x + t.width + lift.width, y: c.y + t.height + lift.height))
+            if let hover, hover != grip.hover, grip.hover != nil || hover != origin { session.feedback.crossed(hover) }
+            grip.hover = hover
         }
     }
 

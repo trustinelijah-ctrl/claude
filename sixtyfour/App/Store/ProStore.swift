@@ -30,6 +30,14 @@ final class ProStore {
     /// A short, plain message after a purchase or restore that did not go through.
     var message: String?
 
+    /// Set when Pro has just been bought or restored, so the welcome can be shown.
+    enum Welcome: Equatable {
+        /// Subscribed; `trialEnds` is when the free week ends, if it started one.
+        case subscribed(trialEnds: Date?)
+        case restored
+    }
+    var welcome: Welcome?
+
     @ObservationIgnored private var updates: Task<Void, Never>?
 
     init() {
@@ -45,6 +53,8 @@ final class ProStore {
         }
         Task { await load() }
     }
+
+    private static var weekFromNow: Date { Date().addingTimeInterval(7 * 24 * 3600) }
 
     func price(_ plan: Plan) -> String { products[plan]?.displayPrice ?? plan.fallbackPrice }
 
@@ -100,6 +110,7 @@ final class ProStore {
             if Self.isTestBuild {
                 UserDefaults.standard.set(true, forKey: "pro.test")
                 isPro = true
+                welcome = .subscribed(trialEnds: plan == .yearly && trialAvailable ? Self.weekFromNow : nil)
                 message = "Test purchase: Pro is on in this development build. Nothing was charged."
             } else {
                 message = "The App Store isn't reachable right now. Try again in a moment."
@@ -114,6 +125,9 @@ final class ProStore {
                 if case .verified(let t) = verification {
                     await t.finish()
                     isPro = true
+                    let trial = t.offerType == .introductory
+                    welcome = .subscribed(trialEnds: trial ? (t.expirationDate ?? Self.weekFromNow) : nil)
+                    trialAvailable = false
                 } else {
                     message = "The purchase couldn't be verified."
                 }
@@ -132,7 +146,9 @@ final class ProStore {
     func restore() async {
         message = nil
         try? await AppStore.sync()
+        let had = isPro
         await refresh()
         if !isPro { message = "No active 64 Pro subscription was found for this Apple ID." }
+        else if !had { welcome = .restored }
     }
 }

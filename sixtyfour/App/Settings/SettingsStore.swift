@@ -31,6 +31,8 @@ final class SettingsStore {
     var volume: Double { didSet { defaults.set(volume, forKey: Keys.volume) } }
     /// Rain or a fire under the game. 64 Pro.
     var ambience: Ambience { didSet { defaults.set(ambience.rawValue, forKey: Keys.ambience) } }
+    var ambienceVolume: Double { didSet { defaults.set(ambienceVolume, forKey: Keys.ambienceVolume) } }
+    var hapticsEnabled: Bool { didSet { defaults.set(hapticsEnabled, forKey: Keys.haptics) } }
     var showCoordinates: Bool { didSet { defaults.set(showCoordinates, forKey: Keys.coordinates) } }
     var showMoveHints: Bool { didSet { defaults.set(showMoveHints, forKey: Keys.hints) } }
     var pieceFacing: PieceFacing { didSet { defaults.set(pieceFacing.rawValue, forKey: Keys.facing) } }
@@ -65,6 +67,8 @@ final class SettingsStore {
             Keys.pieceSet: PieceSet.classic.rawValue,
             Keys.sound: true,
             Keys.volume: 0.5,
+            Keys.ambienceVolume: 0.6,
+            Keys.haptics: true,
             Keys.coordinates: true,
             Keys.hints: true,
             Keys.facing: PieceFacing.eachPlayer.rawValue,
@@ -78,6 +82,8 @@ final class SettingsStore {
         soundEnabled = defaults.bool(forKey: Keys.sound)
         volume = defaults.double(forKey: Keys.volume)
         ambience = Ambience(rawValue: defaults.string(forKey: Keys.ambience) ?? "") ?? .off
+        ambienceVolume = defaults.double(forKey: Keys.ambienceVolume)
+        hapticsEnabled = defaults.bool(forKey: Keys.haptics)
         showCoordinates = defaults.bool(forKey: Keys.coordinates)
         showMoveHints = defaults.bool(forKey: Keys.hints)
         pieceFacing = PieceFacing(rawValue: defaults.string(forKey: Keys.facing) ?? "") ?? .eachPlayer
@@ -93,6 +99,8 @@ final class SettingsStore {
         static let sound = "soundEnabled"
         static let volume = "volume"
         static let ambience = "ambience"
+        static let ambienceVolume = "ambienceVolume"
+        static let haptics = "hapticsEnabled"
         static let coordinates = "showCoordinates"
         static let hints = "showMoveHints"
         static let facing = "pieceFacing"

@@ -11,6 +11,8 @@ final class FeedbackCoordinator {
         audio.setEnabled(settings.soundEnabled)
         audio.setVolume(settings.volume)
         audio.setAmbience(settings.ambience)
+        audio.setAmbienceVolume(settings.ambienceVolume)
+        haptics.enabled = settings.hapticsEnabled
     }
 
     /// Screen-space stereo position of a square. White sits at the bottom, so file a is on the left.
@@ -72,6 +74,12 @@ final class FeedbackCoordinator {
         }
     }
 
+    /// A carried piece crossing into another square: a faint notch, and a tap on iPhone.
+    func crossed(_ square: Square) {
+        audio.play(.notch, gain: 0.8, pan: pan(square))
+        haptics.place(after: 0, weight: 0.22)
+    }
+
     func ui() {
         audio.play(.ui)
     }
@@ -122,7 +130,13 @@ final class FeedbackCoordinator {
         audio.play(.draw, gain: 0.8)
     }
 
+    /// The pieces gathered, then set back down rank by rank: a quick run of small clicks.
     func newGame() {
         audio.play(.reset, gain: 0.95)
+        for i in 0..<8 {
+            let pan: Float = (i % 2 == 0 ? -0.18 : 0.18)
+            audio.play(i % 3 == 0 ? .place : .placeLight, delay: 0.42 + Double(i) * 0.055,
+                       gain: 0.3 - Float(i) * 0.02, pan: pan)
+        }
     }
 }
