@@ -18,6 +18,8 @@ enum Brand {
     static let brown = Color(hex: 0x381F11)
     static let cream = Color(hex: 0xF2E8D8)
     static let gold = Color(hex: 0xD4AF66)
+    /// "iPhone" or "iPad", for copy that talks about the device on the table.
+    static var device: String { UIDevice.current.userInterfaceIdiom == .phone ? "iPhone" : "iPad" }
 }
 
 /// A complete material and colour system for one board and the table it sits on.

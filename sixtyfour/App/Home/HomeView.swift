@@ -74,7 +74,7 @@ struct HomeView: View {
                     resume()
                 }
             }
-            entry("Play a friend", detail: "Face to face on this iPad", symbol: "person.2.fill",
+            entry("Play a friend", detail: "Face to face on this \(Brand.device)", symbol: "person.2.fill",
                   primary: !inProgress, id: "home-friend") {
                 playFriend()
             }

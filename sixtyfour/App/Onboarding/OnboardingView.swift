@@ -36,11 +36,11 @@ struct OnboardingView: View {
 
     private let copy: [Copy] = [
         Copy(title: "Chess, across the table.",
-             body: "Set the iPad between you and play the person in front of you."),
+             body: "Set the \(Brand.device) between you and play the person in front of you."),
         Copy(title: "Pieces you can feel.",
              body: "Every piece is modeled and lit by hand. Pick one up, set it down, and hear the wood."),
         Copy(title: "Welcome to 64.",
-             body: "Sign in with Apple or play as a guest. Your games stay on this iPad."),
+             body: "Sign in with Apple or play as a guest. Your games stay on this \(Brand.device)."),
     ]
 
     var body: some View {

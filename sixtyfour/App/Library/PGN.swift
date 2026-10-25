@@ -12,7 +12,7 @@ enum PGN {
         let black = saved.level == nil ? "Black" : (human == .black ? "Player" : "64 (\(saved.level!.title))")
         var tags = [
             ("Event", saved.level == nil ? "Face to face" : "Against 64"),
-            ("Site", "64 for iPad"),
+            ("Site", "64"),
             ("Date", date),
             ("White", white),
             ("Black", black),
