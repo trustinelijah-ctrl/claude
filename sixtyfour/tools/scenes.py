@@ -33,7 +33,7 @@ UA = {'User-Agent': '64-chess-app-ambience/1.0'}
 
 # scene: (Commons file, start search window in seconds or None, options)
 SCENES = {
-    'rain':  ('Rain against the window.ogg', None, dict(hp=90, lp=12000, target=-26, steady=True)),
+    'rain':  ('Rain (1).ogg', None, dict(hp=90, lp=12000, target=-26, steady=True, flatten=True)),
     'storm': ('Light Rain Distant Thunder July 5th 2016.wav', None, dict(hp=35, lp=13000, target=-25, steady=False)),
     'cafe':  ('Cafe ambiance.ogg', None, dict(hp=80, lp=11000, target=-27, steady=True)),
     'sea':   ('Ocean Waves on a Tropical Beach.ogg', None, dict(hp=40, lp=12000, target=-25, steady=False)),
@@ -69,7 +69,11 @@ def load(path):
 
 
 def filt(x, kind, f, order=2):
-    return signal.sosfiltfilt(signal.butter(order, f, kind, fs=SR, output='sos'), x, axis=-1)
+    """Zero-phase filter that treats the signal as a loop, so the loop point stays seamless."""
+    pad = min(x.shape[-1] // 2, SR)
+    xp = np.concatenate([x[..., -pad:], x, x[..., :pad]], axis=-1)
+    y = signal.sosfiltfilt(signal.butter(order, f, kind, fs=SR, output='sos'), xp, axis=-1)
+    return y[..., pad:-pad]
 
 
 def shelf_down(x, f, db):
@@ -83,6 +87,13 @@ def window_rms(x, win):
     m = (x ** 2).mean(axis=0)
     n = len(m) // win
     return np.sqrt(m[:n * win].reshape(n, win).mean(axis=1) + 1e-12)
+
+
+def flatten(x, seconds=4.0, amount=0.8):
+    """Rides out slow swells in loudness, so the bed stays even for an hour of play."""
+    win = int(seconds * SR)
+    e = np.sqrt(signal.fftconvolve((x ** 2).mean(axis=0), np.ones(win) / win, mode='same') + 1e-10)
+    return x / (e / np.median(e)) ** amount
 
 
 def best_stretch(x, seconds, steady):
@@ -126,29 +137,37 @@ def seamless(x, loop, xfade):
 def build(scene, out_dir):
     name, _, o = SCENES[scene]
     x = load(fetch(name))
-    total = LOOP + XFADE
-    if x.shape[1] < int(total * SR):
-        # Short recording: loop it against itself first.
-        reps = int(np.ceil(total * SR / x.shape[1])) + 1
-        x = np.concatenate([x] * reps, axis=1)
-    start = best_stretch(x, total, o['steady'])
-    x = x[:, start:start + int(total * SR)]
-    x = filt(x, 'highpass', o['hp'], 2)
-    x = filt(x, 'lowpass', o['lp'], 2)
-    x = shelf_down(x, 6000, -3.0)
-    # A touch narrower than the raw recording: easier to sit under the game.
-    mid, side = (x[0] + x[1]) / 2, (x[0] - x[1]) / 2
-    x = np.stack([mid + side * 0.8, mid - side * 0.8])
-    rms = np.sqrt((x ** 2).mean())
-    x *= 10 ** (o['target'] / 20) / rms
-    x = peak_tame(x)
-    y = seamless(x, LOOP, XFADE)
+    mono = np.allclose(x[0], x[1], atol=1e-4)
+    if o.get('flatten'):
+        x = flatten(x)
+    dur = x.shape[1] / SR
+    # A mono recording becomes stereo from two stretches a few seconds apart, one per ear;
+    # each is looped on its own, so neither side has a seam.
+    offset = 6.0 if mono else 0.0
+    loop = min(LOOP, dur - 4.0 - XFADE - offset)
+    total = loop + XFADE
+    start = best_stretch(x, total + offset, o['steady'])
+    take = lambda s0: x[:, s0:s0 + int(total * SR)]
+    if mono:
+        y = np.stack([seamless(take(start), loop, XFADE)[0],
+                      seamless(take(start + int(offset * SR)), loop, XFADE)[0]])
+    else:
+        y = seamless(take(start), loop, XFADE)
+    y = filt(y, 'highpass', o['hp'], 2)
+    y = filt(y, 'lowpass', o['lp'], 2)
+    y = shelf_down(y, 6000, -3.0)
+    if not mono:
+        # A touch narrower than the raw recording: easier to sit under the game.
+        mid, side = (y[0] + y[1]) / 2, (y[0] - y[1]) / 2
+        y = np.stack([mid + side * 0.8, mid - side * 0.8])
+    y *= 10 ** (o['target'] / 20) / np.sqrt((y ** 2).mean())
+    y = peak_tame(y)
     path = os.path.join(out_dir, f'ambience_{scene}.m4a')
     pcm = (np.clip(y.T, -1, 1) * 32767).astype('<i2').tobytes()
     subprocess.run(['ffmpeg', '-v', 'quiet', '-y', '-f', 's16le', '-ar', str(SR), '-ac', '2', '-i', '-',
                     '-c:a', 'aac', '-b:a', '160k', path], input=pcm, check=True)
-    print(f'{scene:6s} from {start / SR:6.1f}s of {name[:44]:44s} rms {20 * np.log10(np.sqrt((y ** 2).mean())):.1f} dBFS  '
-          f'{os.path.getsize(path) // 1024} KB')
+    print(f'{scene:6s} {loop:4.0f} s loop from {start / SR:6.1f}s of {name[:40]:40s} '
+          f'rms {20 * np.log10(np.sqrt((y ** 2).mean())):.1f} dBFS  {os.path.getsize(path) // 1024} KB')
 
 
 if __name__ == '__main__':
