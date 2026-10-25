@@ -48,8 +48,10 @@ struct TableLayout: Equatable {
             let top = boardOrigin.y + board
             zone = CGRect(x: sideInset, y: top + 8, width: size.width - 2 * sideInset,
                           height: max(60, size.height - top - 8 - inset))
-            stacked = zone.width < 560
-            compact = zone.height < 120 || stacked
+            // Tall enough for two rows (every iPhone and iPad in portrait): tray, status and
+            // clock along the board, the control dock beneath.
+            stacked = zone.width < 560 || zone.height >= 120
+            compact = zone.height < 120 || zone.width < 560
             if stacked {
                 let rowH = min(zone.height * 0.5, board / 8 * 0.9)
                 tray = CGRect(x: zone.minX, y: zone.minY, width: zone.width * 0.5, height: rowH)

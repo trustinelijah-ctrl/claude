@@ -63,15 +63,15 @@ final class AudioManager: @unchecked Sendable {
     private var ambienceBuffers: [Ambience: AVAudioPCMBuffer] = [:]
     private var ambience: Ambience = .off
     private var fadeToken = 0
-    private var ambienceVolume: Float = 0.6
-    /// Ambience has its own level, independent of the move sounds.
-    private var ambienceTarget: Float { Self.loudness(ambienceVolume) * 0.9 }
+    private var ambienceVolume: Float = 0.35
+    /// Ambience has its own level, independent of the move sounds; it sits well under them.
+    private var ambienceTarget: Float { Self.loudness(ambienceVolume) * 0.7 }
     private static let stereo = AVAudioFormat(standardFormatWithSampleRate: 48_000, channels: 2)!
     private var library: [SoundEffect: [AVAudioPCMBuffer]] = [:]
     private var lastPick: [SoundEffect: Int] = [:]
     private var ready = false
     private var enabled = true
-    private var volume: Float = 0.5
+    private var volume: Float = 0.35
     /// Sound is the point of 64, so by default it plays even with the silent switch on.
     private var playsInSilentMode = true
 

@@ -67,8 +67,8 @@ final class SettingsStore {
             Keys.timeControl: TimeControl.off.rawValue,
             Keys.pieceSet: PieceSet.classic.rawValue,
             Keys.sound: true,
-            Keys.volume: 0.5,
-            Keys.ambienceVolume: 0.6,
+            Keys.volume: 0.35,
+            Keys.ambienceVolume: 0.35,
             Keys.haptics: true,
             Keys.silentMode: true,
             Keys.coordinates: true,
@@ -82,6 +82,12 @@ final class SettingsStore {
         timeControl = TimeControl(rawValue: defaults.string(forKey: Keys.timeControl) ?? "") ?? .off
         pieceSet = PieceSet(rawValue: defaults.string(forKey: Keys.pieceSet) ?? "") ?? .classic
         soundEnabled = defaults.bool(forKey: Keys.sound)
+        // Quieter starting levels (October 2026): earlier installs move to them once.
+        if !defaults.bool(forKey: "levels.v2") {
+            defaults.removeObject(forKey: Keys.volume)
+            defaults.removeObject(forKey: Keys.ambienceVolume)
+            defaults.set(true, forKey: "levels.v2")
+        }
         volume = defaults.double(forKey: Keys.volume)
         ambience = Ambience(rawValue: defaults.string(forKey: Keys.ambience) ?? "") ?? .off
         ambienceVolume = defaults.double(forKey: Keys.ambienceVolume)

@@ -81,7 +81,11 @@ struct RootView: View {
                              learn: { screen = .learn },
                              games: { libraryOpen = true },
                              options: { settingsFor = bottom },
-                             upgrade: { openPaywall("home") })
+                             upgrade: { openPaywall("home") },
+                             replayWelcome: {
+                                 UserDefaults.standard.removeObject(forKey: "paywall.afterWelcome")
+                                 account.replayWelcome()
+                             })
                         .transition(.opacity)
                         .zIndex(3)
                 }
@@ -209,22 +213,25 @@ struct RootView: View {
         .environment(\.pieceSet, settings.pieceSet)
         .preferredColorScheme(settings.theme.isDark || !account.hasOnboarded ? .dark : .light)
         .onAppear {
-            session.feedback.apply(settings)
+            applyFeedback()
             session.feedback.haptics.prepare()
             revealed = true
             session.configure(timeControl: settings.timeControl)
             applyLaunchOptions()
             syncOpponent()
         }
-        .onChange(of: settings.soundEnabled) { session.feedback.apply(settings) }
-        .onChange(of: settings.volume) { session.feedback.apply(settings) }
+        .onChange(of: settings.soundEnabled) { applyFeedback() }
+        .onChange(of: screen) { applyFeedback() }
+        .onChange(of: settingsFor) { applyFeedback() }
+        .onChange(of: account.hasOnboarded) { applyFeedback() }
+        .onChange(of: settings.volume) { applyFeedback() }
         .onChange(of: settings.ambience) {
-            session.feedback.apply(settings)
+            applyFeedback()
             Analytics.signal("ambience.selected", ["scene": settings.ambience.rawValue])
         }
-        .onChange(of: settings.ambienceVolume) { session.feedback.apply(settings) }
-        .onChange(of: settings.hapticsEnabled) { session.feedback.apply(settings) }
-        .onChange(of: settings.playInSilentMode) { session.feedback.apply(settings) }
+        .onChange(of: settings.ambienceVolume) { applyFeedback() }
+        .onChange(of: settings.hapticsEnabled) { applyFeedback() }
+        .onChange(of: settings.playInSilentMode) { applyFeedback() }
         .onChange(of: settings.opponent) { syncOpponent() }
         .onChange(of: settings.botLevel) { syncOpponent() }
         .onChange(of: settings.humanColor) { syncOpponent() }
@@ -281,6 +288,13 @@ struct RootView: View {
     }
 
     /// A new game from the home screen: against the computer at `level`, or two people.
+    /// Ambience plays only during a game (and while Options is open, to hear the choice);
+    /// the home screen and the app's launch stay quiet.
+    private func applyFeedback() {
+        let live = account.hasOnboarded && (screen == .board || settingsFor != nil)
+        session.feedback.apply(settings, ambience: live ? settings.ambience : .off)
+    }
+
     private func openPaywall(_ source: String) {
         Analytics.signal("paywall.shown", ["source": source])
         paywallOpen = true

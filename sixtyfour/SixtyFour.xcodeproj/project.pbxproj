@@ -28,6 +28,7 @@
 		32496BED9E3E8A8EAFA17A36 /* reset_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = 9F254DEFD491BAACBE1A3344 /* reset_1.wav */; };
 		350E5390B5B7F9B39D257B31 /* RecordBook.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AD4FC49556F83B7B7FB78EF /* RecordBook.swift */; };
 		3915D9FB4F86FEAF7E9164B1 /* ambience_fire.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 6FCF6E8997D62CC17970B60D /* ambience_fire.m4a */; };
+		405248AAC2220A7465A70727 /* ui_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = DEBF0CBB0DCDF3DDE478449C /* ui_3.wav */; };
 		41890D5980BDD2D42C1C0DC5 /* placeLight_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = 9ADCE6E715E3202484CAE82E /* placeLight_1.wav */; };
 		45D7579EB6DB67F54FAC0AB6 /* check_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = 2414C00CAD5A44CCAC88F5C7 /* check_1.wav */; };
 		46A3AABD852059696D5BF6DF /* GameplayUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 355FB9AF0212BC549DE3EB4E /* GameplayUITests.swift */; };
@@ -74,6 +75,7 @@
 		E2DC87AE51991F1D75A44635 /* draw_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = 0A54B0385B19371C708B8DC8 /* draw_1.wav */; };
 		E2F91CD3106772228954149D /* pickup_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = EEADD6DE15C5B0F1238A5C52 /* pickup_2.wav */; };
 		E37303E50B295EFA3E826519 /* notch_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = DBA67FC87E33B9966A69C0A2 /* notch_1.wav */; };
+		E4C1E18826C3E4B8C73ED9C4 /* ui_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = E61CF85142C59805D92D1A10 /* ui_2.wav */; };
 		E8084C940F54208DE3D1A4E0 /* placeLight_4.wav in Resources */ = {isa = PBXBuildFile; fileRef = AB6FC7899927AE4DB8D2EBB4 /* placeLight_4.wav */; };
 		E95D9B91AC6904BCF9D98862 /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A598F4911AA2E4EF70262C68 /* HapticManager.swift */; };
 		EBA794FD3D80173412B66BC5 /* topple_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = B87579E90A75DDE5FFA341CF /* topple_1.wav */; };
@@ -156,10 +158,12 @@
 		D20671ADF34BEB239FF107B1 /* ProCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProCard.swift; sourceTree = "<group>"; };
 		DBA67FC87E33B9966A69C0A2 /* notch_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = notch_1.wav; sourceTree = "<group>"; };
 		DC07CDBEEDDA56251C09B24F /* ProWelcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProWelcome.swift; sourceTree = "<group>"; };
+		DEBF0CBB0DCDF3DDE478449C /* ui_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = ui_3.wav; sourceTree = "<group>"; };
 		E2A2A79267B4817B683C2B18 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		E2F26A2286BEEA13CA408535 /* placeLight_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = placeLight_2.wav; sourceTree = "<group>"; };
 		E563EFB72DC3B9544817BB71 /* PlayerPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerPanel.swift; sourceTree = "<group>"; };
 		E5BF82037DB6A61D04D50F32 /* invalid_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = invalid_1.wav; sourceTree = "<group>"; };
+		E61CF85142C59805D92D1A10 /* ui_2.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = ui_2.wav; sourceTree = "<group>"; };
 		E862E10F51073684D7D87606 /* clockTick_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = clockTick_1.wav; sourceTree = "<group>"; };
 		EC61DA587C5891E39E748813 /* ProStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProStore.swift; sourceTree = "<group>"; };
 		ED14617D8133D1F79A0E78C3 /* PieceArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PieceArt.swift; sourceTree = "<group>"; };
@@ -290,6 +294,8 @@
 				9F254DEFD491BAACBE1A3344 /* reset_1.wav */,
 				B87579E90A75DDE5FFA341CF /* topple_1.wav */,
 				EF14BC9EE2FD5F78AF05612F /* ui_1.wav */,
+				E61CF85142C59805D92D1A10 /* ui_2.wav */,
+				DEBF0CBB0DCDF3DDE478449C /* ui_3.wav */,
 			);
 			path = Sounds;
 			sourceTree = "<group>";
@@ -546,6 +552,8 @@
 				32496BED9E3E8A8EAFA17A36 /* reset_1.wav in Resources */,
 				EBA794FD3D80173412B66BC5 /* topple_1.wav in Resources */,
 				57F590E9E734D4C92DB343DC /* ui_1.wav in Resources */,
+				E4C1E18826C3E4B8C73ED9C4 /* ui_2.wav in Resources */,
+				405248AAC2220A7465A70727 /* ui_3.wav in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

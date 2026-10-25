@@ -66,7 +66,7 @@ struct PlayerZone: View {
                 statusPill
                     .rotationEffect(facesNearPlayer ? .degrees(180) : .zero)
                 if session.clock != nil {
-                    ClockFace(color: color, session: session, theme: theme, large: false)
+                    ClockFace(color: color, session: session, theme: theme, large: !layout.compact)
                         .rotationEffect(facesNearPlayer ? .degrees(180) : .zero)
                 }
             }
@@ -262,46 +262,63 @@ struct PlayerZone: View {
     @ViewBuilder
     private func controls(rows: Int?) -> some View {
         if !isComputer {
-            HStack(spacing: layout.stacked ? 4 : 10) {
-                if rows != 1 {
-                    if session.canClaimDraw && isTurn {
-                        Button {
-                            session.feedback.ui()
-                            session.claimDraw()
-                        } label: {
-                            Text("Claim draw")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(theme.accent)
-                                .padding(.horizontal, 12)
-                                .frame(height: 34)
-                                .overlay(Capsule().strokeBorder(theme.accent.opacity(0.5), lineWidth: 0.75))
-                        }
-                        .buttonStyle(PressScaleStyle())
-                    }
-                    // Hints are for practising against the computer, never in a game between two people.
-                    if settings.isAgainstComputer {
-                        BrassPin(symbol: "lightbulb", label: "Hint", enabled: isTurn && !session.isHinting) {
-                            session.feedback.ui()
-                            requestHint()
-                        }
-                    }
-                    BrassPin(symbol: "arrow.uturn.backward", label: "Undo", enabled: session.canUndo) {
+            HStack(spacing: 10) {
+                if rows != 1 && session.canClaimDraw && isTurn {
+                    Button {
                         session.feedback.ui()
-                        session.undo()
+                        session.claimDraw()
+                    } label: {
+                        Text("Claim draw")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(theme.accent)
+                            .padding(.horizontal, 14)
+                            .frame(height: 40)
+                            .background(Capsule().fill(Color.black.opacity(0.28)))
+                            .overlay(Capsule().strokeBorder(theme.accent.opacity(0.5), lineWidth: 0.75))
                     }
-                    resign
+                    .buttonStyle(PressScaleStyle())
                 }
-                if rows != 0 {
-                    BrassPin(symbol: "house", label: "Home", enabled: true) {
-                        session.feedback.ui()
-                        goHome()
+                // One dock of controls, dark glass edged in gold, each with its name beneath.
+                HStack(spacing: 2) {
+                    if rows != 1 {
+                        // Hints are for practising against the computer, never in a game between two people.
+                        if settings.isAgainstComputer {
+                            DockButton(symbol: "lightbulb.fill", label: "Hint", tint: theme.accent,
+                                       enabled: isTurn && !session.isHinting) {
+                                session.feedback.ui()
+                                requestHint()
+                            }
+                        }
+                        DockButton(symbol: "arrow.uturn.backward", label: "Undo", enabled: session.canUndo) {
+                            session.feedback.ui()
+                            session.undo()
+                        }
+                        resign
                     }
-                    .accessibilityIdentifier("pin-home-\(color.rawValue)")
-                    BrassPin(symbol: "ellipsis", label: "Settings", enabled: true) {
-                        session.feedback.ui()
-                        openSettings()
+                    if rows != 0 {
+                        DockButton(symbol: "house.fill", label: "Home", enabled: true) {
+                            session.feedback.ui()
+                            goHome()
+                        }
+                        .accessibilityIdentifier("pin-home-\(color.rawValue)")
+                        DockButton(symbol: "slider.horizontal.3", label: "Options", enabled: true, accessibility: "Settings") {
+                            session.feedback.ui()
+                            openSettings()
+                        }
                     }
                 }
+                .padding(4)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(Color.black.opacity(theme.isDark ? 0.36 : 0.3))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .strokeBorder(LinearGradient(colors: [theme.accent.opacity(0.55), theme.accent.opacity(0.18)],
+                                                     startPoint: .top, endPoint: .bottom), lineWidth: 0.75)
+                )
+                .shadow(color: .black.opacity(0.25), radius: 6, y: 2)
+                .environment(\.colorScheme, .dark)
             }
         }
     }
@@ -314,19 +331,20 @@ struct PlayerZone: View {
                 resignArmed = false
                 session.resign(color)
             } label: {
-                Text("Resign")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 14)
-                    .frame(height: 34)
-                    .background(Capsule().fill(theme.check))
-                    .frame(minHeight: 44)
+                VStack(spacing: 3) {
+                    Image(systemName: "flag.fill").font(.system(size: 15, weight: .semibold)).frame(height: 20)
+                    Text("Resign?").font(.system(size: 10, weight: .bold))
+                }
+                .foregroundStyle(.white)
+                .frame(width: 62, height: 46)
+                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(theme.check))
             }
             .buttonStyle(PressScaleStyle())
-            .transition(.scale(scale: 0.8).combined(with: .opacity))
+            .transition(.scale(scale: 0.85).combined(with: .opacity))
+            .accessibilityLabel("Confirm resign")
             .accessibilityIdentifier("confirm-resign-\(color.rawValue)")
         } else {
-            BrassPin(symbol: "flag", label: "Resign", enabled: !session.isOver) {
+            DockButton(symbol: "flag", label: "Resign", enabled: !session.isOver) {
                 session.feedback.ui()
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) { resignArmed = true }
                 Task {
@@ -336,6 +354,50 @@ struct PlayerZone: View {
             }
             .accessibilityIdentifier("pin-resign-\(color.rawValue)")
         }
+    }
+}
+
+/// One control in a player's dock: a clear icon with its name beneath, lighting up softly
+/// when pressed.
+struct DockButton: View {
+    let symbol: String
+    let label: String
+    var tint: Color? = nil
+    let enabled: Bool
+    var accessibility: String? = nil
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 3) {
+                Image(systemName: symbol)
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(height: 20)
+                Text(label)
+                    .font(.system(size: 10, weight: .semibold))
+                    .lineLimit(1)
+                    .fixedSize()
+            }
+            .foregroundStyle(tint ?? Brand.cream.opacity(0.92))
+            .frame(width: 54, height: 46)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(DockPressStyle())
+        .disabled(!enabled)
+        .opacity(enabled ? 1 : 0.35)
+        .accessibilityLabel(accessibility ?? label)
+    }
+}
+
+private struct DockPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color.white.opacity(configuration.isPressed ? 0.14 : 0))
+            )
+            .scaleEffect(configuration.isPressed ? 0.95 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }
 

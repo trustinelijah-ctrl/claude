@@ -281,6 +281,28 @@ struct SettingsCard: View {
 
     @ViewBuilder
     private var morePage: some View {
+        if ProStore.isTestBuild {
+            group("Developer", footer: "Only in development builds; the App Store version doesn't have this.") {
+                VStack(spacing: 0) {
+                    navRow("Show the welcome", symbol: "sparkles", value: nil, id: "dev-welcome") {
+                        // Also offer Pro again after it, as a first launch would.
+                        UserDefaults.standard.removeObject(forKey: "paywall.afterWelcome")
+                        showWelcome()
+                    }
+                    divider
+                    navRow("Show the Pro welcome", symbol: "crown", value: nil, id: "dev-pro-welcome") {
+                        close()
+                        pro.welcome = .subscribed(trialEnds: Date().addingTimeInterval(7 * 86_400))
+                    }
+                    if pro.hasTestUnlock {
+                        divider
+                        navRow("End the Pro test", symbol: "arrow.uturn.backward", value: nil, id: "dev-end-pro") {
+                            pro.endTestUnlock()
+                        }
+                    }
+                }
+            }
+        }
         group("Your games") {
             navRow(session.library.games.isEmpty ? "No finished games yet" : "Replay your games",
                    symbol: "film.stack", value: "\(session.library.games.count)", id: "open-library") {

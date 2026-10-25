@@ -197,9 +197,13 @@ def invalid():
     return finish(crop(lp(hp(src, 160), 1300), 110), -19.0)
 
 
-def ui_click():
-    src = from_onset(load('switch2.ogg'))
-    return finish(crop(src, 40, fade_ms=20), -25.0)
+def ui_click(i=0):
+    """Menus and options: a soft, warm tick of wood, like a fingertip on a small box.
+    Rounded off at the top, so it never clicks sharply; three slightly different pitches."""
+    ratio = [1.55, 1.68, 1.47][i % 3]
+    t = crop(lp(hp(pitch(TOCK, ratio), 500), 4200), 42, fade_ms=26)
+    b = body(WOOD_LIGHT[(i + 3) % 5], 2.1, 46) * db(-9)
+    return finish(mix((t, 0.0), (lp(b, 3500), 0.6)), -24.0)
 
 
 def check():
@@ -264,7 +268,8 @@ if __name__ == '__main__':
     for i in range(3):
         files[f'pickup_{i + 1}'] = pickup(i)
     files['invalid_1'] = invalid()
-    files['ui_1'] = ui_click()
+    for i in range(3):
+        files[f'ui_{i + 1}'] = ui_click(i)
     files['check_1'] = check()
     files['promotion_1'] = promotion()
     files['checkmate_1'] = checkmate()

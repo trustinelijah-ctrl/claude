@@ -15,6 +15,7 @@ struct HomeView: View {
     let games: () -> Void
     let options: () -> Void
     let upgrade: () -> Void
+    var replayWelcome: () -> Void = {}
 
     @State private var choosingLevel = false
     private let theme = BoardTheme.with(.house)
@@ -54,6 +55,12 @@ struct HomeView: View {
                     .foregroundStyle(Brand.cream)
                     .frame(height: wide ? min(size.height * 0.34, 260) : min(size.height * 0.2, 220))
                     .accessibilityLabel("64")
+                    // Development builds: hold the logo to see the welcome again.
+                    .onLongPressGesture(minimumDuration: 0.8) {
+                        guard ProStore.isTestBuild else { return }
+                        feedback.ui()
+                        replayWelcome()
+                    }
                 Text("Chess, across the table.")
                     .font(.system(size: 17, weight: .medium))
                     .foregroundStyle(Brand.cream.opacity(0.65))

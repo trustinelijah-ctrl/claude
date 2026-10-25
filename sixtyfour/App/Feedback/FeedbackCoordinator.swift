@@ -7,11 +7,12 @@ final class FeedbackCoordinator {
     let audio = AudioManager()
     let haptics = HapticManager()
 
-    func apply(_ settings: SettingsStore) {
+    /// - Parameter ambience: the scene to play now; the app passes `.off` away from a game.
+    func apply(_ settings: SettingsStore, ambience: Ambience? = nil) {
         audio.setPlaysInSilentMode(settings.playInSilentMode)
         audio.setEnabled(settings.soundEnabled)
         audio.setVolume(settings.volume)
-        audio.setAmbience(settings.ambience)
+        audio.setAmbience(ambience ?? settings.ambience)
         audio.setAmbienceVolume(settings.ambienceVolume)
         haptics.enabled = settings.hapticsEnabled
     }
