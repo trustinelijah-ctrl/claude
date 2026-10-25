@@ -31,6 +31,63 @@ struct RootView: View {
     @Environment(\.requestReview) private var requestReview
 
     var body: some View {
+        observingSettings(table)
+            .onAppear {
+                applyFeedback()
+                session.feedback.haptics.prepare()
+                revealed = true
+                session.configure(timeControl: settings.timeControl)
+                applyLaunchOptions()
+                syncOpponent()
+            }
+            .onChange(of: overlayOpen) { _, open in
+                if open { session.pauseClock() } else { session.resumeClock() }
+            }
+            .onChange(of: keepAwake, initial: true) { _, awake in
+                UIApplication.shared.isIdleTimerDisabled = awake
+            }
+            .onChange(of: session.isResultPresented) { _, shown in resultShown(shown) }
+            .onChange(of: pro.isPro) { _, isPro in
+                if isPro { paywallOpen = false } else { settings.dropProChoices() }
+            }
+            .task { await account.checkAppleCredential() }
+            .onChange(of: scenePhase) { _, phase in scenePhaseChanged(phase) }
+    }
+
+    /// Sound, haptics, ambience and the opponent follow the settings as they change.
+    private func observingSettings<V: View>(_ v: V) -> some View {
+        v.onChange(of: settings.soundEnabled) { applyFeedback() }
+            .onChange(of: screen) { applyFeedback() }
+            .onChange(of: settingsFor) { applyFeedback() }
+            .onChange(of: account.hasOnboarded) { applyFeedback() }
+            .onChange(of: settings.volume) { applyFeedback() }
+            .onChange(of: settings.ambience) {
+                applyFeedback()
+                Analytics.signal("ambience.selected", ["scene": settings.ambience.rawValue])
+            }
+            .onChange(of: settings.ambienceVolume) { applyFeedback() }
+            .onChange(of: settings.hapticsEnabled) { applyFeedback() }
+            .onChange(of: settings.playInSilentMode) { applyFeedback() }
+            .onChange(of: settings.opponent) { syncOpponent() }
+            .onChange(of: settings.botLevel) { syncOpponent() }
+            .onChange(of: settings.humanColor) { syncOpponent() }
+            .onChange(of: settings.timeControl) { session.configure(timeControl: settings.timeControl) }
+    }
+
+    private func resultShown(_ shown: Bool) {
+        guard shown, let r = session.result else { return }
+        let outcome = r.winner == nil ? "draw" : (settings.isAgainstComputer ? (r.winner == settings.humanColor ? "win" : "loss") : "decisive")
+        Analytics.signal("game.finished", ["opponent": settings.isAgainstComputer ? settings.botLevel.rawValue : "friend",
+                                           "outcome": outcome])
+        // A win is the moment to ask for a rating, at most once per version.
+        guard ReviewPrompt.mayAsk, let winner = r.winner else { return }
+        if settings.isAgainstComputer && winner != settings.humanColor { return }
+        ReviewPrompt.asked()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { requestReview() }
+    }
+
+    /// The table: the board, both players' ends, and whatever is open over it.
+    private var table: some View {
         GeometryReader { proxy in
             let layout = TableLayout(size: proxy.size, safeArea: proxy.safeAreaInsets)
             let theme = settings.theme
@@ -73,126 +130,8 @@ struct RootView: View {
                     .zIndex(5)
                 }
 
-                if screen == .home {
-                    HomeView(session: session, settings: settings, pro: pro, feedback: session.feedback,
-                             resume: { screen = .board },
-                             playFriend: { start(against: nil) },
-                             playComputer: { start(against: settings.botLevel) },
-                             learn: { screen = .learn },
-                             games: { libraryOpen = true },
-                             options: { settingsFor = bottom },
-                             upgrade: { openPaywall("home") },
-                             replayWelcome: {
-                                 UserDefaults.standard.removeObject(forKey: "paywall.afterWelcome")
-                                 account.replayWelcome()
-                             })
-                        .transition(.opacity)
-                        .zIndex(3)
-                }
-
-                if screen == .learn {
-                    PuzzleView(pro: pro, feedback: session.feedback, unlock: { openPaywall("learn") }) {
-                        screen = .home
-                    }
-                    .transition(.opacity)
-                    .zIndex(3)
-                }
-
-                if let owner = capturesFor {
-                    Rectangle()
-                        .fill(.ultraThinMaterial)
-                        .overlay(Color.black.opacity(theme.isDark ? 0.25 : 0.08))
-                        .ignoresSafeArea()
-                        .onTapGesture { capturesFor = nil }
-                        .transition(.opacity)
-                        .accessibilityHidden(true)
-                        .zIndex(4)
-                    CapturesPanel(owner: owner, session: session, settings: settings) {
-                        session.feedback.ui()
-                        capturesFor = nil
-                    }
-                    .frame(maxWidth: min(proxy.size.width - 32, 640))
-                    .rotationEffect(owner != bottom && !settings.isAgainstComputer ? .degrees(180) : .zero)
-                    .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
-                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                    .zIndex(4.5)
-                }
-
-                if let player = settingsFor {
-                    Color.black.opacity(theme.isDark ? 0.45 : 0.22)
-                        .ignoresSafeArea()
-                        .onTapGesture { settingsFor = nil }
-                        .transition(.opacity)
-                        .zIndex(6)
-                    SettingsCard(settings: settings, session: session, player: player, pro: pro, account: account,
-                                 showPaywall: { openPaywall("options") },
-                                 showLibrary: { settingsFor = nil; libraryOpen = true },
-                                 showWelcome: { settingsFor = nil; account.replayWelcome() },
-                                 goHome: screen == .board ? leaveToHome : nil) {
-                        settingsFor = nil
-                    }
-                    .frame(maxHeight: min(proxy.size.height - 40, 820))
-                    .padding(20)
-                    .rotationEffect(player == bottom ? .zero : .degrees(180))
-                    .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
-                    .transition(.opacity.combined(with: .scale(scale: 0.97)))
-                    .zIndex(7)
-                }
-
-                if libraryOpen {
-                    dimmer(theme) { libraryOpen = false }.zIndex(8)
-                    LibraryView(library: session.library, pro: pro, theme: theme, feedback: session.feedback,
-                                open: { saved in libraryOpen = false; replaying = saved },
-                                unlock: { openPaywall("library") },
-                                close: { libraryOpen = false })
-                        .padding(20)
-                        .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
-                        .transition(.opacity.combined(with: .scale(scale: 0.97)))
-                        .zIndex(8.5)
-                }
-
-                if paywallOpen {
-                    Rectangle().fill(.ultraThinMaterial)
-                        .overlay(Color.black.opacity(0.35))
-                        .ignoresSafeArea()
-                        .onTapGesture { paywallOpen = false }
-                        .transition(.opacity)
-                        .zIndex(12)
-                    PaywallSheet(pro: pro, theme: theme, feedback: session.feedback) { paywallOpen = false }
-                        .frame(maxHeight: proxy.size.height - proxy.safeAreaInsets.top - proxy.safeAreaInsets.bottom - 24)
-                        .padding(.horizontal, 20)
-                        .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
-                        .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                        .zIndex(12.5)
-                }
-
-                if let welcome = pro.welcome {
-                    ProWelcome(welcome: welcome, feedback: session.feedback) { pro.welcome = nil }
-                        .transition(.opacity.combined(with: .scale(scale: 1.02)))
-                        .zIndex(13)
-                }
-
-                if let saved = replaying {
-                    ReplayView(saved: saved, theme: theme, feedback: session.feedback, pro: pro,
-                               unlock: { openPaywall("review") }) { replaying = nil }
-                        .transition(.opacity)
-                        .zIndex(10)
-                }
-
-                if !account.hasOnboarded {
-                    OnboardingView(pro: pro, account: account, feedback: session.feedback,
-                                   showPlans: { openPaywall("welcome") }) {
-                        // 64 Pro is offered once, right after the welcome, then never pushed again.
-                        let key = "paywall.afterWelcome"
-                        guard !pro.isPro, !UserDefaults.standard.bool(forKey: key),
-                              !ProcessInfo.processInfo.arguments.contains("-onboarded") else { return }
-                        UserDefaults.standard.set(true, forKey: key)
-                        Analytics.signal("onboarding.completed")
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) { openPaywall("after-welcome") }
-                    }
-                        .transition(.opacity)
-                        .zIndex(11)
-                }
+                screens(bottom: bottom)
+                overlays(proxy, theme: theme, bottom: bottom)
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
             .animation(.easeInOut(duration: 0.24), value: settingsFor)
@@ -212,62 +151,147 @@ struct RootView: View {
         .persistentSystemOverlays(.hidden)
         .environment(\.pieceSet, settings.pieceSet)
         .preferredColorScheme(settings.theme.isDark || !account.hasOnboarded ? .dark : .light)
-        .onAppear {
-            applyFeedback()
-            session.feedback.haptics.prepare()
-            revealed = true
-            session.configure(timeControl: settings.timeControl)
-            applyLaunchOptions()
-            syncOpponent()
+    }
+
+    // MARK: Layers (split out of `body` so the compiler can type-check it quickly)
+
+    @ViewBuilder
+    private func screens(bottom: PieceColor) -> some View {
+        if screen == .home {
+            HomeView(session: session, settings: settings, pro: pro, feedback: session.feedback,
+                     resume: { screen = .board },
+                     playFriend: { start(against: nil) },
+                     playComputer: { start(against: settings.botLevel) },
+                     learn: { screen = .learn },
+                     games: { libraryOpen = true },
+                     options: { settingsFor = bottom },
+                     upgrade: { openPaywall("home") },
+                     replayWelcome: {
+                         UserDefaults.standard.removeObject(forKey: "paywall.afterWelcome")
+                         account.replayWelcome()
+                     })
+                .transition(.opacity)
+                .zIndex(3)
         }
-        .onChange(of: settings.soundEnabled) { applyFeedback() }
-        .onChange(of: screen) { applyFeedback() }
-        .onChange(of: settingsFor) { applyFeedback() }
-        .onChange(of: account.hasOnboarded) { applyFeedback() }
-        .onChange(of: settings.volume) { applyFeedback() }
-        .onChange(of: settings.ambience) {
-            applyFeedback()
-            Analytics.signal("ambience.selected", ["scene": settings.ambience.rawValue])
-        }
-        .onChange(of: settings.ambienceVolume) { applyFeedback() }
-        .onChange(of: settings.hapticsEnabled) { applyFeedback() }
-        .onChange(of: settings.playInSilentMode) { applyFeedback() }
-        .onChange(of: settings.opponent) { syncOpponent() }
-        .onChange(of: settings.botLevel) { syncOpponent() }
-        .onChange(of: settings.humanColor) { syncOpponent() }
-        .onChange(of: settings.timeControl) { session.configure(timeControl: settings.timeControl) }
-        .onChange(of: overlayOpen) { _, open in
-            if open { session.pauseClock() } else { session.resumeClock() }
-        }
-        .onChange(of: keepAwake, initial: true) { _, awake in
-            UIApplication.shared.isIdleTimerDisabled = awake
-        }
-        .onChange(of: session.isResultPresented) { _, shown in
-            if shown, let r = session.result {
-                let outcome = r.winner == nil ? "draw" : (settings.isAgainstComputer ? (r.winner == settings.humanColor ? "win" : "loss") : "decisive")
-                Analytics.signal("game.finished", ["opponent": settings.isAgainstComputer ? settings.botLevel.rawValue : "friend",
-                                                   "outcome": outcome])
+
+        if screen == .learn {
+            PuzzleView(pro: pro, feedback: session.feedback, unlock: { openPaywall("learn") }) {
+                screen = .home
             }
-            // A win is the moment to ask for a rating, at most once per version.
-            guard shown, ReviewPrompt.mayAsk, let r = session.result, let winner = r.winner else { return }
-            if settings.isAgainstComputer && winner != settings.humanColor { return }
-            ReviewPrompt.asked()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { requestReview() }
+            .transition(.opacity)
+            .zIndex(3)
         }
-        .onChange(of: pro.isPro) { _, isPro in
-            if isPro { paywallOpen = false } else { settings.dropProChoices() }
-        }
-        .task { await account.checkAppleCredential() }
-        .onChange(of: scenePhase) { _, phase in
-            switch phase {
-            case .active:
-                session.feedback.audio.resume()
-                if !overlayOpen { session.resumeClock() }
-            case .background, .inactive:
-                session.pauseClock()
-                session.save()
-            @unknown default: break
+
+    }
+
+    @ViewBuilder
+    private func overlays(_ proxy: GeometryProxy, theme: BoardTheme, bottom: PieceColor) -> some View {
+        if let owner = capturesFor {
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .overlay(Color.black.opacity(theme.isDark ? 0.25 : 0.08))
+                .ignoresSafeArea()
+                .onTapGesture { capturesFor = nil }
+                .transition(.opacity)
+                .accessibilityHidden(true)
+                .zIndex(4)
+            CapturesPanel(owner: owner, session: session, settings: settings) {
+                session.feedback.ui()
+                capturesFor = nil
             }
+            .frame(maxWidth: min(proxy.size.width - 32, 640))
+            .rotationEffect(owner != bottom && !settings.isAgainstComputer ? .degrees(180) : .zero)
+            .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+            .transition(.opacity.combined(with: .scale(scale: 0.96)))
+            .zIndex(4.5)
+        }
+
+        if let player = settingsFor {
+            Color.black.opacity(theme.isDark ? 0.45 : 0.22)
+                .ignoresSafeArea()
+                .onTapGesture { settingsFor = nil }
+                .transition(.opacity)
+                .zIndex(6)
+            SettingsCard(settings: settings, session: session, player: player, pro: pro, account: account,
+                         showPaywall: { openPaywall("options") },
+                         showLibrary: { settingsFor = nil; libraryOpen = true },
+                         showWelcome: { settingsFor = nil; account.replayWelcome() },
+                         goHome: screen == .board ? leaveToHome : nil) {
+                settingsFor = nil
+            }
+            .frame(maxHeight: min(proxy.size.height - 40, 820))
+            .padding(20)
+            .rotationEffect(player == bottom ? .zero : .degrees(180))
+            .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+            .transition(.opacity.combined(with: .scale(scale: 0.97)))
+            .zIndex(7)
+        }
+
+        if libraryOpen {
+            dimmer(theme) { libraryOpen = false }.zIndex(8)
+            LibraryView(library: session.library, pro: pro, theme: theme, feedback: session.feedback,
+                        open: { saved in libraryOpen = false; replaying = saved },
+                        unlock: { openPaywall("library") },
+                        close: { libraryOpen = false })
+                .padding(20)
+                .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+                .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                .zIndex(8.5)
+        }
+
+        if paywallOpen {
+            Rectangle().fill(.ultraThinMaterial)
+                .overlay(Color.black.opacity(0.35))
+                .ignoresSafeArea()
+                .onTapGesture { paywallOpen = false }
+                .transition(.opacity)
+                .zIndex(12)
+            PaywallSheet(pro: pro, theme: theme, feedback: session.feedback) { paywallOpen = false }
+                .frame(maxHeight: proxy.size.height - proxy.safeAreaInsets.top - proxy.safeAreaInsets.bottom - 24)
+                .padding(.horizontal, 20)
+                .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+                .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                .zIndex(12.5)
+        }
+
+        if let welcome = pro.welcome {
+            ProWelcome(welcome: welcome, feedback: session.feedback) { pro.welcome = nil }
+                .transition(.opacity.combined(with: .scale(scale: 1.02)))
+                .zIndex(13)
+        }
+
+        if let saved = replaying {
+            ReplayView(saved: saved, theme: theme, feedback: session.feedback, pro: pro,
+                       unlock: { openPaywall("review") }) { replaying = nil }
+                .transition(.opacity)
+                .zIndex(10)
+        }
+
+        if !account.hasOnboarded {
+            OnboardingView(pro: pro, account: account, feedback: session.feedback,
+                           showPlans: { openPaywall("welcome") }) {
+                // 64 Pro is offered once, right after the welcome, then never pushed again.
+                let key = "paywall.afterWelcome"
+                guard !pro.isPro, !UserDefaults.standard.bool(forKey: key),
+                      !ProcessInfo.processInfo.arguments.contains("-onboarded") else { return }
+                UserDefaults.standard.set(true, forKey: key)
+                Analytics.signal("onboarding.completed")
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) { openPaywall("after-welcome") }
+            }
+                .transition(.opacity)
+                .zIndex(11)
+        }
+    }
+
+    private func scenePhaseChanged(_ phase: ScenePhase) {
+        switch phase {
+        case .active:
+            session.feedback.audio.resume()
+            if !overlayOpen { session.resumeClock() }
+        case .background, .inactive:
+            session.pauseClock()
+            session.save()
+        @unknown default: break
         }
     }
 
