@@ -377,6 +377,24 @@ struct RootView: View {
     /// Launch arguments used by UI tests and screenshot runs.
     private func applyLaunchOptions() {
         let d = UserDefaults.standard
+        #if DEBUG
+        // Filming: `-demoMoves "e2e4 e7e5 ..."` plays a game by itself, one move every
+        // `-demoInterval` seconds after `-demoStart` seconds, as if someone were playing.
+        if let list = d.string(forKey: "demoMoves") {
+            let moves = list.split(separator: " ").compactMap { Move(uci: String($0)) }
+            let interval = d.double(forKey: "demoInterval") > 0 ? d.double(forKey: "demoInterval") : 0.9
+            let start = d.double(forKey: "demoStart") > 0 ? d.double(forKey: "demoStart") : 2.0
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(start))
+                for m in moves {
+                    session.select(m.from)
+                    try? await Task.sleep(for: .seconds(0.22))
+                    _ = session.move(from: m.from, to: m.to, dragged: false)
+                    try? await Task.sleep(for: .seconds(interval))
+                }
+            }
+        }
+        #endif
         if let sq = d.string(forKey: "select").flatMap({ Square($0) }) { session.select(sq) }
         if let who = d.string(forKey: "openSettings") { settingsFor = who == "black" ? .black : .white }
         if let who = d.string(forKey: "showCaptures") { capturesFor = who == "black" ? .black : .white }

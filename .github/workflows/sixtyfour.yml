@@ -93,8 +93,27 @@ jobs:
           echo "AIR11=$(pick 'iPad Air 11')" >> $GITHUB_ENV
           xcrun simctl list devices available | grep -i ipad
 
+      # A commit tagged [reel] films the app playing scripted games on the big iPhone, for social videos.
+      - name: Reel recording
+        if: steps.build.outcome == 'success' && contains(github.event.head_commit.message, '[reel]')
+        run: |
+          mkdir -p shots
+          udid="$PHONEMAX"
+          xcrun simctl boot "$udid" 2>/dev/null || true
+          xcrun simctl bootstatus "$udid" -b > /dev/null 2>&1 || true
+          xcrun simctl ui "$udid" appearance dark || true
+          for t in test1House test2RosewoodGilded; do
+            xcrun simctl io "$udid" recordVideo --codec=h264 --force "shots/reel-$t.mov" &
+            rec=$!
+            sleep 2
+            xcodebuild test-without-building -project SixtyFour.xcodeproj -scheme SixtyFour -derivedDataPath build \
+              -destination "id=$udid" -only-testing:"SixtyFourUITests/ReelTests/$t" > "reel-$t.log" 2>&1 || tail -20 "reel-$t.log"
+            kill -INT $rec; wait $rec || true
+          done
+          ls -la shots
+
       - name: UI tests (interaction)
-        if: steps.build.outcome == 'success' && !contains(github.event.head_commit.message, '[preview]') && !contains(github.event.head_commit.message, '[iphone]')
+        if: steps.build.outcome == 'success' && !contains(github.event.head_commit.message, '[preview]') && !contains(github.event.head_commit.message, '[iphone]') && !contains(github.event.head_commit.message, '[reel]')
         run: |
           set -o pipefail
           status=0
@@ -109,7 +128,7 @@ jobs:
           exit $status
 
       - name: Screenshots
-        if: always() && steps.build.outcome == 'success' && !contains(github.event.head_commit.message, '[ui-only]')
+        if: always() && steps.build.outcome == 'success' && !contains(github.event.head_commit.message, '[ui-only]') && !contains(github.event.head_commit.message, '[reel]')
         env:
           COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |

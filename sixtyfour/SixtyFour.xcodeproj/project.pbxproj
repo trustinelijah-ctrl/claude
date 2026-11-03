@@ -65,6 +65,7 @@
 		B357911096B6827ACF00C3EB /* AccountStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F59E896E844CBC51292E6393 /* AccountStore.swift */; };
 		B5F8A904E7BD3F5452E72EB6 /* invalid_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = E5BF82037DB6A61D04D50F32 /* invalid_1.wav */; };
 		B79CDC0F9C5C35589B50C299 /* ambience_rain.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 21D95DA670F461D5E9F15E9D /* ambience_rain.m4a */; };
+		C057D2108454C18A6CF4BC41 /* ReelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C1BB49F0F908197087B1281 /* ReelTests.swift */; };
 		C08A55A5BA984469920E777E /* GameSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9235B6F3F8AD5CF119BC0E6E /* GameSession.swift */; };
 		C155FC8F2EF144535ED5F449 /* ProStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC61DA587C5891E39E748813 /* ProStore.swift */; };
 		C8FC8CC2406522AC921AE0A9 /* PuzzleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8BB2775498A655DB9232384 /* PuzzleView.swift */; };
@@ -108,6 +109,7 @@
 		18710F35DA5010AC56C2727C /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		1A8F54B4228A1EF5435B6DA2 /* FeedbackCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackCoordinator.swift; sourceTree = "<group>"; };
 		1BFE116B7FEFC37F6539846B /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		1C1BB49F0F908197087B1281 /* ReelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReelTests.swift; sourceTree = "<group>"; };
 		2025FAAEEC027ECCC07D213A /* placeHeavy_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = placeHeavy_3.wav; sourceTree = "<group>"; };
 		21D95DA670F461D5E9F15E9D /* ambience_rain.m4a */ = {isa = PBXFileReference; path = ambience_rain.m4a; sourceTree = "<group>"; };
 		2414C00CAD5A44CCAC88F5C7 /* check_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = check_1.wav; sourceTree = "<group>"; };
@@ -343,6 +345,7 @@
 			isa = PBXGroup;
 			children = (
 				355FB9AF0212BC549DE3EB4E /* GameplayUITests.swift */,
+				1C1BB49F0F908197087B1281 /* ReelTests.swift */,
 				CF4B1F200F0523CCFD1AB2BF /* ScreenshotTests.swift */,
 			);
 			path = UITests;
@@ -610,6 +613,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				46A3AABD852059696D5BF6DF /* GameplayUITests.swift in Sources */,
+				C057D2108454C18A6CF4BC41 /* ReelTests.swift in Sources */,
 				504E64FF79B9FC3DCE0B7BF2 /* ScreenshotTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
