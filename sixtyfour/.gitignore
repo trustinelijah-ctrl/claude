@@ -13,3 +13,7 @@ tools/puzzles/.build/
 # Ambience source recordings are large; tools/scenes.py downloads them (see CREDITS.md).
 tools/sources/ambience/*
 !tools/sources/ambience/CREDITS.md
+
+# Photo scans for boards are large; tools/scanned.py downloads them (see CREDITS.md there).
+tools/sources/textures/*
+!tools/sources/textures/CREDITS.md

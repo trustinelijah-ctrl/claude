@@ -71,6 +71,14 @@ final class ScreenshotTests: XCTestCase {
         shoot("29-clock-low", args: ["-moves", moves, "-timeControl", "bullet1"], settle: 1.0)
     }
 
+    /// Every board with real (photo-scanned) wood and stone, mid-game.
+    func testC0Boards() {
+        for (theme, set) in [("house", "classic"), ("walnut", "classic"), ("rosewood", "gilded"),
+                             ("ebony", "wood"), ("olive", "classic"), ("marble", "gilded")] {
+            shoot("40-board-\(theme)", args: ["-pro", "YES", "-moves", midgame, "-theme", theme, "-pieceSet", set])
+        }
+    }
+
     func test1Opening() {
         shoot("01-opening", args: ["-fresh", "YES", "-theme", "house"])
         shoot("01-opening", args: ["-fresh", "YES", "-theme", "house"], landscape: true)

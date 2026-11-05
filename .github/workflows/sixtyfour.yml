@@ -113,7 +113,7 @@ jobs:
           ls -la shots
 
       - name: UI tests (interaction)
-        if: steps.build.outcome == 'success' && !contains(github.event.head_commit.message, '[preview]') && !contains(github.event.head_commit.message, '[iphone]') && !contains(github.event.head_commit.message, '[reel]')
+        if: steps.build.outcome == 'success' && !contains(github.event.head_commit.message, '[preview]') && !contains(github.event.head_commit.message, '[iphone]') && !contains(github.event.head_commit.message, '[reel]') && !contains(github.event.head_commit.message, '[shots:')
         run: |
           set -o pipefail
           status=0
@@ -152,6 +152,8 @@ jobs:
           DEVS="PRO13 PHONESE"; ONLY="SixtyFourUITests/ScreenshotTests"
           if [[ "$COMMIT_MSG" == *"[preview]"* ]]; then DEVS="AIR11"; ONLY="SixtyFourUITests/ScreenshotTests/testB0LayoutPreview"; fi
           if [[ "$COMMIT_MSG" == *"[iphone]"* ]]; then DEVS="PHONESE PHONEMAX"; fi
+          # [shots:testName] shoots one screenshot test on the iPad Pro and the big iPhone, quickly.
+          if [[ "$COMMIT_MSG" =~ \[shots:([A-Za-z0-9_]+)\] ]]; then DEVS="PRO13 PHONEMAX"; ONLY="SixtyFourUITests/ScreenshotTests/${BASH_REMATCH[1]}"; fi
           for dev in $DEVS; do
             udid="${!dev}"
             [ -z "$udid" ] && continue
