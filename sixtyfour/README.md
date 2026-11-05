@@ -143,7 +143,12 @@ on one `AVAudioEngine`, with five pitch variations per sample, a peak limiter an
 by board file. Sounds are scheduled on the audio clock so the knock lands on the frame the
 piece lands. By default the session is `.playback` (sound is the point of 64, so it plays with
 the silent switch on); Options ▸ Sound ▸ *Play in silent mode* switches to `.ambient`, which
-respects the switch. Either way it mixes with music at the table. Interruptions, route changes and media-server resets are handled.
+respects the switch. Either way it mixes with music at the table.
+
+The table's lamp follows the device's tilt (`TableLight`, CoreMotion): a glint moves across
+the pieces and the board's lacquer catches a reflection that slides the other way. On iPhone
+every event has its own Core Haptics pattern, scheduled on the haptic engine's clock so it
+lands with the sound. Interruptions, route changes and media-server resets are handled.
 
 **Haptics.** `HapticManager` checks `CHHapticEngine.capabilitiesForHardware()` at
 runtime. iPads without a haptic actuator get no haptic calls at all; the tactile feel
