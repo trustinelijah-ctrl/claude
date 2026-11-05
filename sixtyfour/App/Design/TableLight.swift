@@ -17,6 +17,19 @@ final class TableLight {
     @ObservationIgnored private var started = false
 
     init() {
+        #if DEBUG
+        // Filming on the simulator, which has no motion sensor: `-tiltSweep YES` circles the lamp.
+        if UserDefaults.standard.bool(forKey: "tiltSweep") {
+            let start = Date()
+            Timer.scheduledTimer(withTimeInterval: 1.0 / 30, repeats: true) { [weak self] _ in
+                let t = Date().timeIntervalSince(start)
+                MainActor.assumeIsolated {
+                    self?.tilt = CGSize(width: sin(t * 1.4) * 0.85, height: cos(t * 1.1) * 0.6)
+                }
+            }
+            return
+        }
+        #endif
         // Screenshot runs: `-tilt "0.6,-0.4"` sets a fixed light.
         if let fixed = UserDefaults.standard.string(forKey: "tilt") {
             let p = fixed.split(separator: ",").compactMap { Double($0) }

@@ -17,10 +17,10 @@ final class ReelTests: XCTestCase {
     }
 
     func test1House() {
-        film(["-theme", "house"], seconds: 24)
+        film(["-theme", "house", "-tiltSweep", "YES"], seconds: 24)
     }
 
     func test2RosewoodGilded() {
-        film(["-pro", "YES", "-theme", "rosewood", "-pieceSet", "gilded"], seconds: 24)
+        film(["-pro", "YES", "-theme", "rosewood", "-pieceSet", "gilded", "-tiltSweep", "YES"], seconds: 24)
     }
 }
