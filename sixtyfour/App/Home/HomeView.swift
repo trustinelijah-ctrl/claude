@@ -29,7 +29,7 @@ struct HomeView: View {
             let wide = size.width > size.height * 1.1
             ZStack {
                 backdrop(size)
-                frame(size: size, safe: proxy.safeAreaInsets)
+                cardFrame(size: size, safe: proxy.safeAreaInsets)
                 ViewThatFits(in: .vertical) {
                     content(size: size, wide: wide, safe: proxy.safeAreaInsets)
                     ScrollView(.vertical, showsIndicators: false) {
@@ -110,7 +110,7 @@ struct HomeView: View {
     }
 
     /// A fine double rule of gold around the whole screen, as on a printed menu card.
-    private func frame(size: CGSize, safe: EdgeInsets) -> some View {
+    private func cardFrame(size: CGSize, safe: EdgeInsets) -> some View {
         let inset = max(14, min(safe.top, 24))
         return ZStack {
             RoundedRectangle(cornerRadius: 6, style: .continuous)
@@ -137,6 +137,30 @@ struct HomeView: View {
                 .frame(width: 54, height: 0.75)
         }
         .accessibilityHidden(true)
+    }
+
+    private func masthead(size: CGSize, wide: Bool) -> some View {
+        VStack(spacing: 16) {
+            Image("Logo")
+                .resizable()
+                .renderingMode(.template)
+                .scaledToFit()
+                .foregroundStyle(Brand.cream)
+                .frame(height: wide ? min(size.height * 0.34, 280) : min(size.height * 0.2, 290))
+                .shadow(color: .black.opacity(0.35), radius: 12, y: 6)
+                .accessibilityLabel("64")
+                .onLongPressGesture(minimumDuration: 0.8) {
+                    // Development builds: hold the mark to see the welcome again.
+                    guard ProStore.isTestBuild else { return }
+                    feedback.ui()
+                    replayWelcome()
+                }
+            Text("Chess, across the table.")
+                .font(Typeface.voice(20 * scale(size)))
+                .foregroundStyle(Brand.cream.opacity(0.7))
+            ornament
+                .padding(.top, 4)
+        }
     }
 
     private func menu(_ k: CGFloat) -> some View {
