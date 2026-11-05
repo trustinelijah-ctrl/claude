@@ -66,7 +66,7 @@ final class TableLight {
         case .portraitUpsideDown: (x, y) = (-d.x, d.y)
         default: break
         }
-        let target = CGSize(width: max(-1, min(1, x * 3.2)), height: max(-1, min(1, y * 3.2)))
+        let target = CGSize(width: max(-1, min(1, x * 2.2)), height: max(-1, min(1, y * 2.2)))
         // Smooth, so the light glides rather than trembles.
         let k = 0.18
         let next = CGSize(width: tilt.width + (target.width - tilt.width) * k,
@@ -89,18 +89,16 @@ struct PieceSheen: View {
 
     var body: some View {
         let t = light?.tilt ?? .zero
-        LinearGradient(stops: [.init(color: .white.opacity(0), location: 0.30),
-                               .init(color: .white.opacity(dark ? 0.55 : 0.38), location: 0.47),
-                               .init(color: .white.opacity(dark ? 0.12 : 0.08), location: 0.55),
-                               .init(color: .white.opacity(0), location: 0.70)],
+        LinearGradient(stops: [.init(color: .white.opacity(0), location: 0.40),
+                               .init(color: .white.opacity(dark ? 0.16 : 0.10), location: 0.48),
+                               .init(color: .white.opacity(0), location: 0.58)],
                        startPoint: .topLeading, endPoint: .bottomTrailing)
             .frame(width: size * 2.2, height: size * 2.2)
-            .offset(x: (t.width * 0.45 - 0.08) * size, y: (t.height * 0.45 - 0.08) * size)
+            .offset(x: (t.width * 0.22 - 0.06) * size, y: (t.height * 0.22 - 0.06) * size)
             .frame(width: size, height: size)
             .clipped()
             .mask(Image(imageName).resizable().interpolation(.medium))
             .blendMode(.plusLighter)
-            .opacity(0.9)
             .allowsHitTesting(false)
             .accessibilityHidden(true)
     }
@@ -114,8 +112,8 @@ struct BoardGloss: View {
 
     var body: some View {
         let t = light?.tilt ?? .zero
-        RadialGradient(colors: [.white.opacity(0.10), .white.opacity(0.03), .clear],
-                       center: UnitPoint(x: 0.36 - t.width * 0.3, y: 0.28 - t.height * 0.3),
+        RadialGradient(colors: [.white.opacity(0.045), .white.opacity(0.012), .clear],
+                       center: UnitPoint(x: 0.36 - t.width * 0.14, y: 0.28 - t.height * 0.14),
                        startRadius: 0, endRadius: size * 0.62)
             .frame(width: size, height: size)
             .blendMode(.plusLighter)

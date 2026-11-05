@@ -1,8 +1,8 @@
 import SwiftUI
 import ChessCore
 
-/// Where 64 opens: continue the game on the board, start one against a friend or the
-/// computer, practise with puzzles, or look back at past games.
+/// Where 64 opens. Set like the first page of a fine menu: the mark, a line of italic, and
+/// a few words in serif on dark wood, divided by hairlines of gold. No boxes, no icons.
 struct HomeView: View {
     let session: GameSession
     @Bindable var settings: SettingsStore
@@ -19,7 +19,7 @@ struct HomeView: View {
     var replayWelcome: () -> Void = {}
 
     @State private var choosingLevel = false
-    private let theme = BoardTheme.with(.house)
+    @State private var shown = false
 
     private var inProgress: Bool { !session.game.history.isEmpty && !session.isOver }
 
@@ -28,8 +28,7 @@ struct HomeView: View {
             let size = proxy.size
             let wide = size.width > size.height * 1.1
             ZStack {
-                OnboardingBackdrop(theme: theme, page: 0)
-                // A short screen (a small iPhone with the levels open) scrolls instead of clipping.
+                backdrop(size)
                 ViewThatFits(in: .vertical) {
                     content(size: size, wide: wide, safe: proxy.safeAreaInsets)
                     ScrollView(.vertical, showsIndicators: false) {
@@ -41,218 +40,246 @@ struct HomeView: View {
         }
         .ignoresSafeArea()
         .environment(\.colorScheme, .dark)
+        .onAppear { withAnimation(.easeOut(duration: 0.9)) { shown = true } }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("home")
     }
 
-    private func content(size: CGSize, wide: Bool, safe: EdgeInsets) -> some View {
-        let layout = wide ? AnyLayout(HStackLayout(spacing: 64)) : AnyLayout(VStackLayout(spacing: size.width < 500 ? 24 : 36))
-        return layout {
-            VStack(spacing: 14) {
-                Image("Logo")
-                    .resizable()
-                    .renderingMode(.template)
-                    .scaledToFit()
-                    .foregroundStyle(Brand.cream)
-                    .frame(height: wide ? min(size.height * 0.34, 260) : min(size.height * 0.2, 220))
-                    .accessibilityLabel("64")
-                    // Development builds: hold the logo to see the welcome again.
-                    .onLongPressGesture(minimumDuration: 0.8) {
-                        guard ProStore.isTestBuild else { return }
-                        feedback.ui()
-                        replayWelcome()
-                    }
-                Text("Chess, across the table.")
-                    .font(Typeface.voice(19))
-                    .foregroundStyle(Brand.cream.opacity(0.65))
-            }
-            menu
-                .frame(maxWidth: 440)
+    // MARK: Backdrop
+
+    /// The table in lamplight: the house walnut, dark at the edges, a warm pool in the middle.
+    private func backdrop(_ size: CGSize) -> some View {
+        ZStack {
+            Image("WalnutField")
+                .resizable()
+                .scaledToFill()
+                .frame(width: size.width, height: size.height)
+                .clipped()
+            Color(hex: 0x1A0E07).opacity(0.62)
+            RadialGradient(colors: [Color(hex: 0xFFD9A0).opacity(0.16), .clear],
+                           center: UnitPoint(x: 0.5, y: 0.36), startRadius: 0,
+                           endRadius: max(size.width, size.height) * 0.55)
+            RadialGradient(colors: [.clear, .black.opacity(0.55)], center: .center,
+                           startRadius: min(size.width, size.height) * 0.35,
+                           endRadius: max(size.width, size.height) * 0.75)
         }
-        .padding(.horizontal, size.width < 500 ? 20 : 32)
-        .padding(.top, safe.top + 20)
-        .padding(.bottom, safe.bottom + 20)
+        .ignoresSafeArea()
+        .accessibilityHidden(true)
+    }
+
+    // MARK: Content
+
+    private func content(size: CGSize, wide: Bool, safe: EdgeInsets) -> some View {
+        let layout = wide ? AnyLayout(HStackLayout(spacing: 72)) : AnyLayout(VStackLayout(spacing: size.height < 760 ? 26 : 44))
+        return layout {
+            masthead(size: size, wide: wide)
+            menu
+                .frame(maxWidth: 460)
+        }
+        .padding(.horizontal, 28)
+        .padding(.top, safe.top + 28)
+        .padding(.bottom, safe.bottom + 24)
         .frame(maxWidth: .infinity)
+        .opacity(shown ? 1 : 0)
+        .offset(y: shown ? 0 : 12)
+    }
+
+    private func masthead(size: CGSize, wide: Bool) -> some View {
+        VStack(spacing: 16) {
+            Image("Logo")
+                .resizable()
+                .renderingMode(.template)
+                .scaledToFit()
+                .foregroundStyle(Brand.cream)
+                .frame(height: wide ? min(size.height * 0.3, 230) : min(size.height * 0.17, 200))
+                .shadow(color: .black.opacity(0.35), radius: 12, y: 6)
+                .accessibilityLabel("64")
+                .onLongPressGesture(minimumDuration: 0.8) {
+                    // Development builds: hold the mark to see the welcome again.
+                    guard ProStore.isTestBuild else { return }
+                    feedback.ui()
+                    replayWelcome()
+                }
+            Text("Chess, across the table.")
+                .font(Typeface.voice(20))
+                .foregroundStyle(Brand.cream.opacity(0.7))
+        }
     }
 
     private var menu: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 0) {
             if inProgress {
-                entry("Continue game", detail: continueDetail, symbol: "play.fill", primary: true, id: "home-continue") {
-                    resume()
-                }
+                item("Continue", note: continueNote, gold: true, id: "home-continue", action: resume)
+                rule
             }
-            entry("Play a friend", detail: "Face to face on this \(Brand.device)", symbol: "person.2.fill",
-                  primary: !inProgress, id: "home-friend") {
-                playFriend()
-            }
-            entry("Play 64", detail: "Against the computer · \(settings.botLevel.title)", symbol: "cpu",
-                  primary: false, id: "home-computer") {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) { choosingLevel.toggle() }
+            item("Play a friend", note: "face to face on this \(Brand.device)", id: "home-friend", action: playFriend)
+            rule
+            item("Play 64", note: "against the computer · \(settings.botLevel.title.lowercased())", id: "home-computer") {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.88)) { choosingLevel.toggle() }
             }
             if choosingLevel {
                 levelPicker
+                    .padding(.bottom, 10)
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
-            entry("Learn", detail: "Checkmate puzzles, from one move to three", symbol: "graduationcap.fill",
-                  primary: false, badge: pro.isPro ? nil : "\(PuzzleView.freeCount) FREE", id: "home-learn") {
-                learn()
+            rule
+            item("Learn", note: pro.isPro ? "checkmate puzzles" : "checkmate puzzles · \(PuzzleView.freeCount) free",
+                 id: "home-learn", action: learn)
+            rule
+            item("Free play", note: "no rules, just the pieces", id: "home-free-play", action: freePlay)
+            footer
+                .padding(.top, 30)
+        }
+    }
+
+    private var continueNote: String {
+        let moves = (session.game.history.count + 1) / 2
+        let who = settings.isAgainstComputer ? "against 64" : "face to face"
+        return "\(who) · move \(moves)"
+    }
+
+    /// A hairline of gold, fading out at both ends.
+    private var rule: some View {
+        LinearGradient(colors: [.clear, Brand.gold.opacity(0.55), .clear], startPoint: .leading, endPoint: .trailing)
+            .frame(width: 140, height: 0.75)
+            .accessibilityHidden(true)
+    }
+
+    private func item(_ title: String, note: String, gold: Bool = false, id: String,
+                      action: @escaping () -> Void) -> some View {
+        Button {
+            feedback.ui()
+            action()
+        } label: {
+            VStack(spacing: 5) {
+                Text(title)
+                    .font(Typeface.display(34, bold: false))
+                    .foregroundStyle(gold ? Brand.gold : Brand.cream)
+                Text(note.uppercased())
+                    .font(.system(size: 11, weight: .medium))
+                    .tracking(1.8)
+                    .foregroundStyle(Brand.cream.opacity(0.5))
             }
-            entry("Free play", detail: "No rules. Just the pieces and their sound", symbol: "hand.point.up.left.fill",
-                  primary: false, id: "home-free-play") {
-                freePlay()
-            }
-            HStack(spacing: 12) {
-                small("Your games", symbol: "tray.full", id: "home-games", action: games)
-                small("Options", symbol: "gearshape", id: "home-options", action: options)
+            .frame(maxWidth: .infinity, minHeight: 86)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(MenuPressStyle())
+        .accessibilityIdentifier(id)
+    }
+
+    private var footer: some View {
+        VStack(spacing: 18) {
+            HStack(spacing: 28) {
+                quiet("Your games", id: "home-games", action: games)
+                Circle().fill(Brand.gold.opacity(0.6)).frame(width: 3, height: 3)
+                quiet("Options", id: "home-options", action: options)
             }
             if !pro.isPro {
                 Button {
                     feedback.ui()
                     upgrade()
                 } label: {
-                    Text(pro.trialAvailable ? "Try 64 Pro free for a week" : "Upgrade to 64 Pro")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Brand.brown)
-                        .frame(maxWidth: .infinity, minHeight: 50)
-                        .background(GoldCapsule())
+                    HStack(spacing: 8) {
+                        Image(systemName: "crown.fill").font(.system(size: 11))
+                        Text(pro.trialAvailable ? "64 PRO · TRY A WEEK FREE" : "64 PRO")
+                            .font(.system(size: 12, weight: .semibold))
+                            .tracking(2)
+                    }
+                    .foregroundStyle(Brand.gold)
+                    .padding(.horizontal, 18)
+                    .frame(minHeight: 40)
+                    .overlay(Capsule().strokeBorder(Brand.gold.opacity(0.5), lineWidth: 0.75))
+                    .contentShape(Capsule())
                 }
-                .buttonStyle(PressScaleStyle())
-                .padding(.top, 6)
+                .buttonStyle(MenuPressStyle())
                 .accessibilityIdentifier("home-upgrade")
             }
         }
     }
 
-    private var continueDetail: String {
-        let moves = (session.game.history.count + 1) / 2
-        let who = settings.isAgainstComputer ? "Against 64" : "Face to face"
-        return "\(who) · move \(moves)"
+    private func quiet(_ title: String, id: String, action: @escaping () -> Void) -> some View {
+        Button {
+            feedback.ui()
+            action()
+        } label: {
+            Text(title.uppercased())
+                .font(.system(size: 12, weight: .semibold))
+                .tracking(2)
+                .foregroundStyle(Brand.cream.opacity(0.7))
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(MenuPressStyle())
+        .accessibilityIdentifier(id)
     }
 
-    /// Strength and side, then start.
+    /// Strength and side, then begin; in the same quiet type.
     private var levelPicker: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Five levels in a row; a phone takes them in rows of three.
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 8) {
-                    ForEach(BotLevel.allCases) { levelButton($0) }
-                }
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
-                    ForEach(BotLevel.allCases) { levelButton($0) }
+        VStack(spacing: 16) {
+            HStack(spacing: 6) {
+                ForEach(BotLevel.allCases) { level in
+                    let locked = level.isPro && !pro.isPro
+                    let on = settings.botLevel == level
+                    Button {
+                        feedback.ui()
+                        if locked { upgrade() } else { withAnimation(.easeInOut(duration: 0.2)) { settings.botLevel = level } }
+                    } label: {
+                        VStack(spacing: 4) {
+                            Text(level.title)
+                                .font(Typeface.display(16))
+                                .foregroundStyle(on ? Brand.gold : Brand.cream.opacity(locked ? 0.4 : 0.8))
+                                .lineLimit(1).minimumScaleFactor(0.7)
+                            Rectangle().fill(on ? Brand.gold : .clear).frame(width: 18, height: 1)
+                            if locked {
+                                Text("PRO").font(.system(size: 8, weight: .bold)).tracking(1).foregroundStyle(Brand.gold.opacity(0.7))
+                            }
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(MenuPressStyle())
                 }
             }
-            HStack(spacing: 8) {
-                Text("You play")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Brand.cream.opacity(0.6))
-                Picker("You play", selection: $settings.humanColor) {
-                    Text("White").tag(PieceColor.white)
-                    Text("Black").tag(PieceColor.black)
+            HStack(spacing: 22) {
+                ForEach([PieceColor.white, .black], id: \.self) { c in
+                    let on = settings.humanColor == c
+                    Button {
+                        feedback.ui()
+                        withAnimation(.easeInOut(duration: 0.2)) { settings.humanColor = c }
+                    } label: {
+                        Text(c == .white ? "as White" : "as Black")
+                            .font(Typeface.voice(17))
+                            .foregroundStyle(on ? Brand.gold : Brand.cream.opacity(0.6))
+                            .frame(minHeight: 40)
+                    }
+                    .buttonStyle(MenuPressStyle())
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
                 Button {
                     feedback.ui()
                     playComputer()
                 } label: {
-                    Text("Start")
-                        .font(.system(size: 15, weight: .semibold))
+                    Text("BEGIN")
+                        .font(.system(size: 13, weight: .bold))
+                        .tracking(2.4)
                         .foregroundStyle(Brand.brown)
-                        .padding(.horizontal, 18)
-                        .frame(height: 34)
-                        .background(Capsule().fill(Brand.cream))
+                        .padding(.horizontal, 20)
+                        .frame(minHeight: 38)
+                        .background(GoldCapsule())
                 }
-                .buttonStyle(PressScaleStyle())
+                .buttonStyle(MenuPressStyle())
                 .accessibilityIdentifier("home-start")
             }
         }
-        .padding(14)
-        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.black.opacity(0.18)))
+        .padding(.horizontal, 8)
     }
+}
 
-    private func levelButton(_ level: BotLevel) -> some View {
-        let locked = level.isPro && !pro.isPro
-        return Button {
-            feedback.ui()
-            if locked { upgrade() } else { settings.botLevel = level }
-        } label: {
-            HStack(spacing: 4) {
-                Text(level.title)
-                if locked { Image(systemName: "lock.fill").font(.system(size: 9)) }
-            }
-            .font(.system(size: 13, weight: .semibold))
-            .lineLimit(1)
-            .fixedSize()
-            .foregroundStyle(settings.botLevel == level ? Brand.brown : Brand.cream.opacity(locked ? 0.5 : 0.85))
-            .padding(.horizontal, 10)
-            .frame(height: 34)
-            .frame(maxWidth: .infinity)
-            .background(Capsule().fill(settings.botLevel == level ? Brand.cream : Color.black.opacity(0.25)))
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func entry(_ title: String, detail: String, symbol: String, primary: Bool, badge: String? = nil,
-                       id: String, action: @escaping () -> Void) -> some View {
-        Button {
-            feedback.ui()
-            action()
-        } label: {
-            HStack(spacing: 14) {
-                Image(systemName: symbol)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(primary ? Brand.brown : theme.accent)
-                    .frame(width: 28)
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 8) {
-                        Text(title)
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(primary ? Brand.brown : Brand.cream)
-                        if let badge {
-                            Text(badge)
-                                .font(.system(size: 10, weight: .heavy))
-                                .foregroundStyle(Brand.brown)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Capsule().fill(theme.accent))
-                        }
-                    }
-                    Text(detail)
-                        .font(.system(size: 13))
-                        .foregroundStyle(primary ? Brand.brown.opacity(0.7) : Brand.cream.opacity(0.6))
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(primary ? Brand.brown.opacity(0.5) : Brand.cream.opacity(0.4))
-            }
-            .padding(.horizontal, 18)
-            .frame(minHeight: 68)
-            .background(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(primary ? Brand.cream : Color.black.opacity(0.22)))
-            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(theme.accent.opacity(primary ? 0.9 : 0.4), lineWidth: primary ? 1 : 0.75))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(PressScaleStyle())
-        .accessibilityIdentifier(id)
-    }
-
-    private func small(_ title: String, symbol: String, id: String, action: @escaping () -> Void) -> some View {
-        Button {
-            feedback.ui()
-            action()
-        } label: {
-            Label(title, systemImage: symbol)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Brand.cream.opacity(0.9))
-                .frame(maxWidth: .infinity, minHeight: 50)
-                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.black.opacity(0.18)))
-                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(theme.accent.opacity(0.3), lineWidth: 0.75))
-        }
-        .buttonStyle(PressScaleStyle())
-        .accessibilityIdentifier(id)
+/// A press that feels like touching paper: the words dim a little and settle.
+struct MenuPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.6 : 1)
+            .scaleEffect(configuration.isPressed ? 0.985 : 1)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }
