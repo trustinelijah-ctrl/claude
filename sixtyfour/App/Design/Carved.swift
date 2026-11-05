@@ -1,25 +1,9 @@
 import SwiftUI
 
-// The player's end of the table is worked into the wood itself, the way a fine games table
-// is made: the captured pieces stand in a recess lined with felt, the controls sit in a
-// routed rail, the clock looks out through a small window with a brass bezel, and words are
-// cut into the surface and filled with gold. Everything here is lit from the lamp over the
-// middle of the board, so each recess is shadowed along the edge nearest the board.
-
-extension BoardTheme {
-    /// The baize that lines this table's recesses.
-    var felt: Color {
-        switch id {
-        case .house, .tournament: Color(hex: 0x1D3A2A)
-        case .walnut, .rosewood: Color(hex: 0x3F1517)
-        case .ebony: Color(hex: 0x2B1113)
-        case .salon: Color(hex: 0x0F261D)
-        case .slate: Color(hex: 0x23272C)
-        case .marble, .midnight: Color(hex: 0x172036)
-        case .olive: Color(hex: 0x24321E)
-        }
-    }
-}
+// The player's end of the table is worked into the wood itself, quietly: the captured pieces
+// stand in a shallow groove, and the words, marks and clock are cut into the surface and
+// filled with gold. Nothing sits on top of the wood in a box. Everything is lit from the
+// lamp over the middle of the board, so a groove is shadowed along the edge nearest it.
 
 /// A recess cut into the table: its floor (felt, or the wood itself darkened by its own
 /// shade), the shadow cast by the upper wall, and a fine catch of light along the lower lip.
@@ -40,7 +24,7 @@ struct CarvedRecess<S: InsettableShape>: View {
                     .opacity(0.55)
                     .clipShape(shape)
             } else {
-                shape.fill(Color.black.opacity(0.22))
+                shape.fill(Color.black.opacity(0.1))
             }
             // The upper wall's shadow, falling onto the floor, and a softer ambient one all round.
             InnerShadow(shape: shape, color: .black.opacity(0.8 * depth), radius: 5 * depth, y: 3.5 * depth)
@@ -98,8 +82,8 @@ extension View {
     }
 }
 
-/// A clock window: a small pane of glass in a brass bezel, set into the table. The dial
-/// behind it is lit like enamel while that player's time runs and falls dark while it waits.
+/// The clock, cut into the wood: digits only. While that player's time runs they are lit
+/// gold with a soft glow and a fine rule beneath; while waiting they sit dim in the wood.
 struct ClockWindow<Content: View>: View {
     let running: Bool
     let low: Bool
@@ -107,61 +91,29 @@ struct ClockWindow<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 9, style: .continuous)
         content
-            .background {
-                ZStack {
-                    // The dial: warm enamel when running, smoked glass when waiting.
-                    shape.fill(running
-                               ? (low ? AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xB0352C), Color(hex: 0x7E1E19)], startPoint: .top, endPoint: .bottom))
-                                      : AnyShapeStyle(LinearGradient(colors: [Color(hex: 0xFBF3E2), Color(hex: 0xE8DAC0)], startPoint: .top, endPoint: .bottom)))
-                               : AnyShapeStyle(LinearGradient(colors: [Color(hex: 0x17110C), Color(hex: 0x0C0806)], startPoint: .top, endPoint: .bottom)))
-                    // Set below the bezel: shadow under its upper edge.
-                    InnerShadow(shape: shape, color: .black.opacity(running ? 0.45 : 0.8), radius: 3, y: 2)
-                    // The glass: a faint diagonal reflection of the lamp.
-                    shape.fill(LinearGradient(stops: [.init(color: .white.opacity(running ? 0.22 : 0.08), location: 0),
-                                                      .init(color: .white.opacity(0.0), location: 0.48),
-                                                      .init(color: .white.opacity(0.0), location: 1)],
-                                              startPoint: .topLeading, endPoint: .bottomTrailing))
-                }
+            .shadow(color: running ? (low ? Color(hex: 0xFF5A48) : Color(hex: 0xFFD98A)).opacity(0.35) : .clear, radius: 8)
+            .overlay(alignment: .bottom) {
+                LinearGradient(colors: [.clear, (low ? Color(hex: 0xE0574A) : Brand.gold).opacity(running ? 0.8 : 0), .clear],
+                               startPoint: .leading, endPoint: .trailing)
+                    .frame(height: 0.75)
+                    .padding(.horizontal, 10)
             }
-            .overlay {
-                // The brass bezel: bright where the lamp hits its upper face, dark below.
-                shape.strokeBorder(LinearGradient(colors: [Color(hex: 0xF6E2AE), Color(hex: 0xC59C52), Color(hex: 0x6E4F22)],
-                                                  startPoint: .top, endPoint: .bottom), lineWidth: 2)
-                    .padding(-2)
-            }
-            .background {
-                // The bezel sits in a cut in the wood: a fine dark seam around it.
-                RoundedRectangle(cornerRadius: 11, style: .continuous)
-                    .fill(Color.black.opacity(0.55))
-                    .padding(-3)
-                    .blur(radius: 0.8)
-            }
-            .shadow(color: running && !low ? Color(hex: 0xFFE7B0).opacity(theme.isDark ? 0.18 : 0.1) : .clear, radius: 10)
     }
 }
 
-/// The routed rail the controls sit in: one long, shallow channel in the wood.
+/// The controls at a player's end: their marks stand on the wood with nothing around them.
 struct ControlRail<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
         content
-            .padding(.horizontal, 6)
-            .padding(.vertical, 4)
-            .background(CarvedRecess(shape: Capsule(style: .continuous), depth: 0.8))
     }
 }
 
-/// The groove between two controls in the rail.
+/// A little room between two controls.
 struct RailDivider: View {
     var body: some View {
-        HStack(spacing: 0) {
-            Rectangle().fill(Color.black.opacity(0.45)).frame(width: 0.75)
-            Rectangle().fill(Color.white.opacity(0.1)).frame(width: 0.75)
-        }
-        .frame(height: 26)
-        .accessibilityHidden(true)
+        Color.clear.frame(width: 4, height: 1).accessibilityHidden(true)
     }
 }

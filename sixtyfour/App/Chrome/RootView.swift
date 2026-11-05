@@ -465,14 +465,13 @@ struct TableField: View {
                     .frame(width: b.width, height: b.height)
                     .offset(x: b.minX, y: b.minY)
             }
-            // Each player's well for the pieces they take: cut into the table and lined with felt.
-            ForEach(Array(trayWells.enumerated()), id: \.offset) { _, well in
-                CarvedRecess(shape: RoundedRectangle(cornerRadius: min(14, well.height * 0.3), style: .continuous),
-                             felt: theme.felt)
-                    .frame(width: well.width, height: well.height)
-                    // Lit from the lamp over the board: the far well is shaded on its other side.
-                    .rotationEffect(.degrees(layout.arrangement == .ends && well.minY < layout.boardRect.minY ? 180 : 0))
-                    .offset(x: well.minX, y: well.minY)
+            // The captured pieces stand in a shallow groove cut into the table at each end.
+            ForEach(Array(trayGrooves.enumerated()), id: \.offset) { _, groove in
+                CarvedRecess(shape: Capsule(style: .continuous), depth: 0.4)
+                    .frame(width: groove.width, height: groove.height)
+                    // Lit from the lamp over the board: the far groove is shaded on its other side.
+                    .rotationEffect(.degrees(groove.midY < layout.boardRect.midY ? 180 : 0))
+                    .offset(x: groove.minX, y: groove.minY)
             }
         }
         .frame(width: size.width, height: size.height)
@@ -483,14 +482,12 @@ struct TableField: View {
     /// Layout preview switch (`-quietEnds YES`).
     static let quietEnds = UserDefaults.standard.bool(forKey: "quietEnds")
 
-    /// The felt-lined wells under each player's captured pieces: the near player's, and the
-    /// same turned to face the far player.
-    private var trayWells: [CGRect] {
-        let t = layout.tray
-        let well = CGRect(x: t.minX - 6, y: t.minY + 2, width: t.width + 6, height: t.height + 2)
-        guard well.width > 30, well.height > 24 else { return [] }
-        let far = CGRect(x: layout.size.width - well.maxX, y: layout.size.height - well.maxY,
-                         width: well.width, height: well.height)
-        return [well, far]
+    /// The grooves for both players' captured pieces: the near player's, and the same turned
+    /// to face the far player.
+    private var trayGrooves: [CGRect] {
+        let near = layout.trayGrooves.filter { $0.width > 30 }
+        let far = near.map { CGRect(x: layout.size.width - $0.maxX, y: layout.size.height - $0.maxY,
+                                    width: $0.width, height: $0.height) }
+        return near + far
     }
 }

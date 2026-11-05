@@ -29,6 +29,7 @@ struct HomeView: View {
             let wide = size.width > size.height * 1.1
             ZStack {
                 backdrop(size)
+                frame(size: size, safe: proxy.safeAreaInsets)
                 ViewThatFits(in: .vertical) {
                     content(size: size, wide: wide, safe: proxy.safeAreaInsets)
                     ScrollView(.vertical, showsIndicators: false) {
@@ -69,52 +70,84 @@ struct HomeView: View {
 
     // MARK: Content
 
+    /// Type scales with the screen, so an iPad's menu reads as large as a printed card.
+    private func scale(_ size: CGSize) -> CGFloat {
+        min(1.45, max(1, min(size.width, size.height) / 430))
+    }
+
     private func content(size: CGSize, wide: Bool, safe: EdgeInsets) -> some View {
-        let layout = wide ? AnyLayout(HStackLayout(spacing: 72)) : AnyLayout(VStackLayout(spacing: size.height < 760 ? 26 : 44))
-        return layout {
-            masthead(size: size, wide: wide)
-            menu
-                .frame(maxWidth: 460)
+        let k = scale(size)
+        return Group {
+            if wide {
+                HStack(spacing: 64 * k) {
+                    masthead(size: size, wide: true)
+                    VStack(spacing: 28) {
+                        menu(k)
+                        footer
+                    }
+                    .frame(maxWidth: 420 * k)
+                }
+                .frame(maxHeight: .infinity)
+            } else {
+                VStack(spacing: 0) {
+                    Spacer(minLength: 12)
+                    masthead(size: size, wide: false)
+                    Spacer(minLength: 20)
+                    menu(k)
+                        .frame(maxWidth: 460 * k)
+                    Spacer(minLength: 20)
+                    footer
+                    Spacer(minLength: 8)
+                }
+            }
         }
-        .padding(.horizontal, 28)
-        .padding(.top, safe.top + 28)
-        .padding(.bottom, safe.bottom + 24)
-        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 44)
+        .padding(.top, safe.top + 36)
+        .padding(.bottom, safe.bottom + 32)
+        .frame(maxWidth: .infinity, minHeight: size.height)
         .opacity(shown ? 1 : 0)
         .offset(y: shown ? 0 : 12)
     }
 
-    private func masthead(size: CGSize, wide: Bool) -> some View {
-        VStack(spacing: 16) {
-            Image("Logo")
-                .resizable()
-                .renderingMode(.template)
-                .scaledToFit()
-                .foregroundStyle(Brand.cream)
-                .frame(height: wide ? min(size.height * 0.3, 230) : min(size.height * 0.17, 200))
-                .shadow(color: .black.opacity(0.35), radius: 12, y: 6)
-                .accessibilityLabel("64")
-                .onLongPressGesture(minimumDuration: 0.8) {
-                    // Development builds: hold the mark to see the welcome again.
-                    guard ProStore.isTestBuild else { return }
-                    feedback.ui()
-                    replayWelcome()
-                }
-            Text("Chess, across the table.")
-                .font(Typeface.voice(20))
-                .foregroundStyle(Brand.cream.opacity(0.7))
+    /// A fine double rule of gold around the whole screen, as on a printed menu card.
+    private func frame(size: CGSize, safe: EdgeInsets) -> some View {
+        let inset = max(14, min(safe.top, 24))
+        return ZStack {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .strokeBorder(Brand.gold.opacity(0.42), lineWidth: 0.75)
+                .padding(inset)
+            RoundedRectangle(cornerRadius: 3, style: .continuous)
+                .strokeBorder(Brand.gold.opacity(0.22), lineWidth: 0.5)
+                .padding(inset + 5)
         }
+        .padding(.top, max(0, safe.top - inset))
+        .padding(.bottom, max(0, safe.bottom - inset))
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
-    private var menu: some View {
+    /// A small ornament under the tagline: a gold lozenge between two fading rules.
+    private var ornament: some View {
+        HStack(spacing: 10) {
+            LinearGradient(colors: [.clear, Brand.gold.opacity(0.6)], startPoint: .leading, endPoint: .trailing)
+                .frame(width: 54, height: 0.75)
+            Rectangle().fill(Brand.gold.opacity(0.8)).frame(width: 5, height: 5).rotationEffect(.degrees(45))
+            LinearGradient(colors: [Brand.gold.opacity(0.6), .clear], startPoint: .leading, endPoint: .trailing)
+                .frame(width: 54, height: 0.75)
+        }
+        .accessibilityHidden(true)
+    }
+
+    private func menu(_ k: CGFloat) -> some View {
         VStack(spacing: 0) {
             if inProgress {
-                item("Continue", note: continueNote, gold: true, id: "home-continue", action: resume)
+                item("Continue", k: k, note: continueNote, gold: true, id: "home-continue", action: resume)
                 rule
             }
-            item("Play a friend", note: "face to face on this \(Brand.device)", id: "home-friend", action: playFriend)
+            item("Play a friend", k: k, note: "face to face on this \(Brand.device)", id: "home-friend", action: playFriend)
             rule
-            item("Play 64", note: "against the computer · \(settings.botLevel.title.lowercased())", id: "home-computer") {
+            item("Play 64", k: k, note: "against the computer · \(settings.botLevel.title.lowercased())", id: "home-computer") {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.88)) { choosingLevel.toggle() }
             }
             if choosingLevel {
@@ -123,12 +156,10 @@ struct HomeView: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
             rule
-            item("Learn", note: pro.isPro ? "checkmate puzzles" : "checkmate puzzles · \(PuzzleView.freeCount) free",
+            item("Learn", k: k, note: pro.isPro ? "checkmate puzzles" : "checkmate puzzles · \(PuzzleView.freeCount) free",
                  id: "home-learn", action: learn)
             rule
-            item("Free play", note: "no rules, just the pieces", id: "home-free-play", action: freePlay)
-            footer
-                .padding(.top, 30)
+            item("Free play", k: k, note: "no rules, just the pieces", id: "home-free-play", action: freePlay)
         }
     }
 
@@ -145,7 +176,7 @@ struct HomeView: View {
             .accessibilityHidden(true)
     }
 
-    private func item(_ title: String, note: String, gold: Bool = false, id: String,
+    private func item(_ title: String, k menuScale: CGFloat, note: String, gold: Bool = false, id: String,
                       action: @escaping () -> Void) -> some View {
         Button {
             feedback.ui()
@@ -153,14 +184,14 @@ struct HomeView: View {
         } label: {
             VStack(spacing: 5) {
                 Text(title)
-                    .font(Typeface.display(34, bold: false))
+                    .font(Typeface.display(34 * menuScale, bold: false))
                     .foregroundStyle(gold ? Brand.gold : Brand.cream)
                 Text(note.uppercased())
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(size: 11 * min(menuScale, 1.25), weight: .medium))
                     .tracking(1.8)
                     .foregroundStyle(Brand.cream.opacity(0.5))
             }
-            .frame(maxWidth: .infinity, minHeight: 86)
+            .frame(maxWidth: .infinity, minHeight: 86 * menuScale)
             .contentShape(Rectangle())
         }
         .buttonStyle(MenuPressStyle())

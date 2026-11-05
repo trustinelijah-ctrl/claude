@@ -59,7 +59,7 @@ struct PlayerZone: View {
     /// A narrow end: tray, status and clock in a row along the board, the pins beneath.
     private var stackedEnds: some View {
         let z = layout.zone
-        let trayRight = layout.tray.maxX - z.minX
+        let trayRight = min(layout.tray.maxX, layout.trayGrooves.first?.maxX ?? layout.tray.maxX) - z.minX + 4
         return VStack(spacing: 0) {
             HStack(spacing: 16) {
                 Spacer(minLength: trayRight)
@@ -224,6 +224,8 @@ struct PlayerZone: View {
             }
         }
         .lineLimit(1)
+        .minimumScaleFactor(0.6)
+        .layoutPriority(1)
         .animation(.easeInOut(duration: 0.25), value: statusLine)
         .accessibilityElement(children: .combine)
     }
@@ -425,12 +427,18 @@ struct ClockFace: View {
             let running = clock?.running == color && clock?.isTicking == true
             let low = left < 10
             ClockWindow(running: running, low: low, theme: theme) {
-                Text(Self.format(left))
-                    .font(.system(size: large ? 30 : 23, weight: .medium, design: .serif).monospacedDigit())
-                    .foregroundStyle(running ? (low ? Color(hex: 0xFFF1E6) : Color(hex: 0x2A1A0E))
-                                             : Brand.cream.opacity(left == 0 ? 0.9 : 0.55))
-                    .padding(.horizontal, large ? 14 : 10)
-                    .frame(minWidth: large ? 112 : 86, minHeight: large ? 46 : 38)
+                Group {
+                    if running && !low {
+                        Text(Self.format(left)).gilded()
+                    } else {
+                        Text(Self.format(left))
+                            .foregroundStyle(low && running ? Color(hex: 0xE0574A)
+                                             : Brand.cream.opacity(left == 0 ? 0.85 : 0.42))
+                    }
+                }
+                .font(.system(size: large ? 32 : 24, weight: .regular, design: .serif).monospacedDigit())
+                .padding(.horizontal, 6)
+                .frame(minWidth: large ? 96 : 74, minHeight: large ? 44 : 36)
             }
             .animation(.easeInOut(duration: 0.25), value: running)
             .accessibilityElement()

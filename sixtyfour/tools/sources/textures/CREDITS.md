@@ -5,7 +5,6 @@ All scans from Poly Haven (https://polyhaven.com), licensed CC0.
 - american_walnut_veneer: https://polyhaven.com/a/american_walnut_veneer
 - ash_veneer: https://polyhaven.com/a/ash_veneer
 - black_walnut_veneer_01: https://polyhaven.com/a/black_walnut_veneer_01
-- brown_leather: https://polyhaven.com/a/brown_leather
 - flamed_black_veneer: https://polyhaven.com/a/flamed_black_veneer
 - marble_rock_02: https://polyhaven.com/a/marble_rock_02
 - olive_veneer: https://polyhaven.com/a/olive_veneer

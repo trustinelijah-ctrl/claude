@@ -114,4 +114,24 @@ struct TableLayout: Equatable {
                            y: tray.minY + s * 1.0 + CGFloat(row) * s * 0.7)
         }
     }
+
+    /// The shallow grooves in the table that captured pieces stand in, one per row of the
+    /// tray (bottom player's frame).
+    var trayGrooves: [CGRect] {
+        let s = trayPiece
+        let h = s * 0.26
+        let cap = trayCapacity
+        func groove(from first: Int, to last: Int) -> CGRect {
+            let a = traySlot(first, count: cap), b = traySlot(last, count: cap)
+            return CGRect(x: a.x - s * 0.42, y: a.y - h * 0.6, width: b.x - a.x + s * 0.84, height: h)
+        }
+        switch arrangement {
+        case .ends:
+            return [groove(from: 0, to: cap - 1)]
+        case .sides:
+            let perRow = max(2, Int((tray.width - s * 0.3) / (s * 0.62)))
+            let rows = (cap + perRow - 1) / perRow
+            return (0..<rows).map { r in groove(from: r * perRow, to: min(cap, (r + 1) * perRow) - 1) }
+        }
+    }
 }

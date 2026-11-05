@@ -39,8 +39,6 @@
 		57F590E9E734D4C92DB343DC /* ui_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = EF14BC9EE2FD5F78AF05612F /* ui_1.wav */; };
 		583159D3525322C30E329775 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = CBADC4561C673EF6F2006266 /* PrivacyInfo.xcprivacy */; };
 		697512CBAD18A02B8F43B984 /* place_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = F5D41B0CAA6BEABEC9C20BAF /* place_3.wav */; };
-		6D0F260FD98A80572A9B790B /* capture_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = A65B8DDAB42FB2FB6D6085E8 /* capture_3.wav */; };
-		6F5334968A34BBF5AA507684 /* pickup_4.wav in Resources */ = {isa = PBXBuildFile; fileRef = 1F4E874F70C91C3C8EA0CCD4 /* pickup_4.wav */; };
 		6F9A2362F9A6D24243E99565 /* SixtyFourApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87274A89173B4887E7709820 /* SixtyFourApp.swift */; };
 		715B84EEA8CBFCE1DFCB48C5 /* ProCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20671ADF34BEB239FF107B1 /* ProCard.swift */; };
 		7867AE74D3B37E96A3E47311 /* pickup_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = B4D001202644A4CE8D489099 /* pickup_1.wav */; };
@@ -79,7 +77,6 @@
 		E2F91CD3106772228954149D /* pickup_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = EEADD6DE15C5B0F1238A5C52 /* pickup_2.wav */; };
 		E37303E50B295EFA3E826519 /* notch_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = DBA67FC87E33B9966A69C0A2 /* notch_1.wav */; };
 		E4C1E18826C3E4B8C73ED9C4 /* ui_2.wav in Resources */ = {isa = PBXBuildFile; fileRef = E61CF85142C59805D92D1A10 /* ui_2.wav */; };
-		E8084C940F54208DE3D1A4E0 /* placeLight_4.wav in Resources */ = {isa = PBXBuildFile; fileRef = AB6FC7899927AE4DB8D2EBB4 /* placeLight_4.wav */; };
 		E95D9B91AC6904BCF9D98862 /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A598F4911AA2E4EF70262C68 /* HapticManager.swift */; };
 		EBA794FD3D80173412B66BC5 /* topple_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = B87579E90A75DDE5FFA341CF /* topple_1.wav */; };
 		ED4C432B7874222DB82A5BC7 /* TableLight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D6B748EAA2C22E713FDA21F /* TableLight.swift */; };
@@ -111,7 +108,6 @@
 		1A8F54B4228A1EF5435B6DA2 /* FeedbackCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackCoordinator.swift; sourceTree = "<group>"; };
 		1BFE116B7FEFC37F6539846B /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		1C1BB49F0F908197087B1281 /* ReelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReelTests.swift; sourceTree = "<group>"; };
-		1F4E874F70C91C3C8EA0CCD4 /* pickup_4.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = pickup_4.wav; sourceTree = "<group>"; };
 		2025FAAEEC027ECCC07D213A /* placeHeavy_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = placeHeavy_3.wav; sourceTree = "<group>"; };
 		21D95DA670F461D5E9F15E9D /* ambience_rain.m4a */ = {isa = PBXFileReference; path = ambience_rain.m4a; sourceTree = "<group>"; };
 		2414C00CAD5A44CCAC88F5C7 /* check_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = check_1.wav; sourceTree = "<group>"; };
@@ -144,8 +140,6 @@
 		9F254DEFD491BAACBE1A3344 /* reset_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = reset_1.wav; sourceTree = "<group>"; };
 		A01DD14798520CAC85FB7F6E /* SixtyFourUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SixtyFourUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A598F4911AA2E4EF70262C68 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
-		A65B8DDAB42FB2FB6D6085E8 /* capture_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = capture_3.wav; sourceTree = "<group>"; };
-		AB6FC7899927AE4DB8D2EBB4 /* placeLight_4.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = placeLight_4.wav; sourceTree = "<group>"; };
 		AD2289801C6DFDEDC4D71D6C /* Carved.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Carved.swift; sourceTree = "<group>"; };
 		AD67A1AB01C82D6F5D8BB47B /* placeLight_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = placeLight_3.wav; sourceTree = "<group>"; };
 		B119B00D4F44B8E2CFC03482 /* pickup_3.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = pickup_3.wav; sourceTree = "<group>"; };
@@ -270,7 +264,6 @@
 				B5D03CBA108605F65297B555 /* ambience_storm.m4a */,
 				FA6CD621A39FD6F6E0DCCA43 /* capture_1.wav */,
 				C3C9DF10B6707CA1984B39A3 /* capture_2.wav */,
-				A65B8DDAB42FB2FB6D6085E8 /* capture_3.wav */,
 				2414C00CAD5A44CCAC88F5C7 /* check_1.wav */,
 				B94B699A03BAE000F04D732D /* checkmate_1.wav */,
 				F8BEDCF36380A85758134058 /* clockPress_1.wav */,
@@ -281,7 +274,6 @@
 				B4D001202644A4CE8D489099 /* pickup_1.wav */,
 				EEADD6DE15C5B0F1238A5C52 /* pickup_2.wav */,
 				B119B00D4F44B8E2CFC03482 /* pickup_3.wav */,
-				1F4E874F70C91C3C8EA0CCD4 /* pickup_4.wav */,
 				756EE8CAFA112D17F1BFC188 /* place_1.wav */,
 				2F954A97C06B515815FA17DD /* place_2.wav */,
 				F5D41B0CAA6BEABEC9C20BAF /* place_3.wav */,
@@ -292,7 +284,6 @@
 				9ADCE6E715E3202484CAE82E /* placeLight_1.wav */,
 				E2F26A2286BEEA13CA408535 /* placeLight_2.wav */,
 				AD67A1AB01C82D6F5D8BB47B /* placeLight_3.wav */,
-				AB6FC7899927AE4DB8D2EBB4 /* placeLight_4.wav */,
 				6E6757425D2A62379E042E7D /* promotion_1.wav */,
 				9F254DEFD491BAACBE1A3344 /* reset_1.wav */,
 				B87579E90A75DDE5FFA341CF /* topple_1.wav */,
@@ -529,7 +520,6 @@
 				D229A02BECCB6BEFF990AA6E /* ambience_storm.m4a in Resources */,
 				9A2FA9615E549D01F880D7B3 /* capture_1.wav in Resources */,
 				530C9E616BBF7F2FDDD7D522 /* capture_2.wav in Resources */,
-				6D0F260FD98A80572A9B790B /* capture_3.wav in Resources */,
 				45D7579EB6DB67F54FAC0AB6 /* check_1.wav in Resources */,
 				DFEFC4036D97600AEF7FB283 /* checkmate_1.wav in Resources */,
 				2772C22AB6AAF19C180F9F41 /* clockPress_1.wav in Resources */,
@@ -540,14 +530,12 @@
 				7867AE74D3B37E96A3E47311 /* pickup_1.wav in Resources */,
 				E2F91CD3106772228954149D /* pickup_2.wav in Resources */,
 				E15475222AA873AF3F9E9E45 /* pickup_3.wav in Resources */,
-				6F5334968A34BBF5AA507684 /* pickup_4.wav in Resources */,
 				A9A88615A7D3DA655A3EB69E /* placeHeavy_1.wav in Resources */,
 				2B63058F66C30A37C8FF6366 /* placeHeavy_2.wav in Resources */,
 				1C359F8B60D0121E2919FCB8 /* placeHeavy_3.wav in Resources */,
 				41890D5980BDD2D42C1C0DC5 /* placeLight_1.wav in Resources */,
 				FBDA5E0BDE25B174ED27DEDD /* placeLight_2.wav in Resources */,
 				29DB89E00FBD40CDDDFC21A3 /* placeLight_3.wav in Resources */,
-				E8084C940F54208DE3D1A4E0 /* placeLight_4.wav in Resources */,
 				7D19F586741F7E96507E841F /* place_1.wav in Resources */,
 				4BD055E564C248B94B71D455 /* place_2.wav in Resources */,
 				697512CBAD18A02B8F43B984 /* place_3.wav in Resources */,

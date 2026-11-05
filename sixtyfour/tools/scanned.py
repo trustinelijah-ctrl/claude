@@ -68,6 +68,10 @@ def figure(crop):
     return detail - 40 * (z > 3.2).mean()
 
 
+# Veneers whose figure is loud enough already: for these the calmest cuts are chosen.
+CALM = {'rosewood_veneer1'}
+
+
 def cut(asset, size_px, turn, tries=6):
     """The most figured of a few cuts from the scan, `size_px` of the scan wide, turned:
     what a marquetry maker does when choosing which part of a sheet goes on the board."""
@@ -77,7 +81,7 @@ def cut(asset, size_px, turn, tries=6):
     for _ in range(tries):
         y = RNG.integers(0, h - size_px); x = RNG.integers(0, w - size_px)
         c = s[y:y + size_px, x:x + size_px]
-        sc = figure(c)
+        sc = figure(c) * (-1 if asset in CALM else 1)
         if sc > best_score:
             best, best_score = c, sc
     tile = Image.fromarray(best.astype(np.uint8)).resize((SQ, SQ), Image.LANCZOS)
@@ -163,15 +167,15 @@ def write_imageset(catalog, name, arr, quality=90):
 
 # theme: (light square, dark square, seam colour, table)
 THEMES = {
-    # 64's own board: maple and American walnut, warm and matte, brown table.
+    # 64's own board: maple and American walnut, warm and matte, on a dark walnut table.
     'House': (('white_maple_veneer', 300, (234, 219, 193), 0.7, 0.5, False),
               ('american_walnut_veneer', 300, (124, 82, 52), 1.05, 0.8, False),
-              (48, 27, 15), ('brown_leather', (52, 30, 17), 0.7, 0.6)),
+              (48, 27, 15), ('walnut_veneer', (46, 29, 18), 0.75, 0.7)),
     'Walnut': (('white_maple_veneer', 260, (228, 206, 168), 0.9, 0.8, False),
                ('black_walnut_veneer_01', 260, (84, 54, 36), 1.0, 0.9, False),
                (36, 24, 15), ('walnut_veneer', (56, 36, 22), 0.8, 0.8)),
     'Rosewood': (('ash_veneer', 260, (226, 214, 190), 0.85, 0.6, False),
-                 ('rosewood_veneer1', 260, (110, 52, 36), 1.0, 1.0, False),
+                 ('rosewood_veneer1', 220, (108, 52, 36), 0.8, 0.85, False),
                  (40, 16, 11), ('rosewood_veneer_02', (62, 26, 18), 0.85, 0.9)),
     'Ebony': (('white_maple_veneer', 240, (222, 200, 160), 0.9, 0.8, False),
               ('flamed_black_veneer', 260, (36, 29, 25), 1.1, 0.7, False),
