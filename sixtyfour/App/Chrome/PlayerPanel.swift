@@ -178,54 +178,62 @@ struct PlayerZone: View {
 
     private var hasStatus: Bool { isComputer || statusLine != nil || lead > 0 }
 
-    /// The status in a quiet capsule, so it reads as its own label rather than crowding the pins.
+    /// The status, cut into the wood and filled with gold: no label, no capsule.
     @ViewBuilder
     private var statusPill: some View {
         if hasStatus {
             status
-                .padding(.horizontal, 14)
-                .padding(.vertical, 7)
-                .background(Capsule().fill(theme.ink.opacity(0.07)))
-                .overlay(Capsule().strokeBorder(theme.accent.opacity(0.22), lineWidth: 0.75))
-                .transition(.opacity.combined(with: .scale(scale: 0.92)))
+                .padding(.horizontal, 6)
+                .transition(.opacity)
         }
     }
 
     /// A short line only when there is something to say: whose move, check, or the computer thinking.
     @ViewBuilder
     private var status: some View {
-        VStack(alignment: .center, spacing: 1) {
+        VStack(alignment: .center, spacing: 2) {
             if isComputer {
-                HStack(spacing: 6) {
-                    if session.isThinking { ThinkingDots(color: theme.accent) }
+                HStack(spacing: 7) {
+                    if session.isThinking { ThinkingDots(color: Brand.gold) }
                     Text("64")
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundStyle(theme.accent)
+                        .font(Typeface.display(19, bold: true))
+                        .gilded()
                 }
-                Text(settings.botLevel.title)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(theme.inkSecondary)
+                Text(settings.botLevel.title.uppercased())
+                    .font(.system(size: 10, weight: .semibold))
+                    .tracking(1.6)
+                    .gilded(0.8)
+                    .opacity(0.8)
             } else if let line = statusLine {
-                Text(line)
-                    .font(.system(size: layout.compact ? 14 : 16, weight: .semibold))
-                    .foregroundStyle(statusColor)
-                    .contentTransition(.opacity)
-                if lead > 0 {
-                    Text("+\(lead)")
-                        .font(.system(size: 13, weight: .semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(theme.accent.opacity(0.9))
+                Group {
+                    if line == "Check" {
+                        Text(line)
+                            .font(Typeface.display(layout.compact ? 17 : 20, bold: true))
+                            .foregroundStyle(theme.check.shadow(.inner(color: .black.opacity(0.5), radius: 0.6, x: 0, y: 1)))
+                            .shadow(color: .white.opacity(0.14), radius: 0, x: 0, y: 0.75)
+                    } else {
+                        Text(line)
+                            .font(Typeface.voice(layout.compact ? 17 : 20))
+                            .gilded()
+                    }
                 }
+                .contentTransition(.opacity)
+                if lead > 0 { leadMark }
             } else if lead > 0 {
-                Text("+\(lead)")
-                    .font(.system(size: 14, weight: .semibold))
-                    .monospacedDigit()
-                    .foregroundStyle(theme.accent.opacity(0.9))
+                leadMark
             }
         }
         .lineLimit(1)
         .animation(.easeInOut(duration: 0.25), value: statusLine)
         .accessibilityElement(children: .combine)
+    }
+
+    private var leadMark: some View {
+        Text("+\(lead)")
+            .font(Typeface.display(13, bold: true))
+            .monospacedDigit()
+            .gilded(0.8)
+            .opacity(0.85)
     }
 
     private var lead: Int { session.materialLead(for: color) }
@@ -269,56 +277,49 @@ struct PlayerZone: View {
                         session.claimDraw()
                     } label: {
                         Text("Claim draw")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(theme.accent)
-                            .padding(.horizontal, 14)
+                            .font(Typeface.voice(16))
+                            .gilded()
+                            .padding(.horizontal, 16)
                             .frame(height: 40)
-                            .background(Capsule().fill(Color.black.opacity(0.28)))
-                            .overlay(Capsule().strokeBorder(theme.accent.opacity(0.5), lineWidth: 0.75))
+                            .background(CarvedRecess(shape: Capsule(style: .continuous), depth: 0.7))
                     }
                     .buttonStyle(PressScaleStyle())
                 }
-                // One dock of controls, dark glass edged in gold, each with its name beneath.
-                HStack(spacing: 2) {
-                    if rows != 1 {
-                        // Hints are for practising against the computer, never in a game between two people.
-                        if settings.isAgainstComputer {
-                            DockButton(symbol: "lightbulb.fill", label: "Hint", tint: theme.accent,
-                                       enabled: isTurn && !session.isHinting) {
-                                session.feedback.ui()
-                                requestHint()
+                // The controls sit in one routed rail in the wood, divided by fine grooves.
+                ControlRail {
+                    HStack(spacing: 0) {
+                        if rows != 1 {
+                            // Hints are for practising against the computer, never in a game between two people.
+                            if settings.isAgainstComputer {
+                                DockButton(symbol: "lightbulb", label: "Hint",
+                                           enabled: isTurn && !session.isHinting) {
+                                    session.feedback.ui()
+                                    requestHint()
+                                }
+                                RailDivider()
                             }
+                            DockButton(symbol: "arrow.uturn.backward", label: "Undo", enabled: session.canUndo) {
+                                session.feedback.ui()
+                                session.undo()
+                            }
+                            RailDivider()
+                            resign
                         }
-                        DockButton(symbol: "arrow.uturn.backward", label: "Undo", enabled: session.canUndo) {
-                            session.feedback.ui()
-                            session.undo()
-                        }
-                        resign
-                    }
-                    if rows != 0 {
-                        DockButton(symbol: "house.fill", label: "Home", enabled: true) {
-                            session.feedback.ui()
-                            goHome()
-                        }
-                        .accessibilityIdentifier("pin-home-\(color.rawValue)")
-                        DockButton(symbol: "slider.horizontal.3", label: "Options", enabled: true, accessibility: "Settings") {
-                            session.feedback.ui()
-                            openSettings()
+                        if rows == nil { RailDivider() }
+                        if rows != 0 {
+                            DockButton(symbol: "house", label: "Home", enabled: true) {
+                                session.feedback.ui()
+                                goHome()
+                            }
+                            .accessibilityIdentifier("pin-home-\(color.rawValue)")
+                            RailDivider()
+                            DockButton(symbol: "slider.horizontal.3", label: "Options", enabled: true, accessibility: "Settings") {
+                                session.feedback.ui()
+                                openSettings()
+                            }
                         }
                     }
                 }
-                .padding(4)
-                .background(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(Color.black.opacity(theme.isDark ? 0.36 : 0.3))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(LinearGradient(colors: [theme.accent.opacity(0.55), theme.accent.opacity(0.18)],
-                                                     startPoint: .top, endPoint: .bottom), lineWidth: 0.75)
-                )
-                .shadow(color: .black.opacity(0.25), radius: 6, y: 2)
-                .environment(\.colorScheme, .dark)
             }
         }
     }
@@ -335,9 +336,14 @@ struct PlayerZone: View {
                     Image(systemName: "flag.fill").font(.system(size: 15, weight: .semibold)).frame(height: 20)
                     Text("Resign?").font(.system(size: 10, weight: .bold))
                 }
-                .foregroundStyle(.white)
-                .frame(width: 62, height: 46)
-                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(theme.check))
+                .foregroundStyle(Color(hex: 0xFFF1E6))
+                .frame(width: 62, height: 44)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(LinearGradient(colors: [Color(hex: 0xB0352C), Color(hex: 0x7E1E19)], startPoint: .top, endPoint: .bottom)
+                            .shadow(.inner(color: .white.opacity(0.25), radius: 0.5, x: 0, y: 1)))
+                        .shadow(color: .black.opacity(0.4), radius: 1.5, y: 1)
+                )
             }
             .buttonStyle(PressScaleStyle())
             .transition(.scale(scale: 0.85).combined(with: .opacity))
@@ -357,8 +363,8 @@ struct PlayerZone: View {
     }
 }
 
-/// One control in a player's dock: a clear icon with its name beneath, lighting up softly
-/// when pressed.
+/// One control in a player's rail: its mark and name cut into the wood and gilded. Pressed,
+/// it sinks a little, like a key.
 struct DockButton: View {
     let symbol: String
     let label: String
@@ -369,22 +375,23 @@ struct DockButton: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 3) {
+            VStack(spacing: 4) {
                 Image(systemName: symbol)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 16, weight: .medium))
                     .frame(height: 20)
-                Text(label)
-                    .font(.system(size: 10, weight: .semibold))
+                Text(label.uppercased())
+                    .font(.system(size: 8.5, weight: .semibold))
+                    .tracking(1.1)
                     .lineLimit(1)
                     .fixedSize()
             }
-            .foregroundStyle(tint ?? Brand.cream.opacity(0.92))
-            .frame(width: 54, height: 46)
+            .gilded(enabled ? 1 : 0.4)
+            .frame(width: 56, height: 44)
             .contentShape(Rectangle())
         }
         .buttonStyle(DockPressStyle())
         .disabled(!enabled)
-        .opacity(enabled ? 1 : 0.35)
+        .opacity(enabled ? 1 : 0.4)
         .accessibilityLabel(accessibility ?? label)
     }
 }
@@ -393,11 +400,14 @@ private struct DockPressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.white.opacity(configuration.isPressed ? 0.14 : 0))
+                Capsule(style: .continuous)
+                    .fill(Color.black.opacity(configuration.isPressed ? 0.22 : 0)
+                        .shadow(.inner(color: .black.opacity(configuration.isPressed ? 0.5 : 0), radius: 3, x: 0, y: 2)))
+                    .padding(.vertical, 2)
             )
-            .scaleEffect(configuration.isPressed ? 0.95 : 1)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .offset(y: configuration.isPressed ? 0.75 : 0)
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
     }
 }
 
@@ -414,24 +424,19 @@ struct ClockFace: View {
             let left = clock?.timeLeft(color, at: timeline.date) ?? 0
             let running = clock?.running == color && clock?.isTicking == true
             let low = left < 10
-            Text(Self.format(left))
-                .font(Typeface.clock(large ? 34 : 26))
-                .foregroundStyle(running ? (low ? .white : Brand.brown) : theme.ink.opacity(left == 0 ? 0.9 : 0.55))
-                .padding(.horizontal, large ? 16 : 12)
-                .frame(minWidth: large ? 120 : 92, minHeight: large ? 52 : 42)
-                .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(running ? (low ? theme.check : Brand.cream) : theme.ink.opacity(0.07))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(theme.accent.opacity(running ? 0.9 : 0.3), lineWidth: running ? 1.5 : 0.75)
-                )
-                .animation(.easeInOut(duration: 0.2), value: running)
-                .accessibilityElement()
-                .accessibilityLabel("\(color == .white ? "White" : "Black") clock")
-                .accessibilityValue(Self.format(left))
-                .accessibilityIdentifier("clock-\(color.rawValue)")
+            ClockWindow(running: running, low: low, theme: theme) {
+                Text(Self.format(left))
+                    .font(.system(size: large ? 30 : 23, weight: .medium, design: .serif).monospacedDigit())
+                    .foregroundStyle(running ? (low ? Color(hex: 0xFFF1E6) : Color(hex: 0x2A1A0E))
+                                             : Brand.cream.opacity(left == 0 ? 0.9 : 0.55))
+                    .padding(.horizontal, large ? 14 : 10)
+                    .frame(minWidth: large ? 112 : 86, minHeight: large ? 46 : 38)
+            }
+            .animation(.easeInOut(duration: 0.25), value: running)
+            .accessibilityElement()
+            .accessibilityLabel("\(color == .white ? "White" : "Black") clock")
+            .accessibilityValue(Self.format(left))
+            .accessibilityIdentifier("clock-\(color.rawValue)")
         }
     }
 

@@ -32,9 +32,22 @@ SRC = os.path.join(HERE, 'sources', 'ambience')
 UA = {'User-Agent': '64-chess-app-ambience/1.0'}
 
 # scene: (Commons file, start search window in seconds or None, options)
+# Names starting "archive:" come from the Internet Archive's Red Library sound-effects
+# collection (USC Cinema / Sunset Editorial), dedicated to the public domain under CC0.
 SCENES = {
-    'rain':  ('Rain (1).ogg', None, dict(hp=90, lp=12000, target=-26, steady=True, flatten=True)),
-    'storm': ('Light Rain Distant Thunder July 5th 2016.wav', None, dict(hp=35, lp=13000, target=-25, steady=False)),
+    'rain':  ('archive:Red_Library_Nature_Rain/R30-24-Rain on Roof and Concrete.flac', None,
+              dict(hp=70, lp=11000, target=-27, steady=True, flatten=True)),
+    'storm': ('archive:Red_Library_Nature_Rain/R10-04-Heavy Rain and Wind.flac', None,
+              dict(hp=40, lp=10000, target=-27, steady=False, flatten=True)),
+    'fire':  ('archive:Red_Library_Fire/R09-65-Kindling Fire.flac', None,
+              dict(hp=60, lp=11000, target=-29, steady=True)),
+    'fire_close': ('archive:Red_Library_Fire/R09-66-Close Up Burning Fire.flac', None,
+                   dict(hp=60, lp=10000, target=-29, steady=True)),
+    'fire_soft': ('archive:Red_Library_Fire/R09-68-Slightly Muffled Fire.flac', None,
+                  dict(hp=50, lp=9000, target=-29, steady=True)),
+    'rain_steady': ('archive:Red_Library_Nature_Rain/R30-25a-Steady Heavy Rain.flac', None,
+                    dict(hp=70, lp=11000, target=-27, steady=True, flatten=True)),
+    'rain_commons':  ('Rain (1).ogg', None, dict(hp=90, lp=12000, target=-26, steady=True, flatten=True)),
     'cafe':  ('Cafe ambiance.ogg', None, dict(hp=80, lp=11000, target=-27, steady=True)),
     'sea':   ('Ocean Waves on a Tropical Beach.ogg', None, dict(hp=40, lp=12000, target=-25, steady=False)),
 }
@@ -43,8 +56,13 @@ SCENES = {
 def fetch(name):
     """Downloads a Commons file into tools/sources/ambience if it isn't there yet."""
     os.makedirs(SRC, exist_ok=True)
-    dest = os.path.join(SRC, name.replace(' ', '_'))
+    dest = os.path.join(SRC, name.split('/')[-1].replace(' ', '_'))
     if os.path.exists(dest):
+        return dest
+    if name.startswith('archive:'):
+        url = 'https://archive.org/download/' + urllib.parse.quote(name[len('archive:'):])
+        with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=600) as r, open(dest, 'wb') as f:
+            f.write(r.read())
         return dest
     q = urllib.parse.urlencode(dict(action='query', titles='File:' + name, prop='imageinfo', iiprop='url', format='json'))
     for attempt in range(8):

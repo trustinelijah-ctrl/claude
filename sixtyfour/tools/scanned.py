@@ -57,12 +57,30 @@ def grade(img, mean, spread, sat=1.0):
     return out
 
 
-def cut(asset, size_px, turn):
-    """A square from a random place on the scan, `size_px` of the scan wide, turned."""
+def figure(crop):
+    """How much figure a cut shows (the grain's own light and dark, not its overall tone),
+    less a penalty for knots, splits and stains: patches far outside the rest of the cut."""
+    lum = crop.mean(-1)
+    small = np.asarray(Image.fromarray(lum.astype(np.uint8)).resize((64, 64), Image.BILINEAR), np.float32)
+    blur = np.asarray(Image.fromarray(small.astype(np.uint8)).filter(ImageFilter.GaussianBlur(6)), np.float32)
+    detail = (small - blur).std()
+    z = np.abs(small - small.mean()) / (small.std() + 1e-6)
+    return detail - 40 * (z > 3.2).mean()
+
+
+def cut(asset, size_px, turn, tries=6):
+    """The most figured of a few cuts from the scan, `size_px` of the scan wide, turned:
+    what a marquetry maker does when choosing which part of a sheet goes on the board."""
     s = scan(asset)
     h, w, _ = s.shape
-    y = RNG.integers(0, h - size_px); x = RNG.integers(0, w - size_px)
-    tile = Image.fromarray(s[y:y + size_px, x:x + size_px].astype(np.uint8)).resize((SQ, SQ), Image.LANCZOS)
+    best, best_score = None, -1e9
+    for _ in range(tries):
+        y = RNG.integers(0, h - size_px); x = RNG.integers(0, w - size_px)
+        c = s[y:y + size_px, x:x + size_px]
+        sc = figure(c)
+        if sc > best_score:
+            best, best_score = c, sc
+    tile = Image.fromarray(best.astype(np.uint8)).resize((SQ, SQ), Image.LANCZOS)
     tile = np.asarray(tile, dtype=np.float32)
     if turn:
         tile = np.rot90(tile)
@@ -96,9 +114,23 @@ def board(light, dark, seam_rgb):
     seam = np.asarray(Image.fromarray((seam * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(0.7)), np.float32) / 255
     gap = np.array(seam_rgb, np.float32)[None, None, :]
     img = img * (0.82 + 0.18 * seam[..., None]) + gap * (0.18 * (1 - seam[..., None]))
+    # Each square's edges are eased by a hair, as a cabinetmaker breaks a sharp arris: the
+    # edge toward the lamp catches a fine line of light, the far edge falls into shade.
+    e = np.arange(SQ, dtype=np.float32)
+    lit = np.exp(-e / 2.2)                  # top and left edges
+    shade = np.exp(-(SQ - 1 - e) / 2.4)     # bottom and right edges
+    edge = np.tile(1 + 0.05 * lit[:, None] - 0.07 * shade[:, None], (8, 1)) \
+         * np.tile(1 + 0.04 * lit[None, :] - 0.06 * shade[None, :], (1, 8))
+    img *= edge[..., None]
+    # Lacquer: a clear coat deepens the wood. Colour a touch richer, mid-tones a touch
+    # deeper, and the figure gains depth where it catches the light.
+    lum = img.mean(-1, keepdims=True)
+    img = lum + (img - lum) * 1.1
+    v = np.clip(img / 255, 0, 1)
+    img = 255 * (v ** 1.06) * 1.02
     yy, xx = np.mgrid[0:N, 0:N].astype(np.float32) / N
     sheen = np.exp(-(((xx - 0.38) / 0.55) ** 2 + ((yy - 0.3) / 0.45) ** 2))
-    img *= (0.965 + 0.06 * sheen)[..., None]
+    img *= (0.96 + 0.07 * sheen)[..., None]
     return np.clip(img, 0, 255).astype(np.uint8)
 
 
@@ -132,8 +164,8 @@ def write_imageset(catalog, name, arr, quality=90):
 # theme: (light square, dark square, seam colour, table)
 THEMES = {
     # 64's own board: maple and American walnut, warm and matte, brown table.
-    'House': (('white_maple_veneer', 300, (234, 219, 193), 0.55, 0.45, False),
-              ('american_walnut_veneer', 300, (124, 82, 52), 0.85, 0.7, False),
+    'House': (('white_maple_veneer', 300, (234, 219, 193), 0.7, 0.5, False),
+              ('american_walnut_veneer', 300, (124, 82, 52), 1.05, 0.8, False),
               (48, 27, 15), ('brown_leather', (52, 30, 17), 0.7, 0.6)),
     'Walnut': (('white_maple_veneer', 260, (228, 206, 168), 0.9, 0.8, False),
                ('black_walnut_veneer_01', 260, (84, 54, 36), 1.0, 0.9, False),

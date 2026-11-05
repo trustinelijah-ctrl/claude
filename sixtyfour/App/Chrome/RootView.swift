@@ -465,17 +465,14 @@ struct TableField: View {
                     .frame(width: b.width, height: b.height)
                     .offset(x: b.minX, y: b.minY)
             }
-            // Gilt tooling around each player's end. It frames the strips and stops at the board,
-            // never crossing it.
-            ForEach(Array(endPanels(size: size, board: b).enumerated()), id: \.offset) { _, panel in
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(theme.inlay.opacity(0.55), lineWidth: 1)
-                    .frame(width: panel.width, height: panel.height)
-                    .offset(x: panel.minX, y: panel.minY)
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(theme.inlay.opacity(0.28), lineWidth: 0.6)
-                    .frame(width: panel.width - 10, height: panel.height - 10)
-                    .offset(x: panel.minX + 5, y: panel.minY + 5)
+            // Each player's well for the pieces they take: cut into the table and lined with felt.
+            ForEach(Array(trayWells.enumerated()), id: \.offset) { _, well in
+                CarvedRecess(shape: RoundedRectangle(cornerRadius: min(14, well.height * 0.3), style: .continuous),
+                             felt: theme.felt)
+                    .frame(width: well.width, height: well.height)
+                    // Lit from the lamp over the board: the far well is shaded on its other side.
+                    .rotationEffect(.degrees(layout.arrangement == .ends && well.minY < layout.boardRect.minY ? 180 : 0))
+                    .offset(x: well.minX, y: well.minY)
             }
         }
         .frame(width: size.width, height: size.height)
@@ -486,20 +483,14 @@ struct TableField: View {
     /// Layout preview switch (`-quietEnds YES`).
     static let quietEnds = UserDefaults.standard.bool(forKey: "quietEnds")
 
-    /// The space at each end of the board, inset from the screen edge and from the board.
-    private func endPanels(size: CGSize, board b: CGRect) -> [CGRect] {
-        if Self.quietEnds { return [] }
-        let edge: CGFloat = 9, gap: CGFloat = 7
-        var panels: [CGRect] = []
-        if layout.arrangement == .ends {
-            let top = CGRect(x: edge, y: edge, width: size.width - 2 * edge, height: b.minY - gap - edge)
-            let bottom = CGRect(x: edge, y: b.maxY + gap, width: size.width - 2 * edge, height: size.height - b.maxY - gap - edge)
-            panels = [top, bottom]
-        } else {
-            let left = CGRect(x: edge, y: edge, width: b.minX - gap - edge, height: size.height - 2 * edge)
-            let right = CGRect(x: b.maxX + gap, y: edge, width: size.width - b.maxX - gap - edge, height: size.height - 2 * edge)
-            panels = [left, right]
-        }
-        return panels.filter { $0.width > 30 && $0.height > 30 }
+    /// The felt-lined wells under each player's captured pieces: the near player's, and the
+    /// same turned to face the far player.
+    private var trayWells: [CGRect] {
+        let t = layout.tray
+        let well = CGRect(x: t.minX - 6, y: t.minY + 2, width: t.width + 6, height: t.height + 2)
+        guard well.width > 30, well.height > 24 else { return [] }
+        let far = CGRect(x: layout.size.width - well.maxX, y: layout.size.height - well.maxY,
+                         width: well.width, height: well.height)
+        return [well, far]
     }
 }
