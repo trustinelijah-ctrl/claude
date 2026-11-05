@@ -148,7 +148,10 @@ respects the switch. Either way it mixes with music at the table.
 The table's lamp follows the device's tilt (`TableLight`, CoreMotion): a glint moves across
 the pieces and the board's lacquer catches a reflection that slides the other way. On iPhone
 every event has its own Core Haptics pattern, scheduled on the haptic engine's clock so it
-lands with the sound. Interruptions, route changes and media-server resets are handled.
+lands with the sound.
+
+*Free play* (home screen) is the board without rules: pick up any piece, set it down
+anywhere, knock others off, and set up again with a cascade of clicks. Interruptions, route changes and media-server resets are handled.
 
 **Haptics.** `HapticManager` checks `CHHapticEngine.capabilitiesForHardware()` at
 runtime. iPads without a haptic actuator get no haptic calls at all; the tactile feel
