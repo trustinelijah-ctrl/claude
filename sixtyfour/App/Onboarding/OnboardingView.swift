@@ -177,7 +177,7 @@ struct OnboardingView: View {
     private func text(_ c: Copy, centered: Bool) -> some View {
         VStack(alignment: centered ? .center : .leading, spacing: 12) {
             Text(c.title)
-                .font(.system(size: 40, weight: .bold))
+                .font(Typeface.display(40, bold: true))
                 .foregroundStyle(Brand.cream)
                 .multilineTextAlignment(centered ? .center : .leading)
                 .minimumScaleFactor(0.7)

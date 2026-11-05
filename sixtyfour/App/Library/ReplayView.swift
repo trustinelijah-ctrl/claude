@@ -181,7 +181,7 @@ struct ReplayView: View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(saved.game.result.map(ResultText.headline) ?? "Unfinished")
-                    .font(.system(size: 26, weight: .bold))
+                    .font(Typeface.display(26, bold: true))
                     .foregroundStyle(theme.ink)
                 Text("\(saved.opponentTitle) · \(saved.date.formatted(date: .abbreviated, time: .shortened))")
                     .font(.system(size: 14))
@@ -299,7 +299,7 @@ struct ReplayView: View {
                     playing.toggle()
                 } label: {
                     Image(systemName: playing ? "pause.fill" : "play.fill")
-                        .font(.system(size: 22, weight: .bold))
+                        .font(Typeface.display(22, bold: true))
                         .foregroundStyle(Color(hex: 0x2A1D0A))
                         .frame(width: 64, height: 64)
                         .background(Circle().fill(LinearGradient(colors: [Color(hex: 0xF7E6B4), Color(hex: 0xD4AF66), Color(hex: 0xA27A3A)],

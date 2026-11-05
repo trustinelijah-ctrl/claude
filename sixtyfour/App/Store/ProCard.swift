@@ -67,7 +67,7 @@ struct ProCard: View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("64 Pro")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(Typeface.display(28, bold: true))
                     .foregroundStyle(theme.ink)
                 Text(pro.isPro ? "Active. Thank you for supporting 64."
                                : "Every board, every set, and rain or a fire while you play. Shared with your family.")

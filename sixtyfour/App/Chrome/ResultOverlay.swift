@@ -159,7 +159,7 @@ struct ResultOverlay: View {
         VStack(spacing: 16) {
             VStack(spacing: 4) {
                 Text(headline(for: seat))
-                    .font(.system(size: 30, weight: .bold))
+                    .font(Typeface.display(30, bold: true))
                     .foregroundStyle(theme.ink)
                 Text(subline)
                     .font(.system(size: 15))

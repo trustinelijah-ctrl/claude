@@ -98,7 +98,7 @@ struct SettingsCard: View {
                 .foregroundStyle(theme.accent)
                 .accessibilityHidden(true)
             Text("Options")
-                .font(.system(size: 20, weight: .bold))
+                .font(Typeface.display(22, bold: true))
                 .foregroundStyle(theme.ink)
             Spacer()
             Button {

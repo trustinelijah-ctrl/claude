@@ -63,6 +63,11 @@ final class HapticManager {
               hum(0.19, 0.22, 0.14, 0.05)], after: delay)
     }
 
+    /// A button: a small, soft press.
+    func button() {
+        play([tap(0, 0.3, 0.55)])
+    }
+
     /// A carried piece crossing into another square: the faintest detent.
     func notch() {
         play([tap(0, 0.2, 0.95)])

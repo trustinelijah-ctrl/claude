@@ -407,8 +407,14 @@ struct BoardTheme: Equatable {
 /// The app's type: San Francisco throughout. Headings are semibold and slightly tight;
 /// numbers that change (clocks, counts) use monospaced digits at the call site.
 enum Typeface {
+    /// Headings: Apple's own serif (New York), the voice of a well-made object.
     static func display(_ size: CGFloat, bold: Bool = false) -> Font {
-        .system(size: size, weight: bold ? .bold : .semibold)
+        .system(size: size, weight: bold ? .bold : .semibold, design: .serif)
+    }
+
+    /// Short lines that set a mood, like the tagline: the serif in italic.
+    static func voice(_ size: CGFloat) -> Font {
+        .system(size: size, weight: .regular, design: .serif).italic()
     }
 
     static func text(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {

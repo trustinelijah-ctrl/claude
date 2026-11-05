@@ -12,6 +12,7 @@ struct HomeView: View {
     let playFriend: () -> Void
     let playComputer: () -> Void
     let learn: () -> Void
+    var freePlay: () -> Void = {}
     let games: () -> Void
     let options: () -> Void
     let upgrade: () -> Void
@@ -62,7 +63,7 @@ struct HomeView: View {
                         replayWelcome()
                     }
                 Text("Chess, across the table.")
-                    .font(.system(size: 17, weight: .medium))
+                    .font(Typeface.voice(19))
                     .foregroundStyle(Brand.cream.opacity(0.65))
             }
             menu
@@ -96,6 +97,10 @@ struct HomeView: View {
             entry("Learn", detail: "Checkmate puzzles, from one move to three", symbol: "graduationcap.fill",
                   primary: false, badge: pro.isPro ? nil : "\(PuzzleView.freeCount) FREE", id: "home-learn") {
                 learn()
+            }
+            entry("Free play", detail: "No rules. Just the pieces and their sound", symbol: "hand.point.up.left.fill",
+                  primary: false, id: "home-free-play") {
+                freePlay()
             }
             HStack(spacing: 12) {
                 small("Your games", symbol: "tray.full", id: "home-games", action: games)

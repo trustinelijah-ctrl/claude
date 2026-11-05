@@ -38,7 +38,7 @@ struct ProWelcome: View {
             seal
             VStack(spacing: 8) {
                 Text(welcome == .restored ? "64 Pro is back" : "Welcome to 64 Pro")
-                    .font(.system(size: 28, weight: .bold))
+                    .font(Typeface.display(28, bold: true))
                     .foregroundStyle(Brand.cream)
                     .multilineTextAlignment(.center)
                 Text(subtitle)

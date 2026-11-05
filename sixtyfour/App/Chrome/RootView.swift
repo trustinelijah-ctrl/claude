@@ -18,13 +18,14 @@ struct RootView: View {
     @State private var revealed = false
     @State private var screen: Screen = RootView.initialScreen
 
-    enum Screen { case home, board, learn }
+    enum Screen { case home, board, learn, sandbox }
 
     /// Opens on the home screen, except for test runs that set up a game on the board.
     private static var initialScreen: Screen {
         let d = UserDefaults.standard
         if let home = d.string(forKey: "home") { return ["YES", "1", "true"].contains(home) ? .home : .board }
         if d.string(forKey: "learn") != nil { return .learn }
+        if d.string(forKey: "sandbox") != nil { return .sandbox }
         return d.bool(forKey: "fresh") || d.string(forKey: "moves") != nil ? .board : .home
     }
     @Environment(\.scenePhase) private var scenePhase
@@ -163,6 +164,7 @@ struct RootView: View {
                      playFriend: { start(against: nil) },
                      playComputer: { start(against: settings.botLevel) },
                      learn: { screen = .learn },
+                     freePlay: { screen = .sandbox },
                      games: { libraryOpen = true },
                      options: { settingsFor = bottom },
                      upgrade: { openPaywall("home") },
@@ -170,6 +172,12 @@ struct RootView: View {
                          UserDefaults.standard.removeObject(forKey: "paywall.afterWelcome")
                          account.replayWelcome()
                      })
+                .transition(.opacity)
+                .zIndex(3)
+        }
+
+        if screen == .sandbox {
+            SandboxView(settings: settings, feedback: session.feedback) { screen = .home }
                 .transition(.opacity)
                 .zIndex(3)
         }
@@ -307,7 +315,7 @@ struct RootView: View {
 
     /// The screen stays on while a game or a puzzle is under way, so nobody has to change Auto-Lock.
     private var keepAwake: Bool {
-        scenePhase == .active && ((screen == .board && !session.isOver) || screen == .learn)
+        scenePhase == .active && ((screen == .board && !session.isOver) || screen == .learn || screen == .sandbox)
     }
 
     private func leaveToHome() {
@@ -319,7 +327,7 @@ struct RootView: View {
     /// Ambience plays only during a game (and while Options is open, to hear the choice);
     /// the home screen and the app's launch stay quiet.
     private func applyFeedback() {
-        let live = account.hasOnboarded && (screen == .board || settingsFor != nil)
+        let live = account.hasOnboarded && (screen == .board || screen == .sandbox || settingsFor != nil)
         session.feedback.apply(settings, ambience: live ? settings.ambience : .off)
     }
 

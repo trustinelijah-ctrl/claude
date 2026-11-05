@@ -165,7 +165,7 @@ struct PuzzleView: View {
     private var prompt: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(headline)
-                .font(.system(size: 24, weight: .bold))
+                .font(Typeface.display(24, bold: true))
                 .foregroundStyle(status == .wrong ? theme.check : Brand.cream)
             Text(detail)
                 .font(.system(size: 15))

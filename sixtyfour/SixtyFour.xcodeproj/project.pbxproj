@@ -16,6 +16,7 @@
 		0ECFCF69119213A88C502A5A /* PGN.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF246BACA24142ED809D2C92 /* PGN.swift */; };
 		0F27B90519B89AB2AC3C80CE /* TokenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04113145CD87CD92B5449942 /* TokenView.swift */; };
 		110483BA1F0694CBB7DF5F4A /* PieceToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = 141B0711886C76A81037D369 /* PieceToken.swift */; };
+		12385967F778A57E12C4D75C /* SandboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95CF82791C312614B8E98D96 /* SandboxView.swift */; };
 		1B75D56560B804934BC53CB7 /* SettingsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F14923477BB8A45D12AA719E /* SettingsCard.swift */; };
 		1C359F8B60D0121E2919FCB8 /* placeHeavy_3.wav in Resources */ = {isa = PBXBuildFile; fileRef = 2025FAAEEC027ECCC07D213A /* placeHeavy_3.wav */; };
 		20333A169C9F72CE2ED77363 /* BoardSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5E49E40E024D518E4A0E83D /* BoardSurface.swift */; };
@@ -141,6 +142,7 @@
 		8AD4FC49556F83B7B7FB78EF /* RecordBook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordBook.swift; sourceTree = "<group>"; };
 		9235B6F3F8AD5CF119BC0E6E /* GameSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameSession.swift; sourceTree = "<group>"; };
 		95C1CBC81A35D4AF354ECE85 /* TableLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableLayout.swift; sourceTree = "<group>"; };
+		95CF82791C312614B8E98D96 /* SandboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SandboxView.swift; sourceTree = "<group>"; };
 		9ADCE6E715E3202484CAE82E /* placeLight_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = placeLight_1.wav; sourceTree = "<group>"; };
 		9F254DEFD491BAACBE1A3344 /* reset_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = reset_1.wav; sourceTree = "<group>"; };
 		A01DD14798520CAC85FB7F6E /* SixtyFourUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SixtyFourUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -408,6 +410,7 @@
 			children = (
 				7861FE4B6477E3E14B43423F /* Puzzle.swift */,
 				C8BB2775498A655DB9232384 /* PuzzleView.swift */,
+				95CF82791C312614B8E98D96 /* SandboxView.swift */,
 			);
 			path = Learn;
 			sourceTree = "<group>";
@@ -602,6 +605,7 @@
 				B016C03FF4C58F2A9FEDAF06 /* ResultOverlay.swift in Sources */,
 				7BAC4D756016113AB4D5D272 /* ReviewPrompt.swift in Sources */,
 				F2F33FE7F21BBE827E8FC96E /* RootView.swift in Sources */,
+				12385967F778A57E12C4D75C /* SandboxView.swift in Sources */,
 				1B75D56560B804934BC53CB7 /* SettingsCard.swift in Sources */,
 				A24C4356CEF053BDC4B063C5 /* SettingsStore.swift in Sources */,
 				6F9A2362F9A6D24243E99565 /* SixtyFourApp.swift in Sources */,

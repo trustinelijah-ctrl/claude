@@ -80,7 +80,9 @@ final class FeedbackCoordinator {
         haptics.notch()
     }
 
+    /// Buttons and toggles: the soft wooden tick, and a light touch on iPhone.
     func ui() {
+        haptics.button()
         audio.play(.ui)
     }
 
