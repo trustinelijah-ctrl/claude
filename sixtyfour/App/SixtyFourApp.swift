@@ -7,6 +7,7 @@ struct SixtyFourApp: App {
     @State private var session: GameSession
     @State private var pro = ProStore()
     @State private var account = AccountStore()
+    @State private var light = TableLight()
 
     init() {
         Analytics.start()
@@ -19,6 +20,7 @@ struct SixtyFourApp: App {
         WindowGroup {
             SimulatedWindow {
                 RootView(session: session, settings: settings, pro: pro, account: account)
+                    .environment(light)
             }
         }
     }

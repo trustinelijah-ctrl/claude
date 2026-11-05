@@ -79,6 +79,15 @@ final class ScreenshotTests: XCTestCase {
         }
     }
 
+    /// The lamp moving with the device's tilt: the same position lit from two sides.
+    func testC1Light() {
+        for (name, tilt) in [("left", "-0.9,-0.6"), ("right", "0.9,0.6")] {
+            shoot("41-light-\(name)-house", args: ["-moves", midgame, "-theme", "house", "-tilt", tilt])
+            shoot("41-light-\(name)-rosewood", args: ["-pro", "YES", "-moves", midgame, "-theme", "rosewood",
+                                                       "-pieceSet", "gilded", "-tilt", tilt])
+        }
+    }
+
     func test1Opening() {
         shoot("01-opening", args: ["-fresh", "YES", "-theme", "house"])
         shoot("01-opening", args: ["-fresh", "YES", "-theme", "house"], landscape: true)

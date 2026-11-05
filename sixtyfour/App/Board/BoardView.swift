@@ -44,6 +44,7 @@ struct BoardView: View {
                 BoardSurface(theme: theme, geometry: BoardGeometry(size: g.size, flipped: g.flipped),
                              showCoordinates: settings.showCoordinates,
                              mirrorCoordinates: !settings.isAgainstComputer)
+                BoardGloss(size: g.size)
                 TurnEdge(theme: theme, geometry: BoardGeometry(size: g.size), side: .bottom,
                          active: !session.isOver && session.sideToMove == g.bottomColor, nudge: session.turnNudge)
                 TurnEdge(theme: theme, geometry: BoardGeometry(size: g.size), side: .top,
@@ -133,7 +134,9 @@ struct BoardView: View {
                           revealed: revealed && !isTucked(token),
                           shadowStrength: settings.theme.pieceShadow,
                           fallen: !token.isCaptured && token.piece == Piece(session.fallenKing ?? .white, .king)
-                              && session.fallenKing != nil)
+                              && session.fallenKing != nil,
+                          knockVector: CGSize(width: token.knockFiles * (g.flipped ? -1 : 1),
+                                              height: -token.knockRanks * (g.flipped ? -1 : 1)))
                     .equatable()
                     .zIndex(depth(of: token, dragging: dragging))
             }

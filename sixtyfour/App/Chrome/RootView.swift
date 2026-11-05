@@ -29,6 +29,7 @@ struct RootView: View {
     }
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.requestReview) private var requestReview
+    @Environment(TableLight.self) private var light: TableLight?
 
     var body: some View {
         observingSettings(table)
@@ -285,11 +286,13 @@ struct RootView: View {
     private func scenePhaseChanged(_ phase: ScenePhase) {
         switch phase {
         case .active:
+            light?.start()
             session.feedback.audio.resume()
             // A subscription may have lapsed, renewed or been refunded while away.
             Task { await pro.refresh() }
             if !overlayOpen { session.resumeClock() }
         case .background, .inactive:
+            light?.stop()
             session.pauseClock()
             session.save()
         @unknown default: break

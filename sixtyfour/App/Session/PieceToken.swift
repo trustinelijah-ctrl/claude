@@ -18,11 +18,16 @@ struct PieceToken: Identifiable, Equatable {
     var revision = 0
     /// Bumped at the moment the piece lands, to play its settle.
     var landing = 0
+    /// Bumped when the piece is knocked by a capturing piece arriving on its square.
+    var knock = 0
+    /// Which way it was knocked, in board terms: files right, ranks up (unit length).
+    var knockFiles: Double = 0
+    var knockRanks: Double = 0
 
     static func == (a: PieceToken, b: PieceToken) -> Bool {
         a.id == b.id && a.piece == b.piece && a.square == b.square && a.isCaptured == b.isCaptured
             && a.capturedBy == b.capturedBy && a.trayIndex == b.trayIndex
-            && a.revision == b.revision && a.landing == b.landing
+            && a.revision == b.revision && a.landing == b.landing && a.knock == b.knock
     }
 }
 

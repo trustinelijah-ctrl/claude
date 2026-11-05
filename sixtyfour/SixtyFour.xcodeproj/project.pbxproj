@@ -81,6 +81,7 @@
 		E8084C940F54208DE3D1A4E0 /* placeLight_4.wav in Resources */ = {isa = PBXBuildFile; fileRef = AB6FC7899927AE4DB8D2EBB4 /* placeLight_4.wav */; };
 		E95D9B91AC6904BCF9D98862 /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A598F4911AA2E4EF70262C68 /* HapticManager.swift */; };
 		EBA794FD3D80173412B66BC5 /* topple_1.wav in Resources */ = {isa = PBXBuildFile; fileRef = B87579E90A75DDE5FFA341CF /* topple_1.wav */; };
+		ED4C432B7874222DB82A5BC7 /* TableLight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D6B748EAA2C22E713FDA21F /* TableLight.swift */; };
 		EDFD852DB1218C25D05D31A7 /* BoardGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B5FC26C8E4999BF43A0E997 /* BoardGeometry.swift */; };
 		EE939302573C2121C22EF139 /* GameReview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A802137C7AB6E78D8EE76A5 /* GameReview.swift */; };
 		F1E150746BACF11E283630E2 /* place_5.wav in Resources */ = {isa = PBXBuildFile; fileRef = 362A6497352684BBE80576A4 /* place_5.wav */; };
@@ -104,6 +105,7 @@
 		052D7A07185333A8B8D0D145 /* AudioManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManager.swift; sourceTree = "<group>"; };
 		078DC49262153815A41CDE83 /* capture_4.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = capture_4.wav; sourceTree = "<group>"; };
 		0A54B0385B19371C708B8DC8 /* draw_1.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = draw_1.wav; sourceTree = "<group>"; };
+		0D6B748EAA2C22E713FDA21F /* TableLight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableLight.swift; sourceTree = "<group>"; };
 		0E063C0F00FA100DFD854719 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		141B0711886C76A81037D369 /* PieceToken.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PieceToken.swift; sourceTree = "<group>"; };
 		18710F35DA5010AC56C2727C /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
@@ -395,6 +397,7 @@
 		B80BD57A14EA7F17096FA731 /* Design */ = {
 			isa = PBXGroup;
 			children = (
+				0D6B748EAA2C22E713FDA21F /* TableLight.swift */,
 				8528AE3452F60359349BF2AB /* Theme.swift */,
 			);
 			path = Design;
@@ -603,6 +606,7 @@
 				A24C4356CEF053BDC4B063C5 /* SettingsStore.swift in Sources */,
 				6F9A2362F9A6D24243E99565 /* SixtyFourApp.swift in Sources */,
 				A9C07A06214800302C5AD059 /* TableLayout.swift in Sources */,
+				ED4C432B7874222DB82A5BC7 /* TableLight.swift in Sources */,
 				D5B0F0E0636A9E923EDBBC85 /* Theme.swift in Sources */,
 				0F27B90519B89AB2AC3C80CE /* TokenView.swift in Sources */,
 			);

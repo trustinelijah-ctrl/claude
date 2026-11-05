@@ -32,6 +32,8 @@ struct TokenView: View, Equatable {
     let shadowStrength: Double
     /// A beaten king, tipped over on its square.
     var fallen = false
+    /// Which way a knocked piece is pushed, in screen terms (unit vector).
+    var knockVector: CGSize = .zero
 
     var body: some View {
         PieceBody(piece: token.piece, size: size, hold: hold, rotated: rotated,
@@ -43,6 +45,21 @@ struct TokenView: View, Equatable {
                 KeyframeTrack {
                     CubicKeyframe(0.93, duration: 0.05)
                     SpringKeyframe(1.0, duration: 0.32, spring: Spring(response: 0.26, dampingRatio: 0.5))
+                }
+            }
+            // Knocked by a capturing piece: shoved a little way and tipped, before it is lifted off.
+            .keyframeAnimator(initialValue: Knock(), trigger: token.knock) { content, k in
+                content
+                    .rotationEffect(.degrees(k.tip * (knockVector.width >= 0 ? 1 : -1)), anchor: baseAnchor)
+                    .offset(x: knockVector.width * size * k.push, y: knockVector.height * size * k.push)
+            } keyframes: { _ in
+                KeyframeTrack(\.push) {
+                    CubicKeyframe(0.24, duration: 0.07)
+                    SpringKeyframe(0.2, duration: 0.25, spring: Spring(response: 0.2, dampingRatio: 0.6))
+                }
+                KeyframeTrack(\.tip) {
+                    CubicKeyframe(16, duration: 0.07)
+                    SpringKeyframe(10, duration: 0.25, spring: Spring(response: 0.2, dampingRatio: 0.45))
                 }
             }
             .scaleEffect(scale, anchor: baseAnchor)
@@ -70,6 +87,12 @@ struct TokenView: View, Equatable {
         case .carried: return 1.12
         }
     }
+}
+
+/// A knocked piece's shove and tip.
+struct Knock {
+    var push: CGFloat = 0
+    var tip: Double = 0
 }
 
 /// The stages of a king falling over.
@@ -140,6 +163,8 @@ struct PieceBody: View {
                         .interpolation(.high)
                         .antialiased(true)
                         .frame(width: size * PieceSprite.scale, height: size * PieceSprite.scale)
+                        .overlay(PieceSheen(imageName: PieceSprite.imageName(piece, set: set),
+                                            size: size * PieceSprite.scale, dark: piece.color == .black))
                         // Tipped about the edge of its base, coming to rest on its side.
                         .rotationEffect(.degrees(angle), anchor: UnitPoint(x: 0.62, y: PieceSprite.spriteBase))
                         .offset(x: size * (-0.12 * p + roll),

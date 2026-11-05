@@ -400,9 +400,14 @@ final class GameSession {
             next[ci].isCaptured = true
             next[ci].capturedBy = mover
             next[ci].trayIndex = next.filter { $0.isCaptured && $0.capturedBy == mover && $0.id != next[ci].id }.count
-            next[ci].motion = Motion.toTray.delay(max(0, landing - 0.02))
+            // It is knocked first, the way the arriving piece shoulders it aside, then lifted away.
+            let df = Double(move.to.file - move.from.file), dr = Double(move.to.rank - move.from.rank)
+            let len = max(1, (df * df + dr * dr).squareRoot())
+            next[ci].knockFiles = df / len
+            next[ci].knockRanks = dr / len
+            next[ci].motion = Motion.toTray.delay(landing + Motion.knockHold)
             next[ci].revision += 1
-            flight = (next[ci].id, landing + Motion.toTrayLanding)
+            flight = (next[ci].id, landing + Motion.knockHold + Motion.toTrayLanding)
             // The pieces already in that tray shuffle along to make room.
             for j in next.indices where next[j].isCaptured && next[j].capturedBy == mover && j != ci {
                 next[j].motion = .spring(response: 0.45, dampingFraction: 0.86).delay(landing + 0.1)
@@ -438,8 +443,10 @@ final class GameSession {
         }
 
         // Landings: the settle, a ring of light, and for a ghost move, the hand letting go.
+        let knockedID = flight?.id
         after(landing) { s in
             if let moverID { s.land(moverID) }
+            if let knockedID, let k = s.tokens.firstIndex(where: { $0.id == knockedID }) { s.tokens[k].knock += 1 }
             if style == .ghost { s.ghostLiftID = nil }
             s.ripple(at: move.to, fx.isCapture ? .capture : .land, weight: FeedbackCoordinator.weight(of: fx.piece.kind))
         }

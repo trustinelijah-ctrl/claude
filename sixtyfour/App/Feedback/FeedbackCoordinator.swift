@@ -44,9 +44,7 @@ final class FeedbackCoordinator {
     /// roll; `impact` is when the crown meets the board in the animation.
     func kingFalls(impact: TimeInterval) {
         audio.play(.topple, delay: impact, gain: 0.8)
-        haptics.capture(after: impact)
-        haptics.place(after: impact + 0.105, weight: 0.35)
-        haptics.place(after: impact + 0.175, weight: 0.15)
+        haptics.topple(after: impact)
     }
 
     /// The chess clock's plunger, pressed by the player who just moved.
@@ -79,7 +77,7 @@ final class FeedbackCoordinator {
     /// A carried piece crossing into another square: a faint notch, and a tap on iPhone.
     func crossed(_ square: Square) {
         audio.play(.notch, gain: 0.8, pan: pan(square))
-        haptics.place(after: 0, weight: 0.22)
+        haptics.notch()
     }
 
     func ui() {

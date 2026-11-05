@@ -440,6 +440,8 @@ enum Motion {
     /// A taken piece is lifted off and carried to its captor's tray.
     static let toTray = Animation.spring(response: 0.62, dampingFraction: 0.82)
     static let toTrayLanding = 0.5
+    /// A taken piece is knocked aside and rests a beat before it is lifted to the tray.
+    static let knockHold = 0.16
     static let fromTray = Animation.spring(response: 0.5, dampingFraction: 0.84)
     /// Picking a piece up: a quick, springy rise.
     static let pickup = Animation.spring(response: 0.24, dampingFraction: 0.58)
