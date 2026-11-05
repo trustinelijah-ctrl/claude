@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import ChessCore
 
 /// Which carved set stands on the board.
@@ -47,10 +48,12 @@ extension EnvironmentValues {
 enum PieceSprite {
     /// Sprite size relative to the square it stands on. Pieces are taller than their
     /// squares, as real pieces are; the tallest crowns reach a little into the square behind.
-    /// Layout previews can try a larger set with `-pieceScale`.
+    /// On a phone the squares are small, so the pieces stand larger in them: easier to see and
+    /// to take hold of. Layout previews can try other sizes with `-pieceScale`.
     static let scale: CGFloat = {
         let v = UserDefaults.standard.double(forKey: "pieceScale")
-        return v > 0 ? CGFloat(v) : 1.16
+        if v > 0 { return CGFloat(v) }
+        return UIDevice.current.userInterfaceIdiom == .phone ? 1.34 : 1.16
     }()
     /// Centre of the base within the sprite, from the top.
     static let spriteBase: CGFloat = 0.81
