@@ -95,14 +95,19 @@ jobs:
 
       # A commit tagged [reel] films the app playing scripted games on the big iPhone, for social videos.
       - name: Reel recording
-        if: steps.build.outcome == 'success' && contains(github.event.head_commit.message, '[reel]')
+        if: steps.build.outcome == 'success' && (contains(github.event.head_commit.message, '[reel]') || contains(github.event.head_commit.message, '[walkthrough]'))
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
           mkdir -p shots
           udid="$PHONEMAX"
           xcrun simctl boot "$udid" 2>/dev/null || true
           xcrun simctl bootstatus "$udid" -b > /dev/null 2>&1 || true
           xcrun simctl ui "$udid" appearance dark || true
-          for t in test1House test2RosewoodGilded; do
+          TESTS="test1House test2RosewoodGilded"
+          # [walkthrough] films a tour of the app on the iPhone instead.
+          if [[ "$COMMIT_MSG" == *"[walkthrough]"* ]]; then TESTS="test0Walkthrough"; fi
+          for t in $TESTS; do
             xcrun simctl io "$udid" recordVideo --codec=h264 --force "shots/reel-$t.mov" &
             rec=$!
             sleep 2
@@ -113,7 +118,7 @@ jobs:
           ls -la shots
 
       - name: UI tests (interaction)
-        if: steps.build.outcome == 'success' && !contains(github.event.head_commit.message, '[preview]') && !contains(github.event.head_commit.message, '[iphone]') && !contains(github.event.head_commit.message, '[reel]') && !contains(github.event.head_commit.message, '[shots:')
+        if: steps.build.outcome == 'success' && !contains(github.event.head_commit.message, '[preview]') && !contains(github.event.head_commit.message, '[iphone]') && !contains(github.event.head_commit.message, '[reel]') && !contains(github.event.head_commit.message, '[walkthrough]') && !contains(github.event.head_commit.message, '[shots:')
         run: |
           set -o pipefail
           status=0
@@ -128,7 +133,7 @@ jobs:
           exit $status
 
       - name: Screenshots
-        if: always() && steps.build.outcome == 'success' && !contains(github.event.head_commit.message, '[ui-only]') && !contains(github.event.head_commit.message, '[reel]')
+        if: always() && steps.build.outcome == 'success' && !contains(github.event.head_commit.message, '[ui-only]') && !contains(github.event.head_commit.message, '[reel]') && !contains(github.event.head_commit.message, '[walkthrough]')
         env:
           COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
